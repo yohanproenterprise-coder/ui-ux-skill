@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinépark Metz — Bowling & Centre de Loisirs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #040410;
+      --bg2:      #07071a;
+      --card:     rgba(255,255,255,0.03);
+      --border:   rgba(255,255,255,0.07);
+      --purple:   #7C3AED;
+      --purple-l: #A78BFA;
+      --pink:     #DB2777;
+      --pink-l:   #F472B6;
+      --cyan:     #0EA5E9;
+      --cyan-l:   #7DD3FC;
+      --amber:    #F59E0B;
+      --green:    #10B981;
+      --red:      #EF4444;
+      --text:     #F8FAFC;
+      --muted:    #94A3B8;
+      --muted2:   #64748B;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'Poppins',sans-serif;overflow-x:hidden;cursor:none}
+    ::-webkit-scrollbar{width:3px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--purple);border-radius:2px}
+
+    /* CUSTOM CURSOR */
+    #cursor{position:fixed;width:10px;height:10px;background:var(--purple);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .1s,background .2s,width .2s,height .2s;mix-blend-mode:difference}
+    #cursor-ring{position:fixed;width:40px;height:40px;border:1px solid rgba(124,58,237,.5);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:transform .12s ease,width .2s,height .2s,border-color .2s;transition-delay:0s,.0s,.0s,.0s}
+    body:has(a:hover) #cursor,body:has(button:hover) #cursor{width:20px;height:20px;background:var(--pink)}
+    body:has(a:hover) #cursor-ring,body:has(button:hover) #cursor-ring{width:60px;height:60px;border-color:rgba(219,39,119,.4)}
+
+    /* PROGRESS BAR */
+    #progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--pink),var(--cyan));z-index:1000;width:0%;transition:width .1s}
+
+    /* NAVBAR */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 0;transition:all .4s}
+    .nav.scrolled{padding:12px 0;background:rgba(4,4,16,.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{font-family:'Righteous',sans-serif;font-size:1.4rem;color:#fff;text-decoration:none;letter-spacing:2px;display:flex;align-items:center;gap:2px}
+    .nav-logo span{color:var(--purple);text-shadow:0 0 20px var(--purple)}
+    .nav-logo-dot{width:6px;height:6px;background:var(--pink);border-radius:50%;margin-left:2px;animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .nav-links{display:flex;gap:36px;list-style:none}
+    .nav-links a{color:var(--muted);text-decoration:none;font-size:.85rem;font-weight:500;letter-spacing:.3px;transition:color .2s;position:relative}
+    .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1px;background:var(--purple);transition:width .25s}
+    .nav-links a:hover{color:var(--text)}
+    .nav-links a:hover::after{width:100%}
+    .nav-right{display:flex;align-items:center;gap:12px}
+    .btn-tel-nav{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.8rem;text-decoration:none;transition:color .2s}
+    .btn-tel-nav:hover{color:var(--text)}
+    .btn-tel-nav svg{width:14px;height:14px}
+    .btn-nav{padding:10px 22px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:50px;color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;text-decoration:none;font-family:'Poppins',sans-serif;transition:all .25s;box-shadow:0 4px 20px rgba(124,58,237,.35);letter-spacing:.3px}
+    .btn-nav:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,.55)}
+    /* Mobile hamburger */
+    .nav-burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px}
+    .nav-burger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .3s}
+    .nav-burger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+    .nav-burger.open span:nth-child(2){opacity:0}
+    .nav-burger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+    .mobile-menu{display:none;position:fixed;inset:0;background:rgba(4,4,16,.97);z-index:99;flex-direction:column;align-items:center;justify-content:center;gap:32px;opacity:0;transition:opacity .3s}
+    .mobile-menu.open{display:flex;opacity:1}
+    .mobile-menu a{font-family:'Righteous',sans-serif;font-size:2rem;color:var(--text);text-decoration:none;letter-spacing:1px;transition:color .2s}
+    .mobile-menu a:hover{color:var(--purple)}
+
+    /* CANVAS HERO */
+    #hero-canvas{position:absolute;inset:0;width:100%;height:100%}
+    .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:140px 20px 100px;overflow:hidden}
+    .hero-mesh{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 40%,rgba(124,58,237,.18),transparent),radial-gradient(ellipse 60% 80% at 80% 60%,rgba(219,39,119,.14),transparent),radial-gradient(ellipse 50% 50% at 50% 80%,rgba(14,165,233,.1),transparent)}
+    .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(124,58,237,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,.05) 1px,transparent 1px);background-size:80px 80px;animation:grid 25s linear infinite}
+    @keyframes grid{0%{transform:translateY(0)}100%{transform:translateY(80px)}}
+    .hero-content{position:relative;z-index:2}
+    .hero-badge{display:inline-flex;align-items:center;gap:10px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);border-radius:50px;padding:7px 18px;font-size:.72rem;font-weight:700;color:var(--purple-l);margin-bottom:32px;letter-spacing:2px;text-transform:uppercase;opacity:0;animation:fadeUp .8s .2s forwards}
+    .hero-badge-dot{width:6px;height:6px;background:var(--purple);border-radius:50%;box-shadow:0 0 10px var(--purple);animation:blink 2s infinite}
+    .hero-eyebrow{font-size:clamp(.8rem,1.5vw,.9rem);color:var(--muted);letter-spacing:4px;text-transform:uppercase;font-weight:300;margin-bottom:12px;opacity:0;animation:fadeUp .8s .3s forwards}
+    .hero-title{font-family:'Righteous',sans-serif;font-size:clamp(3rem,9vw,7.5rem);line-height:.95;margin-bottom:24px;letter-spacing:-2px}
+    .hero-title .line{overflow:hidden;display:block}
+    .hero-title .line span{display:block;opacity:0;transform:translateY(100%);animation:lineUp .9s cubic-bezier(.16,1,.3,1) forwards}
+    .hero-title .line:nth-child(1) span{animation-delay:.4s}
+    .hero-title .line:nth-child(2) span{animation-delay:.55s}
+    .hero-title .line:nth-child(3) span{animation-delay:.7s}
+    .line-white{color:#fff}
+    .line-grad{background:linear-gradient(135deg,var(--purple),var(--pink) 50%,var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(124,58,237,.35))}
+    @keyframes lineUp{0%{opacity:0;transform:translateY(100%)}100%{opacity:1;transform:translateY(0)}}
+    @keyframes fadeUp{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+    .hero-sub{font-size:clamp(.9rem,1.8vw,1.1rem);color:var(--muted);max-width:520px;margin:0 auto 48px;line-height:1.7;opacity:0;animation:fadeUp .8s .9s forwards}
+    .hero-sub strong{color:var(--text);font-weight:600}
+    .hero-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:80px;opacity:0;animation:fadeUp .8s 1s forwards}
+    .btn-prim{display:flex;align-items:center;gap:10px;padding:16px 36px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:50px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;text-decoration:none;font-family:'Poppins',sans-serif;transition:all .3s;box-shadow:0 8px 40px rgba(124,58,237,.4);letter-spacing:.3px}
+    .btn-prim:hover{transform:translateY(-3px);box-shadow:0 14px 50px rgba(124,58,237,.6)}
+    .btn-prim svg{width:18px;height:18px}
+    .btn-sec{display:flex;align-items:center;gap:10px;padding:16px 36px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:50px;color:var(--text);font-size:.95rem;font-weight:600;cursor:pointer;text-decoration:none;font-family:'Poppins',sans-serif;transition:all .3s}
+    .btn-sec:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);transform:translateY(-2px)}
+    .btn-sec svg{width:18px;height:18px}
+    .hero-stats{display:flex;gap:64px;justify-content:center;flex-wrap:wrap;opacity:0;animation:fadeUp .8s 1.1s forwards}
+    .hstat{text-align:center}
+    .hstat-n{font-family:'Righteous',sans-serif;font-size:2.5rem;line-height:1;color:#fff;margin-bottom:4px}
+    .hstat-n .cnt{background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hstat-l{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+    .hero-scroll{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;z-index:2;opacity:0;animation:fadeUp .8s 1.3s forwards}
+    .scroll-txt{font-size:.65rem;color:var(--muted2);letter-spacing:3px;text-transform:uppercase}
+    .scroll-mouse{width:22px;height:36px;border:1.5px solid rgba(255,255,255,.2);border-radius:11px;display:flex;justify-content:center;padding-top:6px}
+    .scroll-wheel{width:3px;height:8px;background:var(--purple);border-radius:2px;animation:wheel 2s ease-in-out infinite}
+    @keyframes wheel{0%{transform:translateY(0);opacity:1}100%{transform:translateY(12px);opacity:0}}
+
+    /* MARQUEE */
+    .marquee-wrap{background:linear-gradient(135deg,var(--purple) 0%,var(--pink) 100%);padding:14px 0;overflow:hidden}
+    .marquee-track{display:flex;width:max-content;animation:marquee 20s linear infinite}
+    @keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+    .marquee-item{display:flex;align-items:center;gap:24px;padding:0 24px;font-size:.78rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.9);white-space:nowrap}
+    .marquee-sep{width:5px;height:5px;background:rgba(255,255,255,.5);border-radius:50%}
+
+    /* COMMON SECTION */
+    .section{padding:110px 20px;position:relative}
+    .container{max-width:1200px;margin:0 auto}
+    .sec-label{display:inline-flex;align-items:center;gap:8px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);border-radius:50px;padding:5px 14px;font-size:.68rem;font-weight:700;color:var(--purple-l);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+    .sec-label::before{content:'';width:5px;height:5px;background:var(--purple);border-radius:50%;box-shadow:0 0 8px var(--purple)}
+    .sec-h{font-family:'Righteous',sans-serif;font-size:clamp(2rem,4vw,3.2rem);color:#fff;line-height:1.1;margin-bottom:16px}
+    .sec-h span{background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .sec-p{font-size:1rem;color:var(--muted);line-height:1.75;max-width:520px}
+    .reveal{opacity:0;transform:translateY(32px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+    .reveal.visible{opacity:1;transform:translateY(0)}
+    .reveal-delay-1{transition-delay:.1s}
+    .reveal-delay-2{transition-delay:.2s}
+    .reveal-delay-3{transition-delay:.3s}
+    .reveal-delay-4{transition-delay:.4s}
+    .reveal-delay-5{transition-delay:.5s}
+    .reveal-delay-6{transition-delay:.6s}
+    .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);max-width:1200px;margin:0 auto}
+
+    /* ACTIVITIES */
+    .act-head{text-align:center;margin-bottom:64px}
+    .act-head .sec-p{margin:0 auto}
+    .act-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .act-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:32px 28px;text-decoration:none;color:inherit;display:flex;flex-direction:column;position:relative;overflow:hidden;cursor:pointer;transition:border-color .3s,transform .3s,box-shadow .3s}
+    .act-card::before{content:'';position:absolute;inset:0;border-radius:24px;opacity:0;transition:opacity .3s}
+    .act-card:hover{transform:translateY(-5px)}
+    .act-card:hover::before{opacity:1}
+    .act-card-inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+    /* Tilt is applied via JS */
+    .ac-p::before{background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(124,58,237,.04));box-shadow:inset 0 0 0 1px rgba(124,58,237,.35)}
+    .ac-pk::before{background:linear-gradient(135deg,rgba(219,39,119,.15),rgba(219,39,119,.04));box-shadow:inset 0 0 0 1px rgba(219,39,119,.35)}
+    .ac-c::before{background:linear-gradient(135deg,rgba(14,165,233,.15),rgba(14,165,233,.04));box-shadow:inset 0 0 0 1px rgba(14,165,233,.35)}
+    .ac-a::before{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.04));box-shadow:inset 0 0 0 1px rgba(245,158,11,.35)}
+    .ac-g::before{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.04));box-shadow:inset 0 0 0 1px rgba(16,185,129,.35)}
+    .ac-r::before{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.04));box-shadow:inset 0 0 0 1px rgba(239,68,68,.35)}
+    .ac-p:hover{box-shadow:0 20px 60px rgba(124,58,237,.15);border-color:transparent}
+    .ac-pk:hover{box-shadow:0 20px 60px rgba(219,39,119,.15);border-color:transparent}
+    .ac-c:hover{box-shadow:0 20px 60px rgba(14,165,233,.15);border-color:transparent}
+    .ac-a:hover{box-shadow:0 20px 60px rgba(245,158,11,.15);border-color:transparent}
+    .ac-g:hover{box-shadow:0 20px 60px rgba(16,185,129,.15);border-color:transparent}
+    .ac-r:hover{box-shadow:0 20px 60px rgba(239,68,68,.15);border-color:transparent}
+    .sp5{grid-column:span 5}.sp4{grid-column:span 4}.sp3{grid-column:span 3}
+    .act-ico{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+    .act-ico svg{width:26px;height:26px}
+    .ico-p{background:rgba(124,58,237,.15);color:var(--purple)}
+    .ico-pk{background:rgba(219,39,119,.15);color:var(--pink)}
+    .ico-c{background:rgba(14,165,233,.15);color:var(--cyan)}
+    .ico-a{background:rgba(245,158,11,.15);color:var(--amber)}
+    .ico-g{background:rgba(16,185,129,.15);color:var(--green)}
+    .ico-r{background:rgba(239,68,68,.15);color:var(--red)}
+    .act-tag{font-size:.65rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+    .act-name{font-family:'Righteous',sans-serif;font-size:1.5rem;color:#fff;margin-bottom:10px;line-height:1.1}
+    .act-featured .act-name{font-size:2.2rem}
+    .act-desc{font-size:.875rem;color:var(--muted);line-height:1.65;flex:1}
+    .act-cta{margin-top:22px;display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:700;letter-spacing:.5px}
+    .act-cta svg{width:15px;height:15px;transition:transform .2s}
+    .act-card:hover .act-cta svg{transform:translateX(5px)}
+    .act-num-bg{position:absolute;bottom:16px;right:20px;font-family:'Righteous',sans-serif;font-size:6rem;color:rgba(255,255,255,.03);line-height:1;pointer-events:none;user-select:none}
+
+    /* NUMBERS SECTION */
+    .numbers-sec{background:linear-gradient(135deg,rgba(124,58,237,.06),rgba(219,39,119,.04))}
+    .numbers-inner{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+    .num-block{background:var(--bg);padding:56px 32px;text-align:center}
+    .num-n{font-family:'Righteous',sans-serif;font-size:3.5rem;line-height:1;margin-bottom:8px;color:#fff}
+    .num-n .cnt{background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .num-l{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;font-weight:600}
+    .num-sub{font-size:.8rem;color:var(--muted2);margin-top:4px}
+
+    /* LIEUX */
+    .lieux-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:64px}
+    .lieu-card{border-radius:28px;padding:52px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
+    .lieu-card:hover{transform:translateY(-4px)}
+    .lieu-main{background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(219,39,119,.06));border-color:rgba(124,58,237,.2)}
+    .lieu-main:hover{box-shadow:0 20px 60px rgba(124,58,237,.12)}
+    .lieu-alt{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(16,185,129,.05));border-color:rgba(14,165,233,.18)}
+    .lieu-alt:hover{box-shadow:0 20px 60px rgba(14,165,233,.1)}
+    .lieu-pill{display:inline-block;padding:4px 14px;border-radius:50px;font-size:.65rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px}
+    .pill-p{background:rgba(124,58,237,.2);color:var(--purple-l);border:1px solid rgba(124,58,237,.3)}
+    .pill-c{background:rgba(14,165,233,.15);color:var(--cyan-l);border:1px solid rgba(14,165,233,.25)}
+    .lieu-name{font-family:'Righteous',sans-serif;font-size:2rem;color:#fff;margin-bottom:10px}
+    .lieu-addr{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);margin-bottom:32px}
+    .lieu-addr svg{width:14px;height:14px;flex-shrink:0}
+    .lieu-list{list-style:none;display:flex;flex-direction:column;gap:14px;margin-bottom:40px}
+    .lieu-item{display:flex;align-items:center;gap:14px;font-size:.9rem;color:var(--muted)}
+    .l-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .d-p{background:var(--purple);box-shadow:0 0 10px var(--purple)}
+    .d-c{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+    .btn-lieu-p{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:linear-gradient(135deg,var(--purple),var(--pink));border:none;border-radius:50px;color:#fff;font-size:.85rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all .25s;font-family:'Poppins',sans-serif;box-shadow:0 4px 20px rgba(124,58,237,.3)}
+    .btn-lieu-p:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,.5)}
+    .btn-lieu-c{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:rgba(14,165,233,.12);border:1px solid rgba(14,165,233,.3);border-radius:50px;color:var(--cyan-l);font-size:.85rem;font-weight:700;text-decoration:none;cursor:pointer;transition:all .25s;font-family:'Poppins',sans-serif}
+    .btn-lieu-c:hover{background:rgba(14,165,233,.22);transform:translateY(-2px)}
+
+    /* TARIFS */
+    .tarifs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:64px}
+    .t-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px 32px;position:relative;overflow:hidden;transition:all .3s}
+    .t-card:hover{transform:translateY(-5px);border-color:rgba(124,58,237,.25);box-shadow:0 20px 60px rgba(124,58,237,.1)}
+    .t-card-feat{background:linear-gradient(135deg,rgba(124,58,237,.14),rgba(219,39,119,.08));border-color:rgba(124,58,237,.3)}
+    .t-badge{position:absolute;top:24px;right:24px;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:.62rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;border-radius:50px}
+    .t-ico{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+    .t-ico svg{width:24px;height:24px}
+    .t-name{font-family:'Righteous',sans-serif;font-size:1.2rem;color:#fff;margin-bottom:6px}
+    .t-sub{font-size:.8rem;color:var(--muted);margin-bottom:24px}
+    .t-price{display:flex;align-items:baseline;gap:4px;margin-bottom:24px}
+    .t-from{font-size:.78rem;color:var(--muted2);margin-right:4px}
+    .t-num{font-family:'Righteous',sans-serif;font-size:3rem;color:#fff;line-height:1}
+    .t-unit{font-size:.82rem;color:var(--muted)}
+    .t-feats{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+    .t-feat{display:flex;align-items:center;gap:10px;font-size:.84rem;color:var(--muted)}
+    .t-feat svg{width:15px;height:15px;color:var(--purple);flex-shrink:0}
+
+    /* EVENTS */
+    .events-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:64px}
+    .ev-card{border-radius:24px;padding:48px 36px;border:1px solid var(--border);background:var(--card);position:relative;overflow:hidden;transition:all .3s;cursor:pointer}
+    .ev-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;opacity:0;transition:opacity .3s}
+    .ev-card:hover{transform:translateY(-5px);border-color:transparent}
+    .ev-card:hover::after{opacity:1}
+    .ev-1::after{background:linear-gradient(90deg,var(--pink),var(--purple))}
+    .ev-2::after{background:linear-gradient(90deg,var(--purple),var(--cyan))}
+    .ev-3::after{background:linear-gradient(90deg,var(--cyan),var(--green))}
+    .ev-card:hover{box-shadow:0 20px 60px rgba(124,58,237,.12)}
+    .ev-ico{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:28px}
+    .ev-ico svg{width:32px;height:32px}
+    .ev-num{position:absolute;top:20px;right:24px;font-family:'Righteous',sans-serif;font-size:3.5rem;color:rgba(255,255,255,.04)}
+    .ev-title{font-family:'Righteous',sans-serif;font-size:1.4rem;color:#fff;margin-bottom:14px}
+    .ev-desc{font-size:.875rem;color:var(--muted);line-height:1.75}
+    .ev-link{margin-top:24px;display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:var(--purple-l);letter-spacing:.5px;transition:gap .2s}
+    .ev-card:hover .ev-link{gap:10px}
+    .ev-link svg{width:14px;height:14px}
+
+    /* BAR & FOOD */
+    .bar-section{background:linear-gradient(180deg,var(--bg) 0%,rgba(124,58,237,.04) 50%,var(--bg) 100%)}
+    .bar-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center}
+    .bar-items{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .bar-item{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;display:flex;align-items:center;gap:14px;transition:all .25s}
+    .bar-item:hover{border-color:rgba(124,58,237,.25);transform:translateY(-2px)}
+    .bar-ico{width:44px;height:44px;border-radius:12px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .bar-ico svg{width:22px;height:22px;color:var(--purple)}
+    .bar-item-name{font-size:.9rem;font-weight:600;color:#fff;margin-bottom:2px}
+    .bar-item-sub{font-size:.75rem;color:var(--muted)}
+    .bar-feat-list{display:flex;flex-direction:column;gap:16px;margin-top:32px}
+    .bar-feat{display:flex;align-items:flex-start;gap:14px}
+    .bar-feat-ico{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+    .bar-feat-ico svg{width:20px;height:20px}
+    .bar-feat-title{font-size:.9rem;font-weight:700;color:#fff;margin-bottom:3px}
+    .bar-feat-desc{font-size:.8rem;color:var(--muted);line-height:1.5}
+
+    /* HORAIRES */
+    .horaires-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:64px}
+    .hor-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px}
+    .hor-title{font-family:'Righteous',sans-serif;font-size:1.3rem;color:#fff;margin-bottom:4px}
+    .hor-addr{font-size:.82rem;color:var(--muted);margin-bottom:28px;display:flex;align-items:center;gap:6px}
+    .hor-addr svg{width:12px;height:12px}
+    .hor-rows{display:flex;flex-direction:column;gap:0}
+    .hor-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:.85rem}
+    .hor-row:last-child{border-bottom:none}
+    .hor-day{color:var(--muted);font-weight:500}
+    .hor-time{color:#fff;font-weight:600}
+    .hor-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.2);border-radius:50px;font-size:.65rem;color:var(--green);font-weight:700;letter-spacing:.5px}
+    .hor-badge-dot{width:4px;height:4px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:blink 1.5s infinite}
+
+    /* BOOKING CTA */
+    .cta-section{padding:80px 20px 100px}
+    .cta-box{max-width:800px;margin:0 auto;position:relative;border-radius:32px;overflow:hidden}
+    .cta-bg{position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(219,39,119,.12));border:1px solid rgba(124,58,237,.2)}
+    .cta-bg::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 100% at 50% 0%,rgba(124,58,237,.15),transparent)}
+    .cta-inner{position:relative;z-index:1;padding:80px 48px;text-align:center}
+    .cta-title{font-family:'Righteous',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin-bottom:16px;line-height:1.1}
+    .cta-title span{background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .cta-sub{font-size:1.05rem;color:var(--muted);margin-bottom:44px;line-height:1.7}
+    .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+    .btn-cta-sec{display:flex;align-items:center;gap:10px;padding:16px 32px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:50px;color:#fff;font-size:.9rem;font-weight:600;text-decoration:none;font-family:'Poppins',sans-serif;transition:all .25s}
+    .btn-cta-sec:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25)}
+    .btn-cta-sec svg{width:18px;height:18px;color:var(--purple)}
+    .cta-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none}
+    .cta-orb1{width:300px;height:300px;background:var(--purple);opacity:.12;top:-80px;left:-80px}
+    .cta-orb2{width:250px;height:250px;background:var(--pink);opacity:.1;bottom:-60px;right:-60px}
+
+    /* FOOTER */
+    footer{background:rgba(0,0,0,.6);border-top:1px solid var(--border);padding:70px 20px 40px}
+    .footer-grid{max-width:1200px;margin:0 auto}
+    .footer-top{display:grid;grid-template-columns:2.5fr 1fr 1fr 1fr;gap:56px;margin-bottom:56px}
+    .f-logo{font-family:'Righteous',sans-serif;font-size:2rem;color:#fff;letter-spacing:2px;margin-bottom:14px}
+    .f-logo span{color:var(--purple);text-shadow:0 0 20px var(--purple)}
+    .f-desc{font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:28px}
+    .f-social{display:flex;gap:10px}
+    .f-soc{width:42px;height:42px;border-radius:11px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);text-decoration:none;transition:all .2s}
+    .f-soc:hover{border-color:var(--purple);color:var(--purple);box-shadow:0 0 16px rgba(124,58,237,.2)}
+    .f-soc svg{width:18px;height:18px}
+    .f-col-title{font-weight:700;font-size:.82rem;color:#fff;margin-bottom:20px;letter-spacing:.3px}
+    .f-links{list-style:none;display:flex;flex-direction:column;gap:12px}
+    .f-links a{font-size:.83rem;color:var(--muted);text-decoration:none;transition:color .2s;display:flex;align-items:center;gap:6px}
+    .f-links a:hover{color:var(--text)}
+    .f-bottom{border-top:1px solid var(--border);padding-top:28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+    .f-copy{font-size:.75rem;color:var(--muted2)}
+    .f-legal{display:flex;gap:24px}
+    .f-legal a{font-size:.75rem;color:var(--muted2);text-decoration:none;transition:color .2s}
+    .f-legal a:hover{color:var(--text)}
+    .f-quality{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--muted2)}
+    .f-quality span{color:var(--purple);font-weight:700}
+
+    /* RESPONSIVE */
+    @media(max-width:1024px){
+      .act-grid{grid-template-columns:repeat(6,1fr)}
+      .sp5,.sp4{grid-column:span 6}.sp3{grid-column:span 3}
+      .footer-top{grid-template-columns:1fr 1fr;gap:40px}
+      .tarifs-grid{grid-template-columns:1fr 1fr}
+      .numbers-inner{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:768px){
+      .nav-links,.btn-tel-nav{display:none}
+      .nav-burger{display:flex}
+      .act-grid{grid-template-columns:1fr}
+      .sp5,.sp4,.sp3{grid-column:span 1}
+      .lieux-grid,.events-grid,.tarifs-grid,.horaires-grid,.bar-inner{grid-template-columns:1fr}
+      .bar-inner{gap:40px}
+      .hero-stats{gap:36px}
+      .numbers-inner{grid-template-columns:1fr 1fr}
+      .num-block{padding:40px 20px}
+      .footer-top{grid-template-columns:1fr;gap:32px}
+      .f-bottom{flex-direction:column;text-align:center}
+      .section{padding:72px 20px}
+      .cta-inner{padding:52px 24px}
+      #cursor,#cursor-ring{display:none}
+      body{cursor:auto}
+    }
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation:none!important;transition:none!important}
+      .reveal{opacity:1;transform:none}
+    }
+  </style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- PROGRESS -->
+<div id="progress"></div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#activites" onclick="closeMobile()">Activités</a>
+  <a href="#lieux" onclick="closeMobile()">Nos lieux</a>
+  <a href="#tarifs" onclick="closeMobile()">Tarifs</a>
+  <a href="#evenements" onclick="closeMobile()">Événements</a>
+  <a href="#reservation" onclick="closeMobile()" style="color:var(--purple)">Réserver →</a>
+</div>
+
+<!-- NAVBAR -->
+<nav class="nav" id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">KINÉ<span>PARK</span><div class="nav-logo-dot"></div></a>
+    <ul class="nav-links">
+      <li><a href="#activites">Activités</a></li>
+      <li><a href="#lieux">Nos lieux</a></li>
+      <li><a href="#tarifs">Tarifs</a></li>
+      <li><a href="#evenements">Événements</a></li>
+      <li><a href="#horaires">Horaires</a></li>
+    </ul>
+    <div class="nav-right">
+      <a href="tel:0357843804" class="btn-tel-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 0h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 14.92v2z"/></svg>
+        03 57 84 38 04
+      </a>
+      <a href="#reservation" class="btn-nav">Réserver</a>
+      <div class="nav-burger" id="burger" onclick="toggleMobile()">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-mesh"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><div class="hero-badge-dot"></div>Bowling & Centre de Loisirs · Metz</div>
+    <p class="hero-eyebrow">Kinépark — 2 établissements</p>
+    <h1 class="hero-title">
+      <span class="line"><span class="line-white">L'EXPÉRIENCE</span></span>
+      <span class="line"><span class="line-grad">ULTIME</span></span>
+      <span class="line"><span class="line-white">À METZ</span></span>
+    </h1>
+    <p class="hero-sub">Bowling, lasergame, quizboxing, arcade et bien plus encore. <strong>50 pistes, 9 activités, 2 adresses</strong> — le meilleur du divertissement indoor.</p>
+    <div class="hero-btns">
+      <a href="#reservation" class="btn-prim">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+        Réserver maintenant
+      </a>
+      <a href="#activites" class="btn-sec">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/></svg>
+        Découvrir
+      </a>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-n"><span class="cnt" data-target="50">0</span></div><div class="hstat-l">Pistes bowling</div></div>
+      <div class="hstat"><div class="hstat-n"><span class="cnt" data-target="9">0</span></div><div class="hstat-l">Activités</div></div>
+      <div class="hstat"><div class="hstat-n"><span class="cnt" data-target="2">0</span></div><div class="hstat-l">Établissements</div></div>
+      <div class="hstat"><div class="hstat-n"><span class="cnt" data-target="700">0</span>m²</div><div class="hstat-l">Lasergame</div></div>
+    </div>
+  </div>
+  <div class="hero-scroll">
+    <div class="scroll-mouse"><div class="scroll-wheel"></div></div>
+    <span class="scroll-txt">Scroll</span>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item">Bowling<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Lasergame<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Quizboxing<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Arcade<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Billard<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Baby-foot<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Fléchettes<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Pétanque<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Ping-pong<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Bowling<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Lasergame<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Quizboxing<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Arcade<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Billard<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Baby-foot<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Fléchettes<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Pétanque<div class="marquee-sep"></div></div>
+    <div class="marquee-item">Ping-pong<div class="marquee-sep"></div></div>
+  </div>
+</div>
+
+<!-- ACTIVITÉS -->
+<section class="section" id="activites">
+  <div class="container">
+    <div class="act-head reveal">
+      <div class="sec-label">Nos activités</div>
+      <h2 class="sec-h">Un univers de <span>divertissement</span></h2>
+      <p class="sec-p">Du bowling en famille aux batailles de lasergame, chaque visite est une aventure. À Metz, on sait s'amuser.</p>
+    </div>
+    <div class="act-grid">
+
+      <a href="#tarifs" class="act-card ac-p sp5 act-featured reveal reveal-delay-1">
+        <div class="act-card-inner">
+          <div class="act-ico ico-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="8.5" cy="9" r="1.3" fill="currentColor"/><circle cx="13.5" cy="7.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="12" r="1.3" fill="currentColor"/></svg></div>
+          <div class="act-tag" style="color:var(--purple-l)">Activité phare</div>
+          <div class="act-name">Bowling</div>
+          <div class="act-desc">50 pistes réparties sur 2 établissements. Jouez seul, en famille ou entre amis dans une ambiance lumineuse. Chaussures et boules en location.</div>
+          <div class="act-cta" style="color:var(--purple-l)">Voir les tarifs <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">01</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-pk sp4 reveal reveal-delay-2">
+        <div class="act-card-inner">
+          <div class="act-ico ico-pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <div class="act-tag" style="color:var(--pink-l)">Combat laser</div>
+          <div class="act-name">Lasergame</div>
+          <div class="act-desc">700 m² sur 2 niveaux à Saint-Julien. Formez vos équipes et partez en mission dans un labyrinthe épique.</div>
+          <div class="act-cta" style="color:var(--pink-l)">Découvrir <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">02</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-c sp3 reveal reveal-delay-3">
+        <div class="act-card-inner">
+          <div class="act-ico ico-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg></div>
+          <div class="act-tag" style="color:var(--cyan-l)">Quiz & jeux</div>
+          <div class="act-name">Quizboxing</div>
+          <div class="act-desc">Blind tests, jokers délirants, mini-jeux. Le fun assuré pour tout le groupe !</div>
+          <div class="act-cta" style="color:var(--cyan-l)">Jouer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">03</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-a sp3 reveal reveal-delay-1">
+        <div class="act-card-inner">
+          <div class="act-ico ico-a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M8 10v4M6 12h4M16 12h2M15 10v4"/></svg></div>
+          <div class="act-tag" style="color:var(--amber)">Arcade</div>
+          <div class="act-name">Arcade</div>
+          <div class="act-desc">Dizaines de bornes pour les petits et grands joueurs.</div>
+          <div class="act-cta" style="color:var(--amber)">Jouer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">04</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-g sp3 reveal reveal-delay-2">
+        <div class="act-card-inner">
+          <div class="act-ico ico-g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="7" r="2.5"/><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><circle cx="12" cy="12" r="2"/></svg></div>
+          <div class="act-tag" style="color:var(--green)">Stratégie</div>
+          <div class="act-name">Billard</div>
+          <div class="act-desc">Tables américaines premium dans une ambiance feutrée.</div>
+          <div class="act-cta" style="color:var(--green)">Jouer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">05</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-p sp3 reveal reveal-delay-3">
+        <div class="act-card-inner">
+          <div class="act-ico ico-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="8" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="16" y2="20"/></svg></div>
+          <div class="act-tag" style="color:var(--purple-l)">Sport</div>
+          <div class="act-name">Baby-foot</div>
+          <div class="act-desc">Tables de baby-foot pour des matchs très animés.</div>
+          <div class="act-cta" style="color:var(--purple-l)">Jouer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">06</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-r sp3 reveal reveal-delay-1">
+        <div class="act-card-inner">
+          <div class="act-ico ico-r"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+          <div class="act-tag" style="color:var(--red)">Précision</div>
+          <div class="act-name">Fléchettes</div>
+          <div class="act-desc">Électroniques ou classiques, testez votre adresse.</div>
+          <div class="act-cta" style="color:var(--red)">Viser <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">07</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-c sp3 reveal reveal-delay-2">
+        <div class="act-card-inner">
+          <div class="act-ico ico-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg></div>
+          <div class="act-tag" style="color:var(--cyan-l)">Convivial</div>
+          <div class="act-name">Pétanque</div>
+          <div class="act-desc">Boules et bonne humeur. En intérieur toute l'année.</div>
+          <div class="act-cta" style="color:var(--cyan-l)">Jouer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">08</div>
+      </a>
+
+      <a href="#lieux" class="act-card ac-a sp3 reveal reveal-delay-3">
+        <div class="act-card-inner">
+          <div class="act-ico ico-a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg></div>
+          <div class="act-tag" style="color:var(--amber)">Réflexes</div>
+          <div class="act-name">Ping-pong</div>
+          <div class="act-desc">Tables de tennis pour vos défis sportifs.</div>
+          <div class="act-cta" style="color:var(--amber)">Smash <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        </div>
+        <div class="act-num-bg">09</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- NUMBERS -->
+<div class="divider"></div>
+<section class="numbers-sec section" style="padding:0">
+  <div class="numbers-inner">
+    <div class="num-block reveal"><div class="num-n"><span class="cnt" data-target="50">0</span></div><div class="num-l">Pistes de bowling</div><div class="num-sub">Muse + Saint-Julien</div></div>
+    <div class="num-block reveal reveal-delay-1"><div class="num-n"><span class="cnt" data-target="700">0</span>m²</div><div class="num-l">Lasergame</div><div class="num-sub">Sur 2 niveaux</div></div>
+    <div class="num-block reveal reveal-delay-2"><div class="num-n"><span class="cnt" data-target="9">0</span></div><div class="num-l">Activités</div><div class="num-sub">Bowling, laser, quiz…</div></div>
+    <div class="num-block reveal reveal-delay-3"><div class="num-n">7<span class="cnt" style="-webkit-text-fill-color:inherit;background:none;color:var(--purple)">j</span>/7</div><div class="num-l">Ouvert</div><div class="num-sub">Toute la semaine</div></div>
+  </div>
+</section>
+<div class="divider"></div>
+
+<!-- LIEUX -->
+<section class="section" id="lieux">
+  <div class="container">
+    <div class="reveal">
+      <div class="sec-label">Nos établissements</div>
+      <h2 class="sec-h">2 adresses à <span>Metz</span></h2>
+      <p class="sec-p">Deux centres de loisirs complémentaires pour vous accueillir, chacun avec ses propres spécialités.</p>
+    </div>
+    <div class="lieux-grid">
+      <div class="lieu-card lieu-main reveal reveal-delay-1">
+        <div class="lieu-pill pill-p">Centre Muse</div>
+        <div class="lieu-name">Kinépark Muse</div>
+        <div class="lieu-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centre commercial Muse, Metz</div>
+        <ul class="lieu-list">
+          <li class="lieu-item"><div class="l-dot d-p"></div>20 pistes de bowling</li>
+          <li class="lieu-item"><div class="l-dot d-p"></div>Salle d'arcade complète</li>
+          <li class="lieu-item"><div class="l-dot d-p"></div>Billard &amp; Baby-foot</li>
+          <li class="lieu-item"><div class="l-dot d-p"></div>Fléchettes &amp; Pétanque</li>
+          <li class="lieu-item"><div class="l-dot d-p"></div>Bar &amp; snacking</li>
+        </ul>
+        <a href="tel:0357843804" class="btn-lieu-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 0h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 14.92v2z"/></svg>Réserver</a>
+      </div>
+      <div class="lieu-card lieu-alt reveal reveal-delay-2">
+        <div class="lieu-pill pill-c">Kinépolis</div>
+        <div class="lieu-name">Kinépark Saint-Julien</div>
+        <div class="lieu-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Kinépolis, Saint-Julien-lès-Metz</div>
+        <ul class="lieu-list">
+          <li class="lieu-item"><div class="l-dot d-c"></div>30 pistes de bowling</li>
+          <li class="lieu-item"><div class="l-dot d-c"></div>Lasergame 700 m² / 2 niveaux</li>
+          <li class="lieu-item"><div class="l-dot d-c"></div>Quizboxing interactif</li>
+          <li class="lieu-item"><div class="l-dot d-c"></div>Arcade &amp; Billard</li>
+          <li class="lieu-item"><div class="l-dot d-c"></div>Bar &amp; Pizzas</li>
+        </ul>
+        <a href="tel:0357843804" class="btn-lieu-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 0h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 14.92v2z"/></svg>Réserver</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TARIFS -->
+<section class="section" id="tarifs">
+  <div class="container">
+    <div class="reveal" style="text-align:center;margin-bottom:64px">
+      <div class="sec-label">Tarifs</div>
+      <h2 class="sec-h">Des prix <span>pour tous</span></h2>
+      <p class="sec-p" style="margin:0 auto">Réservez en ligne et bénéficiez de réductions exclusives. Ouvert toute la semaine.</p>
+    </div>
+    <div class="tarifs-grid">
+      <div class="t-card t-card-feat reveal reveal-delay-1">
+        <div class="t-badge">Populaire</div>
+        <div class="t-ico ico-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><circle cx="8.5" cy="9" r="1.3" fill="currentColor"/><circle cx="13.5" cy="7.5" r="1.3" fill="currentColor"/><circle cx="15.5" cy="12" r="1.3" fill="currentColor"/></svg></div>
+        <div class="t-name">Bowling</div>
+        <div class="t-sub">1 partie · jusqu'à 6 joueurs</div>
+        <div class="t-price"><span class="t-from">à partir de</span><span class="t-num">5</span><span class="t-unit">€ / pers.</span></div>
+        <ul class="t-feats">
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Chaussures incluses</li>
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Réservation en ligne</li>
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Tarif réduit enfant</li>
+        </ul>
+        <a href="#reservation" class="btn-prim" style="justify-content:center">Réserver une piste</a>
+      </div>
+      <div class="t-card reveal reveal-delay-2">
+        <div class="t-ico ico-pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <div class="t-name">Lasergame</div>
+        <div class="t-sub">1 partie de 20 min</div>
+        <div class="t-price"><span class="t-from">à partir de</span><span class="t-num">6</span><span class="t-unit">€ / pers.</span></div>
+        <ul class="t-feats">
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>700 m² sur 2 niveaux</li>
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Équipement fourni</li>
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Dès 7 ans</li>
+        </ul>
+        <a href="tel:0357843804" class="btn-sec" style="justify-content:center">Appeler</a>
+      </div>
+      <div class="t-card reveal reveal-delay-3">
+        <div class="t-ico ico-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="t-name">Pack Famille</div>
+        <div class="t-sub">Bowling + Arcade</div>
+        <div class="t-price"><span class="t-from">à partir de</span><span class="t-num">25</span><span class="t-unit">€</span></div>
+        <ul class="t-feats">
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>2 adultes + 2 enfants</li>
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Jetons arcade inclus</li>
+          <li class="t-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>Offre weekend</li>
+        </ul>
+        <a href="tel:0357843804" class="btn-sec" style="justify-content:center">Appeler</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ÉVÉNEMENTS -->
+<section class="section" id="evenements">
+  <div class="container">
+    <div class="reveal" style="text-align:center;margin-bottom:64px">
+      <div class="sec-label">Événements</div>
+      <h2 class="sec-h">Vivez des moments <span>inoubliables</span></h2>
+      <p class="sec-p" style="margin:0 auto">Du simple anniversaire au team building, nous prenons tout en charge de A à Z.</p>
+    </div>
+    <div class="events-grid">
+      <div class="ev-card ev-1 reveal reveal-delay-1">
+        <div class="ev-ico ico-pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+        <div class="ev-num">01</div>
+        <div class="ev-title">Anniversaires</div>
+        <div class="ev-desc">Fêtez votre anniversaire dans un cadre festif et mémorable. Packages avec activités, bar et snacking pour un moment unique.</div>
+        <div class="ev-link">En savoir plus <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+      <div class="ev-card ev-2 reveal reveal-delay-2">
+        <div class="ev-ico ico-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <div class="ev-num">02</div>
+        <div class="ev-title">Team Building</div>
+        <div class="ev-desc">Renforcez la cohésion de votre équipe. Bowling, lasergame et quizboxing : le combo parfait pour vos soirées entreprise.</div>
+        <div class="ev-link">Demander un devis <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+      <div class="ev-card ev-3 reveal reveal-delay-3">
+        <div class="ev-ico ico-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="ev-num">03</div>
+        <div class="ev-title">Groupes &amp; Sorties</div>
+        <div class="ev-desc">EVJF, EVG, sorties scolaires, associations… Formules adaptées et tarifs préférentiels pour tous les groupes.</div>
+        <div class="ev-link">Nous contacter <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- BAR & FOOD -->
+<section class="section bar-section">
+  <div class="container">
+    <div class="bar-inner">
+      <div class="reveal">
+        <div class="sec-label">Bar &amp; Restauration</div>
+        <h2 class="sec-h">Boire &amp; <span>manger</span> sur place</h2>
+        <p class="sec-p">Profitez d'une pause gourmande entre deux activités. Pizzas, snacks et boissons sur place pour prolonger le plaisir.</p>
+        <div class="bar-feat-list">
+          <div class="bar-feat">
+            <div class="bar-feat-ico ico-p"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+            <div><div class="bar-feat-title">Bar complet</div><div class="bar-feat-desc">Cocktails, bières, softs et shots. Ambiance garantie.</div></div>
+          </div>
+          <div class="bar-feat">
+            <div class="bar-feat-ico ico-pk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8M12 8v8"/></svg></div>
+            <div><div class="bar-feat-title">Pizzas &amp; Snacks</div><div class="bar-feat-desc">Pizzas fraîches, burgers et encas pour toute la famille.</div></div>
+          </div>
+          <div class="bar-feat">
+            <div class="bar-feat-ico ico-c"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+            <div><div class="bar-feat-title">Ouvert jusqu'à minuit</div><div class="bar-feat-desc">Soirées prolongées le vendredi et samedi soir.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="bar-items reveal reveal-delay-2">
+        <div class="bar-item"><div class="bar-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div><div><div class="bar-item-name">Cocktails</div><div class="bar-item-sub">Signature &amp; classiques</div></div></div>
+        <div class="bar-item"><div class="bar-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg></div><div><div class="bar-item-name">Pizzas</div><div class="bar-item-sub">Fraîches du jour</div></div></div>
+        <div class="bar-item"><div class="bar-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8C8 10 5.9 16.17 3.82 22M9.1 9.1c-3.4 1.7-5.8 4.9-6.9 8.1M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg></div><div><div class="bar-item-name">Bières</div><div class="bar-item-sub">Pression &amp; bouteilles</div></div></div>
+        <div class="bar-item"><div class="bar-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div><div><div class="bar-item-name">Snacks</div><div class="bar-item-sub">Burgers &amp; encas</div></div></div>
+        <div class="bar-item"><div class="bar-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><div><div class="bar-item-name">Softs</div><div class="bar-item-sub">Sodas &amp; jus</div></div></div>
+        <div class="bar-item"><div class="bar-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="bar-item-name">Shots</div><div class="bar-item-sub">Pour les soirées</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HORAIRES -->
+<section class="section" id="horaires">
+  <div class="container">
+    <div class="reveal" style="text-align:center;margin-bottom:64px">
+      <div class="sec-label">Horaires</div>
+      <h2 class="sec-h">On vous accueille <span>7j/7</span></h2>
+      <p class="sec-p" style="margin:0 auto">Venez quand vous voulez, on est toujours là pour vous.</p>
+    </div>
+    <div class="horaires-grid">
+      <div class="hor-card reveal reveal-delay-1">
+        <div class="hor-title">Kinépark Muse</div>
+        <div class="hor-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Centre Muse · Metz</div>
+        <div class="hor-rows">
+          <div class="hor-row"><span class="hor-day">Lundi – Jeudi</span><span class="hor-time">14h – 23h</span></div>
+          <div class="hor-row"><span class="hor-day">Vendredi</span><span class="hor-time">14h – 00h</span></div>
+          <div class="hor-row"><span class="hor-day">Samedi</span><span class="hor-time">10h – 00h</span></div>
+          <div class="hor-row"><span class="hor-day">Dimanche</span><span class="hor-time">10h – 23h</span></div>
+          <div class="hor-row"><span class="hor-day">Vacances scolaires</span><span class="hor-time">10h – 23h</span></div>
+        </div>
+      </div>
+      <div class="hor-card reveal reveal-delay-2">
+        <div class="hor-title">Kinépark Saint-Julien</div>
+        <div class="hor-addr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Kinépolis · Saint-Julien-lès-Metz</div>
+        <div class="hor-rows">
+          <div class="hor-row"><span class="hor-day">Lundi – Jeudi</span><span class="hor-time">14h – 23h</span></div>
+          <div class="hor-row"><span class="hor-day">Vendredi</span><span class="hor-time">14h – 00h</span></div>
+          <div class="hor-row"><span class="hor-day">Samedi</span><span class="hor-time">10h – 00h</span></div>
+          <div class="hor-row"><span class="hor-day">Dimanche</span><span class="hor-time">10h – 23h</span></div>
+          <div class="hor-row"><span class="hor-day">Vacances scolaires</span><span class="hor-time">10h – 23h</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOOKING CTA -->
+<section class="cta-section" id="reservation">
+  <div class="container">
+    <div class="cta-box reveal">
+      <div class="cta-bg"></div>
+      <div class="cta-orb cta-orb1"></div>
+      <div class="cta-orb cta-orb2"></div>
+      <div class="cta-inner">
+        <div class="sec-label" style="justify-content:center;margin-bottom:20px">Réservation</div>
+        <h2 class="cta-title">Prêt à <span>jouer</span> ?</h2>
+        <p class="cta-sub">Réservez en ligne ou appelez-nous directement.<br>Ouvert 7j/7 — on vous attend à Metz !</p>
+        <div class="cta-btns">
+          <a href="#" class="btn-prim">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+            Réserver en ligne
+          </a>
+          <a href="tel:0357843804" class="btn-cta-sec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 0h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 14.92v2z"/></svg>
+            03 57 84 38 04
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-top">
+      <div>
+        <div class="f-logo">KINÉ<span>PARK</span></div>
+        <div class="f-desc">Le plaisir du jeu, l'expérience du divertissement. Bowling, lasergame, arcade et bien plus encore — à Metz depuis toujours.</div>
+        <div class="f-social">
+          <a href="#" class="f-soc" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+          <a href="#" class="f-soc" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+          <a href="#" class="f-soc" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.17 8.17 0 0 0 4.77 1.52V6.75a4.85 4.85 0 0 1-1-.06z"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <div class="f-col-title">Activités</div>
+        <ul class="f-links">
+          <li><a href="#activites">Bowling</a></li>
+          <li><a href="#activites">Lasergame</a></li>
+          <li><a href="#activites">Quizboxing</a></li>
+          <li><a href="#activites">Arcade</a></li>
+          <li><a href="#activites">Billard &amp; Fléchettes</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="f-col-title">Établissements</div>
+        <ul class="f-links">
+          <li><a href="#lieux">Kinépark Muse</a></li>
+          <li><a href="#lieux">Kinépark Saint-Julien</a></li>
+          <li><a href="#horaires">Horaires</a></li>
+          <li><a href="tel:0357843804">03 57 84 38 04</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="f-col-title">Événements</div>
+        <ul class="f-links">
+          <li><a href="#evenements">Anniversaires</a></li>
+          <li><a href="#evenements">Team Building</a></li>
+          <li><a href="#evenements">EVJF / EVG</a></li>
+          <li><a href="#evenements">Sorties groupe</a></li>
+          <li><a href="#reservation">Réservation</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="f-bottom">
+      <div class="f-copy">© 2025 Kinépark Metz. Tous droits réservés.</div>
+      <div class="f-quality">Site réalisé avec <span>♥</span></div>
+      <div class="f-legal">
+        <a href="#">Mentions légales</a>
+        <a href="#">CGV</a>
+        <a href="#">Confidentialité</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // CURSOR
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cursor.style.left=mx+'px';cursor.style.top=my+'px'});
+  (function raf(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(raf)})();
+
+  // PROGRESS BAR
+  const prog = document.getElementById('progress');
+  window.addEventListener('scroll',()=>{
+    const s=document.documentElement.scrollTop;
+    const h=document.documentElement.scrollHeight-document.documentElement.clientHeight;
+    prog.style.width=(s/h*100)+'%';
+  });
+
+  // NAVBAR SCROLL
+  const nav = document.getElementById('navbar');
+  window.addEventListener('scroll',()=>{nav.classList.toggle('scrolled',window.scrollY>60)});
+
+  // MOBILE MENU
+  function toggleMobile(){
+    const m=document.getElementById('mobileMenu');
+    const b=document.getElementById('burger');
+    m.classList.toggle('open');b.classList.toggle('open');
+  }
+  function closeMobile(){
+    document.getElementById('mobileMenu').classList.remove('open');
+    document.getElementById('burger').classList.remove('open');
+  }
+
+  // CANVAS ANIMATION — floating bowling balls
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  function resizeCanvas(){canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight}
+  resizeCanvas();
+  window.addEventListener('resize',resizeCanvas);
+
+  const balls = Array.from({length:18},(_,i)=>({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height,
+    r:Math.random()*28+10,
+    vx:(Math.random()-.5)*.4,
+    vy:(Math.random()-.5)*.4,
+    opacity:Math.random()*.25+.05,
+    hue: [270,320,200][Math.floor(Math.random()*3)]
+  }));
+
+  function drawBall(b){
+    ctx.save();
+    ctx.globalAlpha=b.opacity;
+    const g=ctx.createRadialGradient(b.x-b.r*.3,b.y-b.r*.3,b.r*.1,b.x,b.y,b.r);
+    g.addColorStop(0,`hsla(${b.hue},70%,70%,.8)`);
+    g.addColorStop(1,`hsla(${b.hue},80%,40%,.3)`);
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle=g;ctx.fill();
+    ctx.strokeStyle=`hsla(${b.hue},70%,70%,.15)`;
+    ctx.lineWidth=1;ctx.stroke();
+    ctx.globalAlpha=b.opacity*.6;
+    [[-.3,-.35,.12],[.15,-.4,.09],[.35,-.1,.09]].forEach(([dx,dy,sr])=>{
+      ctx.beginPath();ctx.arc(b.x+b.r*dx,b.y+b.r*dy,b.r*sr,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,0,0,.7)';ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function animCanvas(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    balls.forEach(b=>{
+      b.x+=b.vx;b.y+=b.vy;
+      if(b.x<-b.r)b.x=canvas.width+b.r;
+      if(b.x>canvas.width+b.r)b.x=-b.r;
+      if(b.y<-b.r)b.y=canvas.height+b.r;
+      if(b.y>canvas.height+b.r)b.y=-b.r;
+      drawBall(b);
+    });
+    requestAnimationFrame(animCanvas);
+  }
+  animCanvas();
+
+  // SCROLL REVEAL
+  const observer = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible')}});
+  },{threshold:.1,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+  // COUNTER ANIMATION
+  function animCount(el){
+    const target=+el.dataset.target;
+    const duration=1800;
+    const start=performance.now();
+    function step(now){
+      const p=Math.min((now-start)/duration,1);
+      const ease=1-Math.pow(1-p,3);
+      el.textContent=Math.floor(ease*target);
+      if(p<1)requestAnimationFrame(step);
+      else el.textContent=target;
+    }
+    requestAnimationFrame(step);
+  }
+  const cntObserver = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.querySelectorAll('[data-target]').forEach(animCount);
+        cntObserver.unobserve(e.target);
+      }
+    });
+  },{threshold:.3});
+  document.querySelectorAll('.hero,.numbers-inner').forEach(el=>cntObserver.observe(el));
+
+  // 3D TILT on activity cards
+  document.querySelectorAll('.act-card').forEach(card=>{
+    card.addEventListener('mousemove',e=>{
+      const r=card.getBoundingClientRect();
+      const x=(e.clientX-r.left)/r.width-.5;
+      const y=(e.clientY-r.top)/r.height-.5;
+      card.style.transform=`translateY(-5px) rotateX(${-y*8}deg) rotateY(${x*8}deg)`;
+    });
+    card.addEventListener('mouseleave',()=>{card.style.transform=''});
+  });
+</script>
+</body>
+</html>
