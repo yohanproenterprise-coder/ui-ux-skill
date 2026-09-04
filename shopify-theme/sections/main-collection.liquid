@@ -10,143 +10,140 @@
 /* ── Hero ── */
 .coll-hero { padding: 56px 0 28px; text-align: center; }
 .coll-hero .eyebrow { margin-bottom: 10px; }
-.coll-hero__title { font-size: clamp(1.5rem, 4vw, 2.6rem); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--dark); margin: 0 0 8px; }
-.coll-hero__count { font-size: .70rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
-.coll-hero__desc { font-size: .86rem; line-height: 1.85; color: #7a6a5a; max-width: 500px; margin: 12px auto 0; }
+.coll-hero__title { font-size: clamp(1.5rem,4vw,2.6rem); font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--dark); margin:0 0 8px; }
+.coll-hero__count { font-size:.70rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+.coll-hero__desc { font-size:.86rem; line-height:1.85; color:#7a6a5a; max-width:500px; margin:12px auto 0; }
 
 /* ── Toolbar ── */
-.coll-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 0 0; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
-.coll-toolbar__left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.coll-toolbar__label { font-size: .69rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.coll-sort { border: 1px solid var(--border); border-radius: 8px; padding: 8px 34px 8px 12px; font-size: .82rem; background: #fff; color: var(--dark); font-family: inherit; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23C4963A' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer; transition: border-color .2s; }
-.coll-sort:focus { outline: none; border-color: var(--gold); }
+.coll-toolbar { display:flex; align-items:center; justify-content:space-between; padding:18px 0 0; gap:12px; flex-wrap:wrap; margin-bottom:28px; }
+.coll-toolbar__left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.coll-toolbar__label { font-size:.69rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.coll-sort { border:1px solid var(--border); border-radius:8px; padding:8px 34px 8px 12px; font-size:.82rem; background:#fff; color:var(--dark); font-family:inherit; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23C4963A' d='M5 7L0 2h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; cursor:pointer; transition:border-color .2s; }
+.coll-sort:focus { outline:none; border-color:var(--gold); }
 
-/* Filter toggle button (mobile) */
-.filter-toggle-btn { display: none; align-items: center; gap: 7px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; background: #fff; font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dark); cursor: pointer; font-family: inherit; transition: border-color .2s, color .2s; }
-.filter-toggle-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
-.filter-toggle-btn:hover { border-color: var(--gold); color: var(--gold); }
-@media (max-width: 860px) { .filter-toggle-btn { display: flex; } }
+/* Mobile filter button */
+.filter-toggle-btn { display:none; align-items:center; gap:7px; border:1px solid var(--border); border-radius:8px; padding:8px 14px; background:#fff; font-size:.78rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--dark); cursor:pointer; font-family:inherit; transition:border-color .2s,color .2s; }
+.filter-toggle-btn svg { width:14px; height:14px; flex-shrink:0; }
+.filter-toggle-btn:hover { border-color:var(--gold); color:var(--gold); }
+@media (max-width:860px) { .filter-toggle-btn { display:flex; } }
 
 /* Active filter chips */
-.active-filters { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.active-filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; background: var(--gold); color: #fff; font-size: .66rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; text-decoration: none; transition: opacity .2s; }
-.active-filter-chip:hover { opacity: .8; }
-.active-filter-chip svg { width: 9px; height: 9px; }
-.active-filters__clear { font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); text-decoration: underline; cursor: pointer; border: none; background: none; font-family: inherit; }
+.active-filters { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+.active-filter-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; background:var(--gold); color:#fff; font-size:.66rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; transition:opacity .2s; }
+.active-filter-chip:hover { opacity:.8; }
+.active-filter-chip svg { width:9px; height:9px; }
+.active-filters__clear { font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); text-decoration:underline; cursor:pointer; border:none; background:none; font-family:inherit; }
 
-/* ── Layout: sidebar + grid ── */
-.coll-layout { display: grid; grid-template-columns: 240px 1fr; gap: 36px; align-items: start; }
-@media (max-width: 860px) { .coll-layout { grid-template-columns: 1fr; gap: 0; } }
+/* ── Layout ── */
+.coll-layout { display:grid; grid-template-columns:230px 1fr; gap:36px; align-items:start; }
+@media (max-width:860px) { .coll-layout { grid-template-columns:1fr; gap:0; } }
 
 /* ── Filter sidebar ── */
-.filter-sidebar { position: sticky; top: 90px; }
-@media (max-width: 860px) {
-  .filter-sidebar {
-    position: fixed; inset: 0; left: auto; width: 300px; max-width: 88vw;
-    background: #faf8f5; z-index: 9000; overflow-y: auto;
-    transform: translateX(100%); transition: transform .35s cubic-bezier(.25,.46,.45,.94);
-    padding: 24px 20px 40px; box-shadow: -8px 0 40px rgba(42,28,16,.15);
-  }
-  .filter-sidebar.open { transform: translateX(0); }
+.filter-sidebar { position:sticky; top:90px; }
+@media (max-width:860px) {
+  .filter-sidebar { position:fixed; inset:0; left:auto; width:300px; max-width:88vw; background:#faf8f5; z-index:9000; overflow-y:auto; transform:translateX(100%); transition:transform .35s cubic-bezier(.25,.46,.45,.94); padding:24px 20px 40px; box-shadow:-8px 0 40px rgba(42,28,16,.15); }
+  .filter-sidebar.open { transform:translateX(0); }
 }
-
-.filter-sidebar__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-.filter-sidebar__title { font-size: .72rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--dark); }
-.filter-sidebar__close { display: none; border: none; background: none; cursor: pointer; color: var(--muted); padding: 4px; }
-@media (max-width: 860px) { .filter-sidebar__close { display: block; } }
+.filter-sidebar__header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+.filter-sidebar__title { font-size:.72rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--dark); }
+.filter-sidebar__close { display:none; border:none; background:none; cursor:pointer; color:var(--muted); padding:4px; }
+@media (max-width:860px) { .filter-sidebar__close { display:block; } }
 
 /* Filter group */
-.filter-group { border-bottom: 1px solid var(--border); padding: 14px 0; }
-.filter-group__btn { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; cursor: pointer; font-family: inherit; font-size: .72rem; font-weight: 700; letter-spacing: .10em; text-transform: uppercase; color: var(--dark); padding: 0; gap: 8px; }
-.filter-group__btn svg { width: 12px; height: 12px; flex-shrink: 0; transition: transform .25s ease; color: var(--muted); }
-.filter-group.open .filter-group__btn svg { transform: rotate(180deg); }
-.filter-group__body { overflow: hidden; max-height: 0; transition: max-height .3s ease; }
-.filter-group.open .filter-group__body { max-height: 600px; }
-.filter-group__inner { padding: 10px 0 4px; display: flex; flex-direction: column; gap: 7px; }
+.filter-group { border-bottom:1px solid var(--border); padding:14px 0; }
+.filter-group__btn { width:100%; display:flex; align-items:center; justify-content:space-between; background:none; border:none; cursor:pointer; font-family:inherit; font-size:.72rem; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:var(--dark); padding:0; gap:8px; }
+.filter-group__btn svg { width:12px; height:12px; flex-shrink:0; transition:transform .25s ease; color:var(--muted); }
+.filter-group.open .filter-group__btn svg { transform:rotate(180deg); }
+.filter-group__body { overflow:hidden; max-height:0; transition:max-height .35s ease; }
+.filter-group.open .filter-group__body { max-height:900px; }
+.filter-group__inner { padding:10px 0 4px; display:flex; flex-direction:column; gap:6px; }
 
-/* Filter option */
-.filter-option { display: flex; align-items: center; gap: 9px; cursor: pointer; }
-.filter-option input[type="checkbox"] { width: 15px; height: 15px; border: 1.5px solid rgba(22,18,13,.2); border-radius: 3px; appearance: none; -webkit-appearance: none; cursor: pointer; flex-shrink: 0; transition: border-color .2s, background .2s; position: relative; }
-.filter-option input[type="checkbox"]:checked { background: var(--gold); border-color: var(--gold); }
-.filter-option input[type="checkbox"]:checked::after { content: ''; position: absolute; inset: 2px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 9'%3E%3Cpath stroke='%23fff' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round' d='M1 4.5l3 3 7-7'/%3E%3C/svg%3E") center/contain no-repeat; }
-.filter-option__label { font-size: .80rem; color: #5a4a3a; flex: 1; }
-.filter-option__count { font-size: .68rem; color: rgba(90,74,58,.45); }
+/* Tag option (links) */
+.filter-tag-link { display:flex; align-items:center; gap:9px; text-decoration:none; cursor:pointer; padding:3px 0; }
+.filter-tag-link__check { width:15px; height:15px; border:1.5px solid rgba(22,18,13,.2); border-radius:3px; flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:border-color .2s,background .2s; }
+.filter-tag-link.active .filter-tag-link__check { background:var(--gold); border-color:var(--gold); }
+.filter-tag-link.active .filter-tag-link__check::after { content:''; display:block; width:8px; height:8px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 9'%3E%3Cpath stroke='%23fff' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round' d='M1 4.5l3 3 7-7'/%3E%3C/svg%3E") center/contain no-repeat; }
+.filter-tag-link__label { font-size:.80rem; color:#5a4a3a; flex:1; transition:color .2s; }
+.filter-tag-link:hover .filter-tag-link__label { color:var(--gold); }
+.filter-tag-link.active .filter-tag-link__label { color:var(--gold); font-weight:600; }
 
-/* Price inputs */
-.price-inputs { display: flex; align-items: center; gap: 8px; padding: 10px 0 4px; }
-.price-inputs input { flex: 1; border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px; font-size: .82rem; font-family: inherit; color: var(--dark); background: #fff; }
-.price-inputs input:focus { outline: none; border-color: var(--gold); }
-.price-inputs__sep { color: var(--muted); font-size: .78rem; flex-shrink: 0; }
-.price-apply-btn { margin-top: 8px; width: 100%; padding: 9px; border: 1px solid var(--gold); border-radius: 7px; background: none; font-size: .70rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); cursor: pointer; font-family: inherit; transition: background .2s, color .2s; }
-.price-apply-btn:hover { background: var(--gold); color: #fff; }
+/* Price range */
+.price-inputs { display:flex; align-items:center; gap:8px; padding:10px 0 6px; }
+.price-inputs input { flex:1; border:1px solid var(--border); border-radius:7px; padding:7px 10px; font-size:.82rem; font-family:inherit; color:var(--dark); background:#fff; min-width:0; }
+.price-inputs input:focus { outline:none; border-color:var(--gold); }
+.price-inputs__sep { color:var(--muted); font-size:.78rem; flex-shrink:0; }
+.price-apply-btn { width:100%; padding:9px; border:1px solid var(--gold); border-radius:7px; background:none; font-size:.70rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); cursor:pointer; font-family:inherit; transition:background .2s,color .2s; }
+.price-apply-btn:hover { background:var(--gold); color:#fff; }
 
-/* Filter overlay (mobile) */
-#filter-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 8999; }
-#filter-overlay.open { display: block; }
+/* Stock toggle */
+.stock-toggle { display:flex; align-items:center; justify-content:space-between; padding:12px 0 4px; gap:10px; }
+.stock-toggle__label { font-size:.80rem; color:#5a4a3a; }
+.toggle-switch { width:38px; height:22px; background:rgba(22,18,13,.15); border-radius:11px; position:relative; cursor:pointer; border:none; transition:background .25s; flex-shrink:0; }
+.toggle-switch.on { background:var(--gold); }
+.toggle-switch::after { content:''; position:absolute; width:16px; height:16px; background:#fff; border-radius:50%; top:3px; left:3px; transition:transform .25s; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+.toggle-switch.on::after { transform:translateX(16px); }
+
+/* Filter overlay */
+#filter-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:8999; }
+#filter-overlay.open { display:block; }
 
 /* ── Grid ── */
-.coll-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 18px; }
-@media (max-width: 1100px) { .coll-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 460px)  { .coll-grid { grid-template-columns: repeat(2, 1fr); gap: 14px 10px; } }
+.coll-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px 18px; }
+@media (max-width:1100px) { .coll-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:460px)  { .coll-grid { grid-template-columns:repeat(2,1fr); gap:14px 10px; } }
 
 /* ── Product card ── */
-.prod-card { position: relative; text-decoration: none; color: inherit; display: flex; flex-direction: column; transform-style: preserve-3d; transition: transform .05s linear, box-shadow .3s ease; will-change: transform; }
-.prod-card__img-wrap { position: relative; overflow: hidden; border-radius: 13px; background: #f4f1ed; aspect-ratio: 3/4; margin-bottom: 13px; box-shadow: 0 4px 18px rgba(42,28,16,.06); transition: box-shadow .4s ease; }
-.prod-card:hover .prod-card__img-wrap { box-shadow: 0 16px 48px rgba(42,28,16,.14); }
-.prod-card__img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s cubic-bezier(.25,.46,.45,.94); }
-.prod-card:hover .prod-card__img { transform: scale(1.08); }
-.prod-card__shimmer { position: absolute; inset: 0; border-radius: 13px; background: radial-gradient(circle at var(--sx,50%) var(--sy,50%), rgba(200,169,107,.18) 0%, rgba(200,169,107,.06) 30%, transparent 60%); opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 3; mix-blend-mode: overlay; }
-.prod-card:hover .prod-card__shimmer { opacity: 1; }
-.prod-card__overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(42,28,16,.22) 0%, transparent 55%); opacity: 0; transition: opacity .35s; border-radius: 13px; }
-.prod-card:hover .prod-card__overlay { opacity: 1; }
-.prod-card__badge { position: absolute; top: 10px; left: 10px; background: var(--dark); color: #fff; font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; padding: 4px 10px; border-radius: 20px; z-index: 4; }
-.prod-card__quick { position: absolute; bottom: 10px; left: 10px; right: 10px; background: linear-gradient(135deg,var(--gold),var(--gold2)); color: #fff; border: none; border-radius: 8px; padding: 10px; font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 800; cursor: pointer; font-family: inherit; opacity: 0; transform: translateY(8px); transition: opacity .25s, transform .25s; pointer-events: none; z-index: 4; box-shadow: 0 8px 24px rgba(196,150,58,.35); }
-.prod-card:hover .prod-card__quick { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.prod-card__info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.prod-card__type { font-size: .62rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
-.prod-card__title { font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--dark); line-height: 1.3; margin: 0; transition: color .2s; }
-.prod-card:hover .prod-card__title { color: var(--gold); }
-.prod-card__prices { display: flex; align-items: baseline; gap: 8px; margin-top: 3px; }
-.prod-card__price { font-size: .95rem; font-weight: 700; color: var(--dark); }
-.prod-card__compare { font-size: .76rem; color: #b09a88; text-decoration: line-through; }
-.prod-card.reveal { opacity: 0; transform: perspective(700px) translateY(20px) rotateX(4deg); transition: opacity .5s ease, transform .5s ease; }
-.prod-card.reveal.visible { opacity: 1; transform: perspective(700px) translateY(0) rotateX(0); }
+.prod-card { position:relative; text-decoration:none; color:inherit; display:flex; flex-direction:column; transform-style:preserve-3d; transition:transform .05s linear,box-shadow .3s ease; will-change:transform; }
+.prod-card[hidden] { display:none; }
+.prod-card__img-wrap { position:relative; overflow:hidden; border-radius:13px; background:#f4f1ed; aspect-ratio:3/4; margin-bottom:13px; box-shadow:0 4px 18px rgba(42,28,16,.06); transition:box-shadow .4s ease; }
+.prod-card:hover .prod-card__img-wrap { box-shadow:0 16px 48px rgba(42,28,16,.14); }
+.prod-card__img { width:100%; height:100%; object-fit:cover; transition:transform .6s cubic-bezier(.25,.46,.45,.94); }
+.prod-card:hover .prod-card__img { transform:scale(1.08); }
+.prod-card__shimmer { position:absolute; inset:0; border-radius:13px; background:radial-gradient(circle at var(--sx,50%) var(--sy,50%),rgba(200,169,107,.18) 0%,rgba(200,169,107,.06) 30%,transparent 60%); opacity:0; pointer-events:none; transition:opacity .3s; z-index:3; mix-blend-mode:overlay; }
+.prod-card:hover .prod-card__shimmer { opacity:1; }
+.prod-card__overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(42,28,16,.22) 0%,transparent 55%); opacity:0; transition:opacity .35s; border-radius:13px; }
+.prod-card:hover .prod-card__overlay { opacity:1; }
+.prod-card__badge { position:absolute; top:10px; left:10px; background:var(--dark); color:#fff; font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700; padding:4px 10px; border-radius:20px; z-index:4; }
+.prod-card__quick { position:absolute; bottom:10px; left:10px; right:10px; background:linear-gradient(135deg,var(--gold),var(--gold2)); color:#fff; border:none; border-radius:8px; padding:10px; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; font-weight:800; cursor:pointer; font-family:inherit; opacity:0; transform:translateY(8px); transition:opacity .25s,transform .25s; pointer-events:none; z-index:4; box-shadow:0 8px 24px rgba(196,150,58,.35); }
+.prod-card:hover .prod-card__quick { opacity:1; transform:translateY(0); pointer-events:auto; }
+.prod-card__info { flex:1; display:flex; flex-direction:column; gap:4px; }
+.prod-card__type { font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+.prod-card__title { font-size:.82rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--dark); line-height:1.3; margin:0; transition:color .2s; }
+.prod-card:hover .prod-card__title { color:var(--gold); }
+.prod-card__prices { display:flex; align-items:baseline; gap:8px; margin-top:3px; }
+.prod-card__price { font-size:.95rem; font-weight:700; color:var(--dark); }
+.prod-card__compare { font-size:.76rem; color:#b09a88; text-decoration:line-through; }
+.prod-card.reveal { opacity:0; transform:perspective(700px) translateY(20px) rotateX(4deg); transition:opacity .5s ease,transform .5s ease; }
+.prod-card.reveal.visible { opacity:1; transform:perspective(700px) translateY(0) rotateX(0); }
 
-/* ── Empty ── */
-.coll-empty { text-align: center; padding: 80px 20px; grid-column: 1/-1; }
-.coll-empty__icon { font-size: 2.4rem; opacity: .25; margin-bottom: 16px; }
-.coll-empty p { font-size: .88rem; color: var(--muted); }
+/* No results */
+.coll-no-results { text-align:center; padding:60px 20px; display:none; }
+.coll-no-results.show { display:block; }
+.coll-no-results p { font-size:.88rem; color:var(--muted); }
+
+/* ── Empty state ── */
+.coll-empty { text-align:center; padding:80px 20px; }
+.coll-empty__icon { font-size:2.4rem; opacity:.25; margin-bottom:16px; }
+.coll-empty p { font-size:.88rem; color:var(--muted); }
 
 /* ── Pagination ── */
-.coll-pagination { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 56px 0 32px; flex-wrap: wrap; }
-.coll-pagination a, .coll-pagination span { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; border-radius: 50%; font-size: .76rem; font-weight: 700; border: 1px solid var(--border); text-decoration: none; color: var(--dark); transition: all .2s; padding: 0 4px; }
-.coll-pagination a:hover { border-color: var(--gold); color: var(--gold); }
-.coll-pagination .current { background: var(--gold); color: #fff; border-color: var(--gold); }
-.coll-pagination .prev-next { border-radius: 20px; padding: 0 16px; font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; }
+.coll-pagination { display:flex; align-items:center; justify-content:center; gap:6px; margin:56px 0 32px; flex-wrap:wrap; }
+.coll-pagination a,.coll-pagination span { display:inline-flex; align-items:center; justify-content:center; min-width:38px; height:38px; border-radius:50%; font-size:.76rem; font-weight:700; border:1px solid var(--border); text-decoration:none; color:var(--dark); transition:all .2s; padding:0 4px; }
+.coll-pagination a:hover { border-color:var(--gold); color:var(--gold); }
+.coll-pagination .current { background:var(--gold); color:#fff; border-color:var(--gold); }
+.coll-pagination .prev-next { border-radius:20px; padding:0 16px; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; }
 
 /* Cursor spotlight */
-#coll-cursor-light { position: fixed; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(200,169,107,.05) 0%, transparent 65%); pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); opacity: 0; filter: blur(1px); transition: opacity .4s ease; }
+#coll-cursor-light { position:fixed; width:360px; height:360px; border-radius:50%; background:radial-gradient(circle,rgba(200,169,107,.05) 0%,transparent 65%); pointer-events:none; z-index:9999; transform:translate(-50%,-50%); opacity:0; filter:blur(1px); transition:opacity .4s ease; }
 </style>
 
 <div id="filter-overlay" onclick="closeFilters()"></div>
 <div id="coll-cursor-light" aria-hidden="true"></div>
 
 {% assign sort_by = collection.sort_by | default: collection.default_sort_by %}
-{% assign current_filter_count = 0 %}
-{% for filter in collection.filters %}
-  {% for value in filter.values %}
-    {% if value.active %}{% assign current_filter_count = current_filter_count | plus: 1 %}{% endif %}
-  {% endfor %}
-  {% if filter.type == 'price_range' %}
-    {% if filter.min_value.value or filter.max_value.value %}
-      {% assign current_filter_count = current_filter_count | plus: 1 %}
-    {% endif %}
-  {% endif %}
-{% endfor %}
 
 <div class="page-width">
 
-  <!-- Hero -->
   <div class="coll-hero">
     <div class="eyebrow">La Galerie Lumineuse</div>
     <h1 class="coll-hero__title">{{ collection.title }}</h1>
@@ -161,19 +158,13 @@
     <!-- Toolbar -->
     <div class="coll-toolbar">
       <div class="coll-toolbar__left">
-        {% if collection.filters.size > 0 %}
-          <button class="filter-toggle-btn" onclick="openFilters()">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-              <line x1="3" y1="6" x2="17" y2="6"/>
-              <line x1="5" y1="10" x2="15" y2="10"/>
-              <line x1="7" y1="14" x2="13" y2="14"/>
-            </svg>
-            Filtres{% if current_filter_count > 0 %} ({{ current_filter_count }}){% endif %}
-          </button>
-        {% endif %}
+        <button class="filter-toggle-btn" onclick="openFilters()">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="6" x2="17" y2="6"/><line x1="5" y1="10" x2="15" y2="10"/><line x1="7" y1="14" x2="13" y2="14"/></svg>
+          Filtres{% if current_tags.size > 0 %} ({{ current_tags.size }}){% endif %}
+        </button>
         <span class="coll-toolbar__label">Trier</span>
         <select class="coll-sort" onchange="window.location.href=this.value">
-          <option value="?sort_by=best-selling{% if collection.filters.size > 0 %}&{{ request.query_string | remove_first: 'sort_by=' | split: '&' | reject: 'blank' | join: '&' }}{% endif %}" {% if sort_by == 'best-selling' %}selected{% endif %}>Meilleures ventes</option>
+          <option value="?sort_by=best-selling"     {% if sort_by == 'best-selling' %}selected{% endif %}>Meilleures ventes</option>
           <option value="?sort_by=price-ascending"  {% if sort_by == 'price-ascending' %}selected{% endif %}>Prix croissant</option>
           <option value="?sort_by=price-descending" {% if sort_by == 'price-descending' %}selected{% endif %}>Prix décroissant</option>
           <option value="?sort_by=created-descending" {% if sort_by == 'created-descending' %}selected{% endif %}>Nouveautés</option>
@@ -183,45 +174,22 @@
       <span class="coll-toolbar__label" style="color:var(--gold)">{{ collection.products_count }} résultats</span>
     </div>
 
-    <!-- Active filter chips -->
-    {% assign has_active_filters = false %}
-    {% for filter in collection.filters %}
-      {% for value in filter.values %}{% if value.active %}{% assign has_active_filters = true %}{% endif %}{% endfor %}
-      {% if filter.type == 'price_range' and filter.min_value.value or filter.max_value.value %}{% assign has_active_filters = true %}{% endif %}
-    {% endfor %}
-
-    {% if has_active_filters %}
+    <!-- Active filter chips (tag filter) -->
+    {% if current_tags.size > 0 %}
       <div class="active-filters">
-        {% for filter in collection.filters %}
-          {% if filter.type == 'price_range' %}
-            {% if filter.min_value.value or filter.max_value.value %}
-              <a href="{{ filter.url_to_remove }}" class="active-filter-chip">
-                {% if filter.min_value.value %}{{ filter.min_value.value | money_without_trailing_zeros }}{% else %}0€{% endif %}
-                –
-                {% if filter.max_value.value %}{{ filter.max_value.value | money_without_trailing_zeros }}{% else %}+{% endif %}
-                <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
-              </a>
-            {% endif %}
-          {% else %}
-            {% for value in filter.values %}
-              {% if value.active %}
-                <a href="{{ value.url_to_remove }}" class="active-filter-chip">
-                  {{ value.label }}
-                  <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
-                </a>
-              {% endif %}
-            {% endfor %}
-          {% endif %}
+        {% for tag in current_tags %}
+          <a href="{{ collection.url }}" class="active-filter-chip">
+            {{ tag }}
+            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+          </a>
         {% endfor %}
         <a href="{{ collection.url }}" class="active-filters__clear">Tout effacer</a>
       </div>
     {% endif %}
 
-    <!-- Layout -->
     <div class="coll-layout">
 
-      <!-- Filter sidebar -->
-      {% if collection.filters.size > 0 %}
+      <!-- Sidebar -->
       <aside class="filter-sidebar" id="filter-sidebar" aria-label="Filtres">
         <div class="filter-sidebar__header">
           <span class="filter-sidebar__title">Filtrer</span>
@@ -230,52 +198,72 @@
           </button>
         </div>
 
-        {% for filter in collection.filters %}
-          <div class="filter-group open" id="fg-{{ forloop.index }}">
-            <button class="filter-group__btn" onclick="toggleGroup('fg-{{ forloop.index }}')" aria-expanded="true">
-              {{ filter.label }}
+        <!-- ── 1. Tags filter (native Shopify — no app required) ── -->
+        {% if collection.all_tags.size > 0 %}
+          <div class="filter-group open" id="fg-tags">
+            <button class="filter-group__btn" onclick="toggleGroup('fg-tags')" aria-expanded="true">
+              Style &amp; Ambiance
               <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l5 5 5-5"/></svg>
             </button>
             <div class="filter-group__body">
-              {% if filter.type == 'price_range' %}
-                <form class="price-inputs" id="price-form-{{ forloop.index }}" onsubmit="applyPrice(event,'{{ filter.min_value.param_name }}','{{ filter.max_value.param_name }}')">
-                  <input type="number" id="price-min-{{ forloop.index }}"
-                         placeholder="Min" min="0"
-                         value="{{ filter.min_value.value | default: '' }}"
-                         aria-label="Prix minimum">
-                  <span class="price-inputs__sep">—</span>
-                  <input type="number" id="price-max-{{ forloop.index }}"
-                         placeholder="Max" min="0"
-                         value="{{ filter.max_value.value | default: '' }}"
-                         aria-label="Prix maximum">
-                </form>
-                <button class="price-apply-btn" onclick="document.getElementById('price-form-{{ forloop.index }}').dispatchEvent(new Event('submit'))">Appliquer</button>
-              {% else %}
-                <div class="filter-group__inner">
-                  {% for value in filter.values %}
-                    <label class="filter-option">
-                      <input type="checkbox"
-                             {% if value.active %}checked{% endif %}
-                             onchange="location.href='{{ value.active | ternary: value.url_to_remove, value.url_to_add }}'">
-                      <span class="filter-option__label">{{ value.label }}</span>
-                      <span class="filter-option__count">({{ value.count }})</span>
-                    </label>
-                  {% endfor %}
-                </div>
-              {% endif %}
+              <div class="filter-group__inner">
+                {% for tag in collection.all_tags %}
+                  {% assign tag_active = false %}
+                  {% if current_tags contains tag %}{% assign tag_active = true %}{% endif %}
+                  <a href="{% if tag_active %}{{ collection.url }}{% else %}{{ collection.url }}/{{ tag | handle }}{% endif %}"
+                     class="filter-tag-link{% if tag_active %} active{% endif %}">
+                    <span class="filter-tag-link__check"></span>
+                    <span class="filter-tag-link__label">{{ tag }}</span>
+                  </a>
+                {% endfor %}
+              </div>
             </div>
           </div>
-        {% endfor %}
+        {% endif %}
+
+        <!-- ── 2. Price filter (JS — filters visible products on page) ── -->
+        <div class="filter-group open" id="fg-price">
+          <button class="filter-group__btn" onclick="toggleGroup('fg-price')" aria-expanded="true">
+            Fourchette de prix
+            <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l5 5 5-5"/></svg>
+          </button>
+          <div class="filter-group__body">
+            <div class="price-inputs">
+              <input type="number" id="price-min" placeholder="Min €" min="0" oninput="applyPriceFilter()">
+              <span class="price-inputs__sep">—</span>
+              <input type="number" id="price-max" placeholder="Max €" min="0" oninput="applyPriceFilter()">
+            </div>
+            <button class="price-apply-btn" onclick="clearPriceFilter()">Réinitialiser le prix</button>
+          </div>
+        </div>
+
+        <!-- ── 3. Promo filter ── -->
+        <div class="filter-group" id="fg-promo">
+          <button class="filter-group__btn" onclick="toggleGroup('fg-promo')" aria-expanded="false">
+            Promotions
+            <svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l5 5 5-5"/></svg>
+          </button>
+          <div class="filter-group__body">
+            <div class="stock-toggle" style="padding-top:12px">
+              <span class="stock-toggle__label">Produits en promo uniquement</span>
+              <button class="toggle-switch" id="promo-toggle" onclick="togglePromo(this)" aria-pressed="false"></button>
+            </div>
+          </div>
+        </div>
 
       </aside>
-      {% endif %}
 
-      <!-- Product grid -->
+      <!-- Grid -->
       <div>
         {% if collection.products.size > 0 %}
-          <div class="coll-grid">
+          <div class="coll-grid" id="coll-grid">
             {% for product in collection.products %}
-              <a class="prod-card reveal" href="{{ product.url }}" data-card>
+              {% assign raw_price = product.price %}
+              {% assign compare_price = product.compare_at_price %}
+              <a class="prod-card reveal"
+                 href="{{ product.url }}"
+                 data-price="{{ raw_price }}"
+                 data-on-sale="{% if compare_price > raw_price %}true{% else %}false{% endif %}">
                 <div class="prod-card__img-wrap">
                   {% if product.featured_image %}
                     <img class="prod-card__img"
@@ -287,7 +275,7 @@
                   {% endif %}
                   <div class="prod-card__shimmer"></div>
                   <div class="prod-card__overlay"></div>
-                  {% if product.compare_at_price > product.price %}
+                  {% if compare_price > raw_price %}
                     <span class="prod-card__badge">Promo</span>
                   {% endif %}
                   <button class="prod-card__quick" onclick="quickAdd(event,{{ product.variants.first.id }},this)">
@@ -298,14 +286,19 @@
                   {% if product.type != blank %}<div class="prod-card__type">{{ product.type }}</div>{% endif %}
                   <div class="prod-card__title">{{ product.title }}</div>
                   <div class="prod-card__prices">
-                    <span class="prod-card__price">{{ product.price | money }}</span>
-                    {% if product.compare_at_price > product.price %}
-                      <span class="prod-card__compare">{{ product.compare_at_price | money }}</span>
+                    <span class="prod-card__price">{{ raw_price | money }}</span>
+                    {% if compare_price > raw_price %}
+                      <span class="prod-card__compare">{{ compare_price | money }}</span>
                     {% endif %}
                   </div>
                 </div>
               </a>
             {% endfor %}
+          </div>
+
+          <div class="coll-no-results" id="no-results">
+            <p>Aucun produit ne correspond à ces critères.</p>
+            <p style="margin-top:10px"><button onclick="clearAllFilters()" style="color:var(--gold);background:none;border:none;font-family:inherit;font-size:.88rem;cursor:pointer;text-decoration:underline">Effacer les filtres</button></p>
           </div>
 
           {% if paginate.pages > 1 %}
@@ -322,13 +315,13 @@
         {% else %}
           <div class="coll-empty">
             <div class="coll-empty__icon">✦</div>
-            <p>Aucun produit ne correspond à ces filtres.</p>
-            {% if has_active_filters %}<p style="margin-top:12px"><a href="{{ collection.url }}" style="color:var(--gold)">Voir tous les produits</a></p>{% endif %}
+            <p>Aucun produit dans cette collection.</p>
+            {% if current_tags.size > 0 %}<p style="margin-top:12px"><a href="{{ collection.url }}" style="color:var(--gold)">Voir tous les produits</a></p>{% endif %}
           </div>
         {% endif %}
       </div>
 
-    </div><!-- /.coll-layout -->
+    </div>
 
   {% endpaginate %}
 </div>
@@ -336,69 +329,103 @@
 <script>
 (function(){
 
-  /* ── Filter sidebar open/close ── */
-  window.openFilters = function() {
-    var sidebar  = document.getElementById('filter-sidebar');
-    var overlay  = document.getElementById('filter-overlay');
-    if (sidebar) sidebar.classList.add('open');
-    if (overlay) overlay.classList.add('open');
+  /* ── sidebar open/close ── */
+  window.openFilters = function(){
+    var s = document.getElementById('filter-sidebar'), o = document.getElementById('filter-overlay');
+    if(s) s.classList.add('open');
+    if(o) o.classList.add('open');
     document.body.style.overflow = 'hidden';
   };
-  window.closeFilters = function() {
-    var sidebar = document.getElementById('filter-sidebar');
-    var overlay = document.getElementById('filter-overlay');
-    if (sidebar) sidebar.classList.remove('open');
-    if (overlay) overlay.classList.remove('open');
+  window.closeFilters = function(){
+    var s = document.getElementById('filter-sidebar'), o = document.getElementById('filter-overlay');
+    if(s) s.classList.remove('open');
+    if(o) o.classList.remove('open');
     document.body.style.overflow = '';
   };
 
-  /* ── Filter group accordion ── */
-  window.toggleGroup = function(id) {
+  /* ── accordion ── */
+  window.toggleGroup = function(id){
     var el = document.getElementById(id);
-    if (!el) return;
+    if(!el) return;
     el.classList.toggle('open');
     var btn = el.querySelector('.filter-group__btn');
-    if (btn) btn.setAttribute('aria-expanded', el.classList.contains('open'));
+    if(btn) btn.setAttribute('aria-expanded', el.classList.contains('open'));
   };
 
-  /* ── Price filter ── */
-  window.applyPrice = function(e, minParam, maxParam) {
-    e.preventDefault();
-    var form   = e.target;
-    var inputs = form.querySelectorAll('input[type="number"]');
-    var minVal = inputs[0] ? inputs[0].value : '';
-    var maxVal = inputs[1] ? inputs[1].value : '';
-    var url    = new URL(window.location.href);
-    if (minVal) url.searchParams.set(minParam, minVal);
-    else url.searchParams.delete(minParam);
-    if (maxVal) url.searchParams.set(maxParam, maxVal);
-    else url.searchParams.delete(maxParam);
-    window.location.href = url.toString();
+  /* ── JS filters (price + promo) ── */
+  var promoOnly = false;
+
+  function getCards(){
+    return Array.from(document.querySelectorAll('#coll-grid .prod-card'));
+  }
+
+  function applyJSFilters(){
+    var minVal = parseFloat(document.getElementById('price-min').value) || 0;
+    var maxVal = parseFloat(document.getElementById('price-max').value) || Infinity;
+    var cards  = getCards();
+    var visible = 0;
+
+    cards.forEach(function(card){
+      var price   = parseInt(card.dataset.price, 10) / 100; // Shopify stores in cents
+      var onSale  = card.dataset.onSale === 'true';
+      var priceOk = price >= minVal && price <= maxVal;
+      var promoOk = !promoOnly || onSale;
+      var show    = priceOk && promoOk;
+      card.hidden = !show;
+      if(show) visible++;
+    });
+
+    var noRes = document.getElementById('no-results');
+    if(noRes) noRes.classList.toggle('show', visible === 0);
+  }
+
+  window.applyPriceFilter = applyJSFilters;
+
+  window.clearPriceFilter = function(){
+    document.getElementById('price-min').value = '';
+    document.getElementById('price-max').value = '';
+    applyJSFilters();
+  };
+
+  window.togglePromo = function(btn){
+    promoOnly = !promoOnly;
+    btn.classList.toggle('on', promoOnly);
+    btn.setAttribute('aria-pressed', promoOnly);
+    applyJSFilters();
+  };
+
+  window.clearAllFilters = function(){
+    promoOnly = false;
+    document.getElementById('price-min').value = '';
+    document.getElementById('price-max').value = '';
+    var pt = document.getElementById('promo-toggle');
+    if(pt){ pt.classList.remove('on'); pt.setAttribute('aria-pressed','false'); }
+    applyJSFilters();
   };
 
   /* ── Card reveal ── */
   var cards = document.querySelectorAll('.prod-card.reveal');
-  var revealIO = new IntersectionObserver(function(entries){
-    entries.forEach(function(e){
-      if (e.isIntersecting) { e.target.classList.add('visible'); revealIO.unobserve(e.target); }
+  var revealIO = new IntersectionObserver(function(e){
+    e.forEach(function(entry){
+      if(entry.isIntersecting){ entry.target.classList.add('visible'); revealIO.unobserve(entry.target); }
     });
-  }, { threshold: 0.04, rootMargin: '0px 0px -32px 0px' });
+  },{ threshold:0.04, rootMargin:'0px 0px -32px 0px' });
   cards.forEach(function(c){ revealIO.observe(c); });
 
   /* ── 3D tilt + shimmer ── */
   var TILT = 9;
-  cards.forEach(function(card) {
+  cards.forEach(function(card){
     var wrap = card.querySelector('.prod-card__img-wrap');
-    card.addEventListener('mousemove', function(e) {
-      var r = card.getBoundingClientRect();
-      var rx = ((e.clientY - r.top - r.height/2) / (r.height/2)) * -TILT;
+    card.addEventListener('mousemove', function(e){
+      var r  = card.getBoundingClientRect();
+      var rx = ((e.clientY - r.top  - r.height/2) / (r.height/2)) * -TILT;
       var ry = ((e.clientX - r.left - r.width/2)  / (r.width/2))  *  TILT;
       card.style.transform = 'perspective(800px) rotateX('+rx+'deg) rotateY('+ry+'deg) translateZ(10px)';
       card.style.transition = 'transform .05s linear';
-      if (wrap) {
+      if(wrap){
         var ir = wrap.getBoundingClientRect();
-        card.style.setProperty('--sx', ((e.clientX-ir.left)/ir.width*100).toFixed(1)+'%');
-        card.style.setProperty('--sy', ((e.clientY-ir.top)/ir.height*100).toFixed(1)+'%');
+        card.style.setProperty('--sx',((e.clientX-ir.left)/ir.width*100).toFixed(1)+'%');
+        card.style.setProperty('--sy',((e.clientY-ir.top)/ir.height*100).toFixed(1)+'%');
       }
     });
     card.addEventListener('mouseleave', function(){
@@ -409,24 +436,24 @@
 
   /* ── Cursor spotlight ── */
   var cl = document.getElementById('coll-cursor-light');
-  if (cl) {
+  if(cl){
     document.addEventListener('mousemove', function(e){ cl.style.left=e.clientX+'px'; cl.style.top=e.clientY+'px'; cl.style.opacity='1'; });
     document.addEventListener('mouseleave', function(){ cl.style.opacity='0'; });
   }
 
   /* ── Quick add ── */
-  window.quickAdd = function(e, variantId, btn) {
+  window.quickAdd = function(e, variantId, btn){
     e.preventDefault(); e.stopPropagation();
     var orig = btn.textContent;
-    btn.textContent = '·  ·  ·'; btn.disabled = true;
-    fetch('/cart/add.js', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({id: variantId, quantity: 1})
+    btn.textContent='·  ·  ·'; btn.disabled=true;
+    fetch('/cart/add.js',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:variantId,quantity:1})
     }).then(function(){
-      btn.textContent = '✓ Ajouté';
-      btn.style.background = 'linear-gradient(135deg,#4a9a6b,#5bb87c)';
-      setTimeout(function(){ btn.textContent=orig; btn.style.background=''; btn.disabled=false; }, 1800);
+      btn.textContent='✓ Ajouté';
+      btn.style.background='linear-gradient(135deg,#4a9a6b,#5bb87c)';
+      setTimeout(function(){ btn.textContent=orig; btn.style.background=''; btn.disabled=false; },1800);
     }).catch(function(){ btn.textContent=orig; btn.disabled=false; });
   };
 
