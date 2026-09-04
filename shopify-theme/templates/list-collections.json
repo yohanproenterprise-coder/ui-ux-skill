@@ -1,4 +1,5 @@
 {
+  "layout": "theme",
   "sections": {
     "main": {
       "type": "main-list-collections",
