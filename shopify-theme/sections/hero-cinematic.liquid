@@ -1,0 +1,871 @@
+<style>
+#lux-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #090909;
+}
+#lux-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+.lux-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.lux-hero__media img,
+.lux-hero__media video {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center; display: block;
+}
+.lux-hero__media-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(108deg, rgba(9,9,9,0.97) 0%, rgba(9,9,9,0.80) 45%, rgba(9,9,9,0.45) 100%);
+}
+
+/* Glows */
+.lux-hero__glow {
+  position: absolute;
+  bottom: -8%; left: 18%;
+  width: 900px; height: 900px;
+  background: radial-gradient(circle, rgba(200,169,107,0.12) 0%, transparent 65%);
+  pointer-events: none; z-index: 2;
+  filter: blur(90px);
+  animation: lux-pulse-glow 7s ease-in-out infinite alternate;
+}
+.lux-hero__glow2 {
+  position: absolute;
+  top: -8%; right: 10%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(200,169,107,0.07) 0%, transparent 65%);
+  pointer-events: none; z-index: 2;
+  filter: blur(70px);
+  animation: lux-pulse-glow 9s ease-in-out infinite alternate-reverse;
+}
+.lux-hero__glow3 {
+  position: absolute;
+  top: 30%; right: 30%;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(200,169,107,0.05) 0%, transparent 65%);
+  pointer-events: none; z-index: 2;
+  filter: blur(50px);
+  animation: lux-pulse-glow 5s ease-in-out infinite alternate;
+}
+@keyframes lux-pulse-glow {
+  from { opacity: 0.5; transform: scale(1); }
+  to   { opacity: 1;   transform: scale(1.18); }
+}
+
+/* Light ray sweep */
+.lux-hero__ray {
+  position: absolute;
+  top: 0; left: -20%;
+  width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent 40%, rgba(200,169,107,0.025) 50%, transparent 60%);
+  pointer-events: none; z-index: 3;
+  animation: lux-ray-sweep 14s ease-in-out infinite;
+}
+@keyframes lux-ray-sweep {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  40%  { transform: translateX(200%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+/* Scanline */
+.lux-hero__scanline {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px);
+  opacity: 0.4;
+}
+
+/* SVG geometry */
+.lux-hero__geometry {
+  position: absolute;
+  right: -60px; top: 50%;
+  transform: translateY(-50%);
+  z-index: 2; pointer-events: none;
+  opacity: 0;
+}
+.geo-circle { width: clamp(320px, 42vw, 600px); height: auto; animation: lux-spin-slow 90s linear infinite; }
+.geo-inner  { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 60%; animation: lux-spin-slow 60s linear infinite reverse; }
+@keyframes lux-spin-slow { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* Noise grain */
+.lux-hero__grain {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: 0.6;
+  mix-blend-mode: overlay;
+}
+
+/* Mouse glow */
+#hero-mouse-glow {
+  position: absolute; width: 320px; height: 320px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,169,107,0.08) 0%, transparent 70%);
+  pointer-events: none; z-index: 3;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.5s ease;
+  opacity: 0; filter: blur(24px);
+}
+
+/* Giant ambient number */
+.lux-hero__num {
+  position: absolute; bottom: -0.1em; right: -0.03em;
+  font-family: var(--lux-serif, 'Cormorant Garamond', Georgia, serif);
+  font-size: clamp(14rem, 30vw, 26rem);
+  font-weight: 300; font-style: italic; line-height: 1;
+  color: rgba(200,169,107,0.018); pointer-events: none; user-select: none;
+  z-index: 1; letter-spacing: -0.06em;
+}
+
+/* Content */
+.lux-hero__content {
+  position: relative; z-index: 4;
+  padding: 0 80px;
+  max-width: 900px;
+  padding-top: 68px;
+}
+
+/* Eyebrow */
+.lux-hero__eyebrow {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.63rem; font-weight: 500; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--lux-gold, #C8A96B);
+  margin-bottom: 30px; opacity: 0; transform: translateX(-20px);
+}
+.lux-hero__eyebrow::before {
+  content: ''; display: block; width: 36px; height: 1px;
+  background: linear-gradient(to right, var(--lux-gold, #C8A96B), transparent);
+}
+.lux-hero__eyebrow::after {
+  content: ''; display: block; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--lux-gold, #C8A96B); opacity: 0.5;
+}
+
+/* Title */
+.lux-hero__title {
+  font-family: var(--lux-serif, 'Cormorant Garamond', Georgia, serif);
+  font-size: clamp(3.4rem, 7.5vw, 7.5rem);
+  font-weight: 300; line-height: 1.0;
+  letter-spacing: -0.025em; color: var(--lux-ivory, #F5F1EA);
+  margin-bottom: 36px;
+}
+.lux-hero__title-line {
+  display: block; overflow: hidden; line-height: 1.1;
+}
+.lux-hero__title-line-inner {
+  display: block; opacity: 0; transform: translateY(105%);
+  will-change: transform, opacity;
+}
+.lux-hero__title em {
+  font-style: italic; color: var(--lux-gold, #C8A96B); position: relative;
+}
+.lux-hero__title em::after {
+  content: ''; position: absolute; bottom: 6px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--lux-gold, #C8A96B), rgba(200,169,107,0.2), transparent);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 1.2s cubic-bezier(.16,1,.3,1) 2s;
+}
+.lux-hero--animated .lux-hero__title em::after { transform: scaleX(1); }
+
+/* Sub */
+.lux-hero__sub {
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.92rem; font-weight: 300; line-height: 1.9;
+  color: rgba(245,241,234,0.42);
+  max-width: 460px; margin-bottom: 52px;
+  opacity: 0; transform: translateY(12px);
+}
+
+/* CTAs */
+.lux-hero__cta {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  opacity: 0; transform: translateY(12px);
+}
+.lux-hero__cta-primary {
+  display: inline-flex; align-items: center; gap: 16px;
+  padding: 16px 40px;
+  background: var(--lux-gold, #C8A96B); color: #090909;
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; text-decoration: none;
+  position: relative; overflow: hidden;
+  transition: gap 0.35s ease, letter-spacing 0.35s ease, transform 0.2s ease;
+}
+.lux-hero__cta-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 60%);
+  transform: translateX(-100%) skewX(-20deg);
+  transition: transform 0.5s ease;
+}
+.lux-hero__cta-primary:hover::before { transform: translateX(150%) skewX(-20deg); }
+.lux-hero__cta-primary:hover { gap: 22px; letter-spacing: 0.20em; }
+.lux-hero__cta-primary:active { transform: scale(0.97); }
+
+.lux-hero__cta-secondary {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 30px;
+  border: 1px solid rgba(245,241,234,0.14);
+  color: rgba(245,241,234,0.50);
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.66rem; font-weight: 400; letter-spacing: 0.18em;
+  text-transform: uppercase; text-decoration: none;
+  transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
+}
+.lux-hero__cta-secondary:hover {
+  border-color: rgba(200,169,107,0.4);
+  color: var(--lux-gold, #C8A96B);
+  background: rgba(200,169,107,0.04);
+}
+
+/* Trust row */
+.lux-hero__trust {
+  position: absolute; bottom: 44px; left: 80px; right: 80px;
+  z-index: 4;
+  display: flex; align-items: center; gap: 36px;
+  opacity: 0;
+  border-top: 1px solid rgba(245,241,234,0.05);
+  padding-top: 22px; flex-wrap: wrap;
+}
+.lux-hero__trust-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.60rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(245,241,234,0.26);
+}
+.lux-hero__trust-item svg { width: 10px; height: 10px; flex-shrink: 0; color: var(--lux-gold, #C8A96B); opacity: 0.65; }
+
+/* Scroll indicator */
+.lux-hero__scroll {
+  position: absolute; bottom: 52px; right: 80px; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  opacity: 0;
+}
+.lux-hero__scroll-line {
+  width: 1px; height: 56px;
+  background: linear-gradient(to bottom, transparent, var(--lux-gold, #C8A96B));
+  animation: lux-scroll-drop 2.6s ease-in-out infinite;
+}
+.lux-hero__scroll-label {
+  writing-mode: vertical-lr;
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.54rem; letter-spacing: 0.26em;
+  text-transform: uppercase; color: rgba(245,241,234,0.18);
+}
+@keyframes lux-scroll-drop {
+  0%   { transform: scaleY(0); transform-origin: top;    opacity: 0; }
+  40%  { transform: scaleY(1); transform-origin: top;    opacity: 1; }
+  70%  { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+
+/* Stats counter */
+.lux-hero__stats {
+  position: absolute; right: 80px; top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  display: flex; flex-direction: column; gap: 32px;
+  opacity: 0;
+}
+.lux-hero__stat { text-align: right; }
+.lux-hero__stat-num {
+  font-family: var(--lux-serif, 'Cormorant Garamond', Georgia, serif);
+  font-size: clamp(2rem, 3.5vw, 3.2rem);
+  font-weight: 300; line-height: 1;
+  color: var(--lux-gold, #C8A96B); display: block;
+}
+.lux-hero__stat-label {
+  font-family: var(--lux-sans, 'Inter', sans-serif);
+  font-size: 0.58rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(245,241,234,0.22);
+}
+
+@media (max-width: 900px) {
+  .lux-hero__content  { padding: 90px 28px 0; max-width: 100%; }
+  .lux-hero__trust    { left: 28px; right: 28px; bottom: 24px; gap: 14px; }
+  .lux-hero__scroll   { display: none; }
+  .lux-hero__num      { display: none; }
+  .lux-hero__geometry { display: none; }
+  .lux-hero__stats    { display: none; }
+  .lux-hero__ray      { display: none; }
+}
+</style>
+
+<section id="lux-hero" class="lux-hero">
+
+  <canvas id="lux-hero-canvas" aria-hidden="true"></canvas>
+  <div id="hero-mouse-glow" aria-hidden="true"></div>
+
+  <div class="lux-hero__media">
+    {%- if section.settings.video != blank -%}
+      <video autoplay muted loop playsinline preload="metadata">
+        <source src="{{ section.settings.video }}" type="video/mp4">
+      </video>
+    {%- elsif section.settings.image != blank -%}
+      <img src="{{ section.settings.image | image_url: width: 2400 }}"
+           alt="{{ section.settings.image_alt | escape }}" width="2400" loading="eager" fetchpriority="high">
+    {%- endif -%}
+    <div class="lux-hero__media-overlay"></div>
+  </div>
+
+  <div class="lux-hero__glow"  aria-hidden="true"></div>
+  <div class="lux-hero__glow2" aria-hidden="true"></div>
+  <div class="lux-hero__glow3" aria-hidden="true"></div>
+  <div class="lux-hero__ray"   aria-hidden="true"></div>
+  <div class="lux-hero__scanline" aria-hidden="true"></div>
+  <div class="lux-hero__grain"    aria-hidden="true"></div>
+
+  <div class="lux-hero__geometry" aria-hidden="true">
+    <svg class="geo-circle" viewBox="0 0 560 560" fill="none">
+      <circle cx="280" cy="280" r="270" stroke="#C8A96B" stroke-width="0.4"/>
+      <circle cx="280" cy="280" r="210" stroke="#C8A96B" stroke-width="0.28"/>
+      <circle cx="280" cy="280" r="150" stroke="#E6B566" stroke-width="0.20"/>
+      <circle cx="280" cy="280" r="90"  stroke="#C8A96B" stroke-width="0.16"/>
+      <circle cx="280" cy="280" r="36"  stroke="#C8A96B" stroke-width="0.14"/>
+      <line x1="10" y1="280" x2="550" y2="280" stroke="#C8A96B" stroke-width="0.22"/>
+      <line x1="280" y1="10" x2="280" y2="550" stroke="#C8A96B" stroke-width="0.22"/>
+      <line x1="83" y1="83" x2="477" y2="477" stroke="#C8A96B" stroke-width="0.15"/>
+      <line x1="477" y1="83" x2="83" y2="477" stroke="#C8A96B" stroke-width="0.15"/>
+      <circle cx="280" cy="10"  r="2.5" fill="#C8A96B" opacity="0.4"/>
+      <circle cx="280" cy="550" r="2.5" fill="#C8A96B" opacity="0.4"/>
+      <circle cx="10"  cy="280" r="2.5" fill="#C8A96B" opacity="0.4"/>
+      <circle cx="550" cy="280" r="2.5" fill="#C8A96B" opacity="0.4"/>
+    </svg>
+    <svg class="geo-inner" viewBox="0 0 280 280" fill="none">
+      <rect x="14" y="14" width="252" height="252" stroke="#C8A96B" stroke-width="0.4"/>
+      <rect x="42" y="42" width="196" height="196" stroke="#E6B566" stroke-width="0.25"/>
+      <rect x="70" y="70" width="140" height="140" stroke="#C8A96B" stroke-width="0.18"/>
+      <line x1="14" y1="14" x2="266" y2="266" stroke="#C8A96B" stroke-width="0.22"/>
+      <line x1="266" y1="14" x2="14" y2="266" stroke="#C8A96B" stroke-width="0.22"/>
+    </svg>
+  </div>
+
+  <span class="lux-hero__num" aria-hidden="true">01</span>
+
+  <div class="lux-hero__content">
+    <p class="lux-hero__eyebrow">{{ section.settings.eyebrow }}</p>
+    <h1 class="lux-hero__title">
+      <span class="lux-hero__title-line">
+        <span class="lux-hero__title-line-inner">{{ section.settings.title_line1 }}</span>
+      </span>
+      {%- if section.settings.title_line2 != blank -%}
+        <span class="lux-hero__title-line">
+          <span class="lux-hero__title-line-inner"><em>{{ section.settings.title_line2 }}</em></span>
+        </span>
+      {%- endif -%}
+    </h1>
+    {%- if section.settings.subheading != blank -%}
+      <p class="lux-hero__sub">{{ section.settings.subheading }}</p>
+    {%- endif -%}
+    <div class="lux-hero__cta">
+      {%- if section.settings.cta1_label != blank -%}
+        <a href="{{ section.settings.cta1_url }}" class="lux-hero__cta-primary">
+          {{ section.settings.cta1_label }}
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 7h12M8 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      {%- endif -%}
+      {%- if section.settings.cta2_label != blank -%}
+        <a href="{{ section.settings.cta2_url }}" class="lux-hero__cta-secondary">
+          {{ section.settings.cta2_label }}
+        </a>
+      {%- endif -%}
+    </div>
+  </div>
+
+  <!-- Side stats -->
+  <div class="lux-hero__stats" aria-hidden="true">
+    <div class="lux-hero__stat">
+      <span class="lux-hero__stat-num">197</span>
+      <span class="lux-hero__stat-label">Luminaires</span>
+    </div>
+    <div class="lux-hero__stat">
+      <span class="lux-hero__stat-num">60+</span>
+      <span class="lux-hero__stat-label">Designers</span>
+    </div>
+    <div class="lux-hero__stat">
+      <span class="lux-hero__stat-num">5★</span>
+      <span class="lux-hero__stat-label">Garantie</span>
+    </div>
+  </div>
+
+  {%- assign trust_blocks = section.blocks | where: "type", "trust" -%}
+  {%- if trust_blocks.size > 0 -%}
+    <div class="lux-hero__trust">
+      {%- for block in trust_blocks -%}
+        <div class="lux-hero__trust-item" {{ block.shopify_attributes }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ block.settings.text }}
+        </div>
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+
+  <div class="lux-hero__scroll" aria-hidden="true">
+    <div class="lux-hero__scroll-line"></div>
+    <span class="lux-hero__scroll-label">Défiler</span>
+  </div>
+
+</section>
+
+<script>
+(function(){
+  'use strict';
+
+  var W = window.innerWidth, H = window.innerHeight;
+  var canvas = document.getElementById('lux-hero-canvas');
+  var mouseGlow = document.getElementById('hero-mouse-glow');
+  var heroEl    = document.getElementById('lux-hero');
+
+  /* ──────────────────────────────────────────────────────────
+     THREE.JS 3D SCENE
+  ────────────────────────────────────────────────────────── */
+  if (canvas && typeof THREE !== 'undefined') {
+
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+
+    var scene  = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(52, W / H, 0.1, 120);
+    camera.position.set(0, 0.3, 9);
+
+    /* ── helpers ── */
+    function mat(color, opacity, wire) {
+      return new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: opacity, wireframe: !!wire });
+    }
+
+    /* ── Background stars (very far, very subtle) ── */
+    var starCount = 280;
+    var starPos = new Float32Array(starCount * 3);
+    for (var s = 0; s < starCount; s++) {
+      starPos[s*3]   = (Math.random() - 0.5) * 40;
+      starPos[s*3+1] = (Math.random() - 0.5) * 24;
+      starPos[s*3+2] = -10 - Math.random() * 12;
+    }
+    var starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    var stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xF5F1EA, size: 0.018, transparent: true, opacity: 0.20 }));
+    scene.add(stars);
+
+    /* ── Ambient gold particles ── */
+    var pCount = 600;
+    var pPos   = new Float32Array(pCount * 3);
+    for (var p = 0; p < pCount; p++) {
+      pPos[p*3]   = (Math.random() - 0.5) * 26;
+      pPos[p*3+1] = (Math.random() - 0.5) * 16;
+      pPos[p*3+2] = (Math.random() - 0.5) * 10 - 1;
+    }
+    var pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    var particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ color: 0xC8A96B, size: 0.030, transparent: true, opacity: 0.50, sizeAttenuation: true }));
+    scene.add(particles);
+
+    /* ── Fine dust ── */
+    var dCount = 160;
+    var dPos   = new Float32Array(dCount * 3);
+    for (var d = 0; d < dCount; d++) {
+      dPos[d*3]   = (Math.random() - 0.5) * 20;
+      dPos[d*3+1] = (Math.random() - 0.5) * 13;
+      dPos[d*3+2] = (Math.random() - 0.5) * 7;
+    }
+    var dGeo = new THREE.BufferGeometry();
+    dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+    var dust = new THREE.Points(dGeo, new THREE.PointsMaterial({ color: 0xE6B566, size: 0.010, transparent: true, opacity: 0.25 }));
+    scene.add(dust);
+
+    /* ── Helper: build a pendant lamp ── */
+    function buildLamp(opts) {
+      var g = new THREE.Group();
+      var cSc  = opts.scale || 1;
+      var cOp  = opts.opacity || 0.12;
+      var cCol = opts.color || 0xC8A96B;
+
+      // Outer shade
+      var outGeo = new THREE.ConeGeometry(1.1 * cSc, 1.65 * cSc, 12, 1, true);
+      g.add(new THREE.Mesh(outGeo, mat(cCol, cOp, true)));
+
+      // Inner shade
+      var inGeo = new THREE.ConeGeometry(0.82 * cSc, 1.28 * cSc, 8, 1, true);
+      var inner = new THREE.Mesh(inGeo, mat(0xE6B566, cOp * 0.7, true));
+      inner.position.y = 0.09 * cSc;
+      g.add(inner);
+
+      // Top cap disc
+      var capGeo = new THREE.CircleGeometry(0.55 * cSc, 12);
+      var cap = new THREE.Mesh(capGeo, mat(cCol, cOp * 0.5, false));
+      cap.position.y = 0.83 * cSc;
+      cap.rotation.x = -Math.PI / 2;
+      g.add(cap);
+
+      // Top ring
+      var topRingGeo = new THREE.TorusGeometry(0.57 * cSc, 0.022 * cSc, 6, 24);
+      var topRing = new THREE.Mesh(topRingGeo, mat(cCol, cOp * 2.0, false));
+      topRing.position.y = 0.83 * cSc;
+      g.add(topRing);
+
+      // Mid ring
+      var midRingGeo = new THREE.TorusGeometry(0.88 * cSc, 0.015 * cSc, 6, 20);
+      var midRing = new THREE.Mesh(midRingGeo, mat(cCol, cOp * 1.2, false));
+      midRing.position.y = 0.0;
+      g.add(midRing);
+
+      // Bottom ring
+      var botRingGeo = new THREE.TorusGeometry(1.08 * cSc, 0.012 * cSc, 6, 20);
+      var botRing = new THREE.Mesh(botRingGeo, mat(cCol, cOp * 0.9, false));
+      botRing.position.y = -0.82 * cSc;
+      g.add(botRing);
+
+      // Cord
+      var cordGeo = new THREE.CylinderGeometry(0.010 * cSc, 0.010 * cSc, 2.6 * cSc, 4);
+      var cord = new THREE.Mesh(cordGeo, mat(cCol, cOp * 1.5, false));
+      cord.position.y = 2.13 * cSc;
+      g.add(cord);
+
+      // Cord connector knot
+      var knotGeo = new THREE.TorusGeometry(0.06 * cSc, 0.018 * cSc, 5, 10);
+      var knot = new THREE.Mesh(knotGeo, mat(cCol, cOp * 2.0, false));
+      knot.position.y = 2.8 * cSc;
+      g.add(knot);
+
+      // Bulb
+      var bulbGeo = new THREE.SphereGeometry(0.20 * cSc, 12, 12);
+      var bulbMat = mat(0xFFF0C8, 0.22, false);
+      var bulb = new THREE.Mesh(bulbGeo, bulbMat);
+      bulb.position.y = -0.14 * cSc;
+      g.add(bulb);
+
+      // Bulb glow aura
+      var auraGeo = new THREE.SphereGeometry(0.42 * cSc, 8, 8);
+      var auraMat = mat(0xF5D080, 0.05, true);
+      var aura = new THREE.Mesh(auraGeo, auraMat);
+      aura.position.y = -0.14 * cSc;
+      g.add(aura);
+
+      // Volumetric light cone (pointing downward)
+      var lcGeo = new THREE.ConeGeometry(1.4 * cSc, 3.2 * cSc, 24, 4, true);
+      var lcMat1 = mat(0xF5D080, 0.032, false);
+      lcMat1.side = THREE.DoubleSide;
+      var lc1 = new THREE.Mesh(lcGeo, lcMat1);
+      lc1.rotation.x = Math.PI;
+      lc1.position.y = -1.8 * cSc;
+      g.add(lc1);
+
+      var lcGeo2 = new THREE.ConeGeometry(0.9 * cSc, 2.4 * cSc, 16, 3, true);
+      var lcMat2 = mat(0xFFF0B0, 0.055, false);
+      lcMat2.side = THREE.DoubleSide;
+      var lc2 = new THREE.Mesh(lcGeo2, lcMat2);
+      lc2.rotation.x = Math.PI;
+      lc2.position.y = -1.5 * cSc;
+      g.add(lc2);
+
+      g._bulb = bulb;
+      g._bulbMat = bulbMat;
+      g._aura = aura;
+      g._auraMat = auraMat;
+      g._lc1Mat = lcMat1;
+      g._lc2Mat = lcMat2;
+      g._cSc = cSc;
+      return g;
+    }
+
+    /* ── Main lamp (foreground right) ── */
+    var lamp1 = buildLamp({ scale: 1.0, opacity: 0.13, color: 0xC8A96B });
+    lamp1.position.set(2.6, 12, -1.2); // start off-screen top
+    lamp1._targetY = 0.8;
+    scene.add(lamp1);
+
+    /* ── Second lamp (left, mid) ── */
+    var lamp2 = buildLamp({ scale: 0.68, opacity: 0.08, color: 0xC8A96B });
+    lamp2.position.set(-3.2, 12, -3.0);
+    lamp2._targetY = 1.6;
+    scene.add(lamp2);
+
+    /* ── Third lamp (far right, background) ── */
+    var lamp3 = buildLamp({ scale: 0.38, opacity: 0.045, color: 0xD4AA70 });
+    lamp3.position.set(5.5, 12, -5.5);
+    lamp3._targetY = 0.6;
+    scene.add(lamp3);
+
+    /* ── Orbiting particles around lamp1 ── */
+    var orbitCount = 50;
+    var orbitPos   = new Float32Array(orbitCount * 3);
+    for (var o = 0; o < orbitCount; o++) {
+      var angle = (o / orbitCount) * Math.PI * 2;
+      var r     = 0.7 + Math.random() * 0.9;
+      var oy    = (Math.random() - 0.5) * 2.4;
+      orbitPos[o*3]   = Math.cos(angle) * r;
+      orbitPos[o*3+1] = oy;
+      orbitPos[o*3+2] = Math.sin(angle) * r;
+    }
+    var orbitGeo = new THREE.BufferGeometry();
+    orbitGeo.setAttribute('position', new THREE.BufferAttribute(orbitPos, 3));
+    var orbitParticles = new THREE.Points(orbitGeo, new THREE.PointsMaterial({ color: 0xF0C060, size: 0.025, transparent: true, opacity: 0.55, sizeAttenuation: true }));
+    var orbitGroup = new THREE.Group();
+    orbitGroup.add(orbitParticles);
+    scene.add(orbitGroup);
+
+    /* ── Floating rings ── */
+    var ring1Geo = new THREE.TorusGeometry(2.4, 0.016, 6, 80);
+    var ring1 = new THREE.Mesh(ring1Geo, mat(0xC8A96B, 0.055, false));
+    ring1.rotation.x = Math.PI / 5;
+    ring1.position.set(0.8, -0.4, -3.5);
+    scene.add(ring1);
+
+    var ring2Geo = new THREE.TorusGeometry(1.5, 0.010, 5, 60);
+    var ring2 = new THREE.Mesh(ring2Geo, mat(0xE6B566, 0.04, false));
+    ring2.rotation.x = -Math.PI / 3;
+    ring2.rotation.z = Math.PI / 6;
+    ring2.position.set(-1.5, 0.8, -4.0);
+    scene.add(ring2);
+
+    var ring3Geo = new THREE.TorusGeometry(3.8, 0.012, 4, 80);
+    var ring3 = new THREE.Mesh(ring3Geo, mat(0xC8A96B, 0.025, false));
+    ring3.rotation.x = Math.PI / 2.5;
+    ring3.position.set(2.0, -1.5, -6.0);
+    scene.add(ring3);
+
+    /* ── Lamp entrance animation ── */
+    var entranceDone = false;
+    var entranceStart = null;
+    var ENTRANCE_DUR = 2200; // ms
+
+    function easeOutElastic(t) {
+      var c4 = (2 * Math.PI) / 4.5;
+      return t === 0 ? 0 : t === 1 ? 1 :
+        Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+    }
+
+    /* ── Mouse state ── */
+    var mx = 0, my = 0, tmx = 0, tmy = 0;
+
+    heroEl && heroEl.addEventListener('mousemove', function(e) {
+      mx = (e.clientX / W - 0.5) * 2;
+      my = -(e.clientY / H - 0.5) * 2;
+      if (mouseGlow) {
+        mouseGlow.style.left    = e.clientX + 'px';
+        mouseGlow.style.top     = e.clientY + 'px';
+        mouseGlow.style.opacity = '1';
+      }
+    });
+    heroEl && heroEl.addEventListener('mouseleave', function() {
+      if (mouseGlow) mouseGlow.style.opacity = '0';
+    });
+
+    /* ── Resize ── */
+    window.addEventListener('resize', function() {
+      W = window.innerWidth; H = window.innerHeight;
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W, H);
+    });
+
+    /* ── Animation loop ── */
+    var clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      var t    = clock.getElapsedTime();
+      var dt   = clock.getDelta ? 0.016 : 0.016;
+      var now  = performance.now();
+
+      /* Entrance: lamps fall from above */
+      if (!entranceDone) {
+        if (!entranceStart) entranceStart = now;
+        var ep = Math.min((now - entranceStart) / ENTRANCE_DUR, 1);
+        var ee = easeOutElastic(ep);
+        lamp1.position.y = 12 + (lamp1._targetY - 12) * ee;
+        lamp2.position.y = 12 + (lamp2._targetY - 12) * Math.min(easeOutElastic(Math.max(ep - 0.12, 0) / 0.88), 1);
+        lamp3.position.y = 12 + (lamp3._targetY - 12) * Math.min(easeOutElastic(Math.max(ep - 0.22, 0) / 0.78), 1);
+        if (ep >= 1) { entranceDone = true; lamp1.position.y = lamp1._targetY; lamp2.position.y = lamp2._targetY; lamp3.position.y = lamp3._targetY; }
+      }
+
+      /* Smooth mouse */
+      tmx += (mx - tmx) * 0.035;
+      tmy += (my - tmy) * 0.035;
+
+      /* Particle field */
+      particles.rotation.y = t * 0.010;
+      particles.rotation.x = t * 0.004;
+      dust.rotation.y = -t * 0.007;
+      dust.rotation.x = t * 0.003;
+      stars.rotation.y = t * 0.002;
+
+      /* Lamp 1 */
+      if (entranceDone) {
+        lamp1.position.y = lamp1._targetY + Math.sin(t * 0.40) * 0.20;
+        lamp1.position.x = 2.6 + tmx * 0.35;
+      }
+      lamp1.rotation.y = Math.sin(t * 0.25) * 0.18 + tmx * 0.14;
+      lamp1.rotation.z = Math.sin(t * 0.16) * 0.05;
+
+      /* Bulb 1 pulse */
+      var pulse1 = 0.20 + Math.sin(t * 2.0) * 0.06;
+      lamp1._bulbMat.opacity  = pulse1;
+      lamp1._auraMat.opacity  = Math.sin(t * 1.6) * 0.025 + 0.045;
+      lamp1._lc1Mat.opacity   = 0.025 + pulse1 * 0.05;
+      lamp1._lc2Mat.opacity   = 0.045 + pulse1 * 0.08;
+
+      /* Lamp 2 */
+      if (entranceDone) lamp2.position.y = lamp2._targetY + Math.sin(t * 0.55 + 1.1) * 0.15;
+      lamp2.rotation.y = t * 0.08;
+      var pulse2 = 0.14 + Math.sin(t * 1.8 + 1.5) * 0.04;
+      lamp2._bulbMat.opacity = pulse2;
+      lamp2._lc1Mat.opacity  = 0.015 + pulse2 * 0.04;
+      lamp2._lc2Mat.opacity  = 0.025 + pulse2 * 0.06;
+
+      /* Lamp 3 */
+      if (entranceDone) lamp3.position.y = lamp3._targetY + Math.sin(t * 0.30 + 2.3) * 0.10;
+      lamp3.rotation.y = -t * 0.05;
+      var pulse3 = 0.10 + Math.sin(t * 2.4 + 3.0) * 0.03;
+      lamp3._bulbMat.opacity = pulse3;
+      lamp3._lc1Mat.opacity  = 0.008 + pulse3 * 0.02;
+      lamp3._lc2Mat.opacity  = 0.012 + pulse3 * 0.04;
+
+      /* Orbiting particles — follow lamp1 + rotate */
+      orbitGroup.position.copy(lamp1.position);
+      orbitGroup.position.y += -0.14; // bulb offset
+      orbitGroup.rotation.y = t * 0.55;
+      orbitGroup.rotation.x = Math.sin(t * 0.22) * 0.3;
+
+      /* Floating rings */
+      ring1.rotation.y = t * 0.06;
+      ring1.rotation.z = t * 0.03;
+      ring2.rotation.y = -t * 0.05;
+      ring2.rotation.x = -Math.PI / 3 + Math.sin(t * 0.18) * 0.1;
+      ring3.rotation.y = t * 0.04;
+      ring3.rotation.z = -t * 0.02;
+
+      /* Camera parallax */
+      camera.position.x += (tmx * 0.45 - camera.position.x) * 0.025;
+      camera.position.y += (tmy * 0.28 + 0.3 - camera.position.y) * 0.025;
+      camera.lookAt(0, 0.3, 0);
+
+      renderer.render(scene, camera);
+    }
+    animate();
+  }
+
+  /* ──────────────────────────────────────────────────────────
+     GSAP ENTRANCE ANIMATIONS
+  ────────────────────────────────────────────────────────── */
+  function bootGSAP() {
+    if (typeof gsap === 'undefined') { fallbackAnim(); return; }
+
+    var hero = document.getElementById('lux-hero');
+    if (!hero) return;
+
+    var tl = gsap.timeline({ delay: 0.3 });
+
+    tl.to('.lux-hero__eyebrow', {
+      opacity: 1, x: 0, duration: 1.0, ease: 'power3.out'
+    }, 0);
+
+    tl.to('.lux-hero__title-line-inner', {
+      opacity: 1, y: '0%', duration: 1.2,
+      stagger: { amount: 0.28, ease: 'power2.inOut' },
+      ease: 'power4.out'
+    }, 0.18);
+
+    tl.to('.lux-hero__sub', {
+      opacity: 1, y: 0, duration: 1.1, ease: 'power3.out'
+    }, 0.60);
+
+    tl.to('.lux-hero__cta', {
+      opacity: 1, y: 0, duration: 1.0, ease: 'power3.out'
+    }, 0.82);
+
+    tl.to('.lux-hero__stats', {
+      opacity: 1, duration: 1.2, ease: 'power2.out'
+    }, 1.0);
+
+    tl.to('.lux-hero__trust', {
+      opacity: 1, duration: 1.2, ease: 'power2.out'
+    }, 1.1);
+
+    tl.to('.lux-hero__scroll', {
+      opacity: 1, duration: 0.9, ease: 'power2.out'
+    }, 1.35);
+
+    tl.to('.lux-hero__geometry', {
+      opacity: 1, duration: 2.4, ease: 'power1.out'
+    }, 0.5);
+
+    /* Animated underline on italic */
+    setTimeout(function() {
+      if (hero) hero.classList.add('lux-hero--animated');
+    }, 2200);
+  }
+
+  function fallbackAnim() {
+    var els = document.querySelectorAll('.lux-hero__eyebrow,.lux-hero__title-line-inner,.lux-hero__sub,.lux-hero__cta,.lux-hero__stats,.lux-hero__trust,.lux-hero__scroll,.lux-hero__geometry');
+    els.forEach(function(el, i) {
+      setTimeout(function() {
+        el.style.transition = 'opacity 0.9s ease, transform 0.9s ease';
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      }, i * 100 + 300);
+    });
+    setTimeout(function() {
+      var h = document.getElementById('lux-hero');
+      if (h) h.classList.add('lux-hero--animated');
+    }, 2200);
+  }
+
+  bootGSAP();
+
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Hero cinématique 3D",
+  "tag": "div",
+  "settings": [
+    { "type": "text",         "id": "eyebrow",     "label": "Surtitre",                        "default": "Éclairage de prestige" },
+    { "type": "text",         "id": "title_line1", "label": "Titre — Ligne 1",                 "default": "La lumière comme" },
+    { "type": "text",         "id": "title_line2", "label": "Titre — Ligne 2 (italique doré)", "default": "art de vivre" },
+    { "type": "textarea",     "id": "subheading",  "label": "Sous-titre",                      "default": "Des luminaires de designers internationaux pour transformer chaque espace en une expérience sensorielle unique." },
+    { "type": "text",         "id": "cta1_label",  "label": "Bouton principal — Texte",        "default": "Découvrir les collections" },
+    { "type": "url",          "id": "cta1_url",    "label": "Bouton principal — URL" },
+    { "type": "text",         "id": "cta2_label",  "label": "Bouton secondaire — Texte",       "default": "Notre univers" },
+    { "type": "url",          "id": "cta2_url",    "label": "Bouton secondaire — URL" },
+    { "type": "image_picker", "id": "image",       "label": "Image de fond" },
+    { "type": "text",         "id": "image_alt",   "label": "Texte alt image",                 "default": "Luminaire de prestige" },
+    { "type": "text",         "id": "video",       "label": "URL vidéo MP4 (prioritaire)" }
+  ],
+  "blocks": [
+    {
+      "type": "trust",
+      "name": "Badge de confiance",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Texte", "default": "Livraison offerte dès 500€" }
+      ]
+    }
+  ],
+  "max_blocks": 4,
+  "presets": [
+    {
+      "name": "Hero cinématique 3D",
+      "blocks": [
+        { "type": "trust", "settings": { "text": "Livraison offerte dès 500€" } },
+        { "type": "trust", "settings": { "text": "Garantie 5 ans" } },
+        { "type": "trust", "settings": { "text": "Designers certifiés" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
