@@ -1,0 +1,287 @@
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "WebSite",
+ "name": "La Galerie Lumineuse",
+ "url": "https://lagalerielumineuse.com"
+}
+</script>
+<style>
+.header-luxe {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  transition: background 0.5s cubic-bezier(0.16,1,0.3,1), padding 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s;
+}
+.header-luxe--top { background: transparent; padding: 0; }
+.header-luxe--scrolled {
+  background: rgba(15,10,6,0.92);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(196,150,58,0.12), 0 4px 32px rgba(0,0,0,0.3);
+}
+.header-luxe--light.header-luxe--top { background: transparent; }
+.header-luxe--light.header-luxe--scrolled {
+  background: rgba(253,250,245,0.95);
+  box-shadow: 0 1px 0 rgba(196,150,58,0.15), 0 4px 24px rgba(42,28,16,0.08);
+}
+.header-luxe__inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 64px;
+  transition: padding 0.4s cubic-bezier(0.16,1,0.3,1);
+  max-width: 1600px; margin: 0 auto;
+}
+.header-luxe--scrolled .header-luxe__inner { padding: 14px 64px; }
+
+/* LOGO */
+.header-luxe__logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+.header-luxe__logo-img { height: {{ section.settings.logo_height | default: 36 }}px; width: auto; object-fit: contain; transition: opacity 0.3s; }
+.header-luxe__logo-img--dark { display: block; }
+.header-luxe__logo-img--light { display: none; }
+.header-luxe--top .header-luxe__logo-img--dark { display: none; }
+.header-luxe--top .header-luxe__logo-img--light { display: block; }
+.header-luxe--scrolled .header-luxe__logo-img--dark { display: block; }
+.header-luxe--scrolled .header-luxe__logo-img--light { display: none; }
+.header-luxe__logo-text {
+  font-family: 'Cormorant Garamond', Georgia, serif !important;
+  font-size: 12px !important; font-weight: 400; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #fff; transition: color 0.4s;
+  white-space: nowrap;
+}
+.header-luxe--scrolled .header-luxe__logo-text { color: #2A1C10; }
+.header-luxe--light .header-luxe__logo-text { color: #2A1C10; }
+.header-luxe__logo-sym { color: #C4963A; font-size: 14px; }
+
+/* NAV */
+.header-luxe__nav { display: flex; align-items: center; gap: 28px; }
+.header-luxe__nav a {
+  font-family: 'Raleway', sans-serif !important;
+  font-size: 10px !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+  color: rgba(255,255,255,0.75) !important;
+  text-decoration: none !important;
+  position: relative;
+  padding-bottom: 2px;
+  transition: color 0.3s;
+  white-space: nowrap;
+}
+.header-luxe__nav a::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 1px; background: #C4963A;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+.header-luxe__nav a:hover { color: #fff !important; }
+.header-luxe__nav a:hover::after { transform: scaleX(1); }
+.header-luxe--scrolled .header-luxe__nav a,
+.header-luxe--light .header-luxe__nav a { color: #8A7A68 !important; }
+.header-luxe--scrolled .header-luxe__nav a:hover,
+.header-luxe--light .header-luxe__nav a:hover { color: #2A1C10 !important; }
+
+/* ICÔNES */
+.header-luxe__icons { display: flex; align-items: center; gap: 18px; }
+.header-luxe__icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.65); text-decoration: none;
+  transition: color 0.3s; padding: 4px; background: none; border: none; cursor: pointer;
+}
+.header-luxe__icon-btn:hover { color: #C4963A; }
+.header-luxe--scrolled .header-luxe__icon-btn,
+.header-luxe--light .header-luxe__icon-btn { color: #8A7A68; }
+.header-luxe--scrolled .header-luxe__icon-btn:hover,
+.header-luxe--light .header-luxe__icon-btn:hover { color: #C4963A; }
+.header-luxe__cart { position: relative; }
+.header-luxe__cart-count {
+  position: absolute; top: -6px; right: -8px;
+  min-width: 17px; height: 17px; border-radius: 50%;
+  background: #C4963A; color: #fff;
+  font-family: 'Raleway', sans-serif; font-size: 9px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; padding: 0 2px;
+}
+.header-luxe__cart-count:empty { display: none; }
+
+/* BURGER */
+.header-luxe__burger { display: none; flex-direction: column; gap: 5px; padding: 4px; background: none; border: none; cursor: pointer; }
+.header-luxe__burger span { display: block; width: 22px; height: 1.5px; background: rgba(255,255,255,0.7); transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
+.header-luxe--scrolled .header-luxe__burger span,
+.header-luxe--light .header-luxe__burger span { background: #2A1C10; }
+.header-luxe__burger.open span:nth-child(1) { transform: rotate(45deg) translate(4.5px,4.5px); }
+.header-luxe__burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.header-luxe__burger.open span:nth-child(3) { transform: rotate(-45deg) translate(4.5px,-4.5px); }
+
+/* MENU MOBILE */
+.header-luxe__mobile {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(300px,100vw);
+  background: #0F0A06; z-index: 499;
+  transform: translateX(101%); transition: transform 0.6s cubic-bezier(0.16,1,0.3,1);
+  display: flex; flex-direction: column; padding: 88px 32px 40px;
+}
+.header-luxe__mobile.open { transform: none; box-shadow: -20px 0 80px rgba(0,0,0,0.5); }
+.header-luxe__mobile-link {
+  font-family: 'Raleway', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(196,150,58,0.1);
+  transition: color 0.3s; display: block;
+  white-space: nowrap;
+}
+.header-luxe__mobile-link:hover { color: #C4963A; }
+.header-luxe__mobile-footer { margin-top: auto; padding-top: 28px; display: flex; gap: 20px; }
+.header-luxe__mobile-icon {
+  color: rgba(255,255,255,0.35); text-decoration: none;
+  font-family: 'Raleway', sans-serif; font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.3s;
+}
+.header-luxe__mobile-icon:hover { color: #C4963A; }
+
+/* OVERLAY */
+.header-luxe__overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 498; opacity: 0; pointer-events: none;
+  transition: opacity 0.4s; backdrop-filter: blur(4px);
+}
+.header-luxe__overlay.open { opacity: 1; pointer-events: all; }
+
+/* RESPONSIVE */
+@media(max-width:1200px){
+  .header-luxe__inner { padding: 20px 40px; }
+  .header-luxe--scrolled .header-luxe__inner { padding: 12px 40px; }
+  .header-luxe__nav { gap: 20px; }
+}
+@media(max-width:900px){
+  .header-luxe__nav { display: none; }
+  .header-luxe__burger { display: flex; }
+  .header-luxe__inner { padding: 18px 24px; }
+  .header-luxe--scrolled .header-luxe__inner { padding: 12px 24px; }
+}
+</style>
+
+<div class="header-luxe__overlay" id="headerOverlay"></div>
+
+<div class="header-luxe__mobile" id="mobileMenu">
+  {% for link in linklists[section.settings.menu].links %}
+    <a class="header-luxe__mobile-link" href="{{ link.url }}">{{ link.title }}</a>
+  {% else %}
+    <a class="header-luxe__mobile-link" href="/collections/all">Luminaires</a>
+    <a class="header-luxe__mobile-link" href="/pages/notre-univers">Univers</a>
+    <a class="header-luxe__mobile-link" href="/pages/contact">Contact</a>
+    <a class="header-luxe__mobile-link" href="/pages/a-propos">À propos</a>
+  {% endfor %}
+  <div class="header-luxe__mobile-footer">
+    <a class="header-luxe__mobile-icon" href="{{ routes.search_url }}">Recherche</a>
+    <a class="header-luxe__mobile-icon" href="{{ routes.cart_url }}">Panier ({{ cart.item_count }})</a>
+  </div>
+</div>
+
+<header class="header-luxe {% if section.settings.style == 'light' %}header-luxe--light{% endif %} header-luxe--top" id="headerLuxe">
+  <div class="header-luxe__inner">
+
+    <a class="header-luxe__logo" href="{{ routes.root_url }}">
+      {% if section.settings.logo_dark %}
+        <img class="header-luxe__logo-img header-luxe__logo-img--dark" src="{{ section.settings.logo_dark | img_url: '300x' }}" alt="{{ shop.name }}" width="200" height="{{ section.settings.logo_height | default: 36 }}">
+      {% endif %}
+      {% if section.settings.logo_light %}
+        <img class="header-luxe__logo-img header-luxe__logo-img--light" src="{{ section.settings.logo_light | img_url: '300x' }}" alt="{{ shop.name }}" width="200" height="{{ section.settings.logo_height | default: 36 }}">
+      {% endif %}
+      {% unless section.settings.logo_dark or section.settings.logo_light %}
+        <span class="header-luxe__logo-sym">{{ section.settings.logo_symbol | default: '✦' }}</span>
+      {% endunless %}
+      <span class="header-luxe__logo-text">{{ section.settings.logo_text | default: shop.name }}</span>
+    </a>
+
+    <nav class="header-luxe__nav" aria-label="Navigation principale">
+      {% for link in linklists[section.settings.menu].links %}
+        <a href="{{ link.url }}" {% if link.url == request.path %}aria-current="page"{% endif %}>{{ link.title }}</a>
+      {% else %}
+        <a href="/collections/all">Luminaires</a>
+        <a href="/pages/notre-univers">Univers</a>
+        <a href="/pages/contact">Contact</a>
+        <a href="/pages/a-propos">À propos de nous</a>
+      {% endfor %}
+    </nav>
+
+    <div class="header-luxe__icons">
+      {% if section.settings.show_search %}
+        <a class="header-luxe__icon-btn" href="{{ routes.search_url }}" aria-label="Rechercher">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </a>
+      {% endif %}
+      <a class="header-luxe__icon-btn header-luxe__cart" href="{{ routes.cart_url }}" aria-label="Panier">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="header-luxe__cart-count" id="headerCartCount">{% if cart.item_count > 0 %}{{ cart.item_count }}{% endif %}</span>
+      </a>
+      <button class="header-luxe__burger" id="headerBurger" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+  </div>
+</header>
+
+{% unless section.settings.transparent_on_hero %}
+  <div style="height:80px"></div>
+{% endunless %}
+
+<script>
+(function(){
+  var header  = document.getElementById('headerLuxe');
+  var burger  = document.getElementById('headerBurger');
+  var menu    = document.getElementById('mobileMenu');
+  var overlay = document.getElementById('headerOverlay');
+  var forceScrolled = {{ template | json }} !== 'index';
+
+  function onScroll(){
+    if(forceScrolled || window.scrollY > 40){
+      header.classList.remove('header-luxe--top');
+      header.classList.add('header-luxe--scrolled');
+    } else {
+      header.classList.add('header-luxe--top');
+      header.classList.remove('header-luxe--scrolled');
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  function openMenu(){ menu.classList.add('open'); overlay.classList.add('open'); burger.classList.add('open'); burger.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; }
+  function closeMenu(){ menu.classList.remove('open'); overlay.classList.remove('open'); burger.classList.remove('open'); burger.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
+  burger.addEventListener('click', function(){ menu.classList.contains('open') ? closeMenu() : openMenu(); });
+  overlay.addEventListener('click', closeMenu);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeMenu(); });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Header luxe",
+  "settings": [
+    { "type": "header",       "content": "Logo" },
+    { "type": "image_picker", "id": "logo_dark",           "label": "Logo foncé (fond clair / scrollé)" },
+    { "type": "image_picker", "id": "logo_light",          "label": "Logo clair (fond sombre / hero)" },
+    { "type": "range",        "id": "logo_height",         "label": "Hauteur logo (px)", "min": 20, "max": 80, "step": 2, "default": 36 },
+    { "type": "header",       "content": "Texte (si pas de logo image)" },
+    { "type": "text",         "id": "logo_text",           "label": "Nom affiché",        "default": "La Galerie Lumineuse" },
+    { "type": "text",         "id": "logo_symbol",         "label": "Symbole",            "default": "✦" },
+    { "type": "header",       "content": "Navigation" },
+    { "type": "link_list",    "id": "menu",                "label": "Menu principal" },
+    { "type": "header",       "content": "Options" },
+    { "type": "checkbox",     "id": "show_search",         "label": "Icône recherche",    "default": true },
+    { "type": "checkbox",     "id": "transparent_on_hero", "label": "Transparent sur hero (pas de spacer)", "default": true },
+    { "type": "header",       "content": "Style" },
+    { "type": "select",       "id": "style",               "label": "Style par défaut",
+      "options": [
+        { "value": "dark",  "label": "Sombre (fond hero foncé)" },
+        { "value": "light", "label": "Clair (fond hero clair)" }
+      ], "default": "dark"
+    }
+  ],
+  "presets": [{ "name": "Header luxe" }]
+}
+{% endschema %}

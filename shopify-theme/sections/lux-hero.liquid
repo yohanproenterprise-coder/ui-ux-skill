@@ -1,0 +1,745 @@
+<style>
+#lux-hero {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  background: var(--lux-bg);
+}
+
+/* 3D canvas */
+#lux-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Background media */
+.lux-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.lux-hero__media img,
+.lux-hero__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.lux-hero__media-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(108deg, rgba(9,9,9,0.95) 0%, rgba(9,9,9,0.70) 50%, rgba(9,9,9,0.35) 100%);
+}
+
+/* Ambient glow */
+.lux-hero__glow {
+  position: absolute;
+  bottom: -10%;
+  left: 20%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(200,169,107,0.10) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 2;
+  filter: blur(80px);
+  animation: lux-pulse-glow 6s ease-in-out infinite alternate;
+}
+.lux-hero__glow2 {
+  position: absolute;
+  top: -5%;
+  right: 15%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(200,169,107,0.06) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 2;
+  filter: blur(60px);
+  animation: lux-pulse-glow 8s ease-in-out infinite alternate-reverse;
+}
+@keyframes lux-pulse-glow {
+  from { opacity: 0.6; transform: scale(1); }
+  to   { opacity: 1;   transform: scale(1.15); }
+}
+
+/* SVG geometry (right side) */
+.lux-hero__geometry {
+  position: absolute;
+  right: -80px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+}
+.geo-circle {
+  width: clamp(300px, 40vw, 560px);
+  height: auto;
+  animation: lux-spin-slow 80s linear infinite;
+}
+.geo-lines {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 55%;
+  opacity: 0.5;
+  animation: lux-spin-slow 55s linear infinite reverse;
+}
+@keyframes lux-spin-slow { to { transform: translateY(-50%) rotate(360deg); } }
+@keyframes lux-spin-slow-inner { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+/* Scanline overlay */
+.lux-hero__scanline {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(9,9,9,0.04) 3px,
+    rgba(9,9,9,0.04) 4px
+  );
+  opacity: 0.5;
+}
+
+/* Content */
+.lux-hero__content {
+  position: relative;
+  z-index: 4;
+  padding: 0 80px;
+  max-width: 860px;
+  padding-top: 72px;
+}
+
+/* Eyebrow */
+.lux-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--lux-sans);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lux-gold);
+  margin-bottom: 28px;
+  opacity: 0;
+  transform: translateX(-16px);
+}
+.lux-hero__eyebrow::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: linear-gradient(to right, var(--lux-gold), var(--lux-gold2));
+}
+
+/* Title */
+.lux-hero__title {
+  font-family: var(--lux-serif);
+  font-size: clamp(3.2rem, 7vw, 7rem);
+  font-weight: 300;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--lux-ivory);
+  margin-bottom: 32px;
+}
+.lux-hero__title-line {
+  display: block;
+  overflow: hidden;
+  line-height: 1.08;
+}
+.lux-hero__title-line-inner {
+  display: block;
+  opacity: 0;
+  transform: translateY(100%);
+  will-change: transform, opacity;
+}
+.lux-hero__title em {
+  font-style: italic;
+  color: var(--lux-gold);
+  position: relative;
+}
+.lux-hero__title em::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, var(--lux-gold), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1s ease 1.8s;
+}
+.lux-hero--animated .lux-hero__title em::after { transform: scaleX(1); }
+
+/* Sub */
+.lux-hero__sub {
+  font-family: var(--lux-sans);
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.85;
+  color: rgba(245,241,234,0.48);
+  max-width: 440px;
+  margin-bottom: 48px;
+  opacity: 0;
+}
+
+/* CTAs */
+.lux-hero__cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  opacity: 0;
+}
+.lux-hero__cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 36px;
+  background: var(--lux-gold);
+  color: #090909;
+  font-family: var(--lux-sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: gap 0.3s ease, transform 0.2s ease;
+}
+.lux-hero__cta-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+.lux-hero__cta-primary:hover::before { transform: translateX(0); }
+.lux-hero__cta-primary:hover { gap: 20px; }
+.lux-hero__cta-primary:active { transform: scale(0.97); }
+
+.lux-hero__cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 28px;
+  border: 1px solid rgba(245,241,234,0.18);
+  color: rgba(245,241,234,0.60);
+  font-family: var(--lux-sans);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+.lux-hero__cta-secondary:hover { border-color: var(--lux-gold); color: var(--lux-gold); }
+
+/* Trust */
+.lux-hero__trust {
+  position: absolute;
+  bottom: 48px;
+  left: 80px;
+  right: 80px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  opacity: 0;
+  border-top: 1px solid rgba(245,241,234,0.06);
+  padding-top: 20px;
+  flex-wrap: wrap;
+}
+.lux-hero__trust-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--lux-sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: rgba(245,241,234,0.30);
+}
+.lux-hero__trust-item svg { width: 11px; height: 11px; flex-shrink: 0; color: var(--lux-gold); opacity: 0.7; }
+
+/* Scroll indicator */
+.lux-hero__scroll {
+  position: absolute;
+  bottom: 56px;
+  right: 80px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+}
+.lux-hero__scroll-line {
+  width: 1px;
+  height: 52px;
+  background: linear-gradient(to bottom, transparent, var(--lux-gold));
+  animation: lux-scroll-drop 2.4s ease-in-out infinite;
+}
+.lux-hero__scroll-label {
+  writing-mode: vertical-lr;
+  font-family: var(--lux-sans);
+  font-size: 0.56rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(245,241,234,0.22);
+}
+@keyframes lux-scroll-drop {
+  0%   { transform: scaleY(0); transform-origin: top;    opacity: 0; }
+  40%  { transform: scaleY(1); transform-origin: top;    opacity: 1; }
+  70%  { transform: scaleY(1); transform-origin: bottom; opacity: 1; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+
+/* Giant number */
+.lux-hero__num {
+  position: absolute;
+  bottom: -0.15em;
+  right: -0.04em;
+  font-family: var(--lux-serif);
+  font-size: clamp(12rem, 28vw, 24rem);
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1;
+  color: rgba(200,169,107,0.022);
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+  letter-spacing: -0.06em;
+}
+
+/* Mouse follower glow */
+#hero-mouse-glow {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,169,107,0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.4s ease;
+  opacity: 0;
+  filter: blur(20px);
+}
+
+@media (max-width: 768px) {
+  .lux-hero__content  { padding: 80px 24px 0; max-width: 100%; }
+  .lux-hero__trust    { left: 24px; right: 24px; bottom: 28px; gap: 12px; }
+  .lux-hero__scroll   { display: none; }
+  .lux-hero__num      { display: none; }
+  .lux-hero__geometry { display: none; }
+}
+</style>
+
+<section id="lux-hero" class="lux-hero">
+
+  <!-- 3D canvas -->
+  <canvas id="lux-hero-canvas" aria-hidden="true"></canvas>
+
+  <!-- Mouse glow follower -->
+  <div id="hero-mouse-glow" aria-hidden="true"></div>
+
+  <!-- Background media -->
+  <div class="lux-hero__media">
+    {%- if section.settings.video != blank -%}
+      <video autoplay muted loop playsinline preload="metadata">
+        <source src="{{ section.settings.video }}" type="video/mp4">
+      </video>
+    {%- elsif section.settings.image != blank -%}
+      <img src="{{ section.settings.image | image_url: width: 2400 }}"
+           alt="{{ section.settings.image_alt | escape }}"
+           width="2400" loading="eager" fetchpriority="high">
+    {%- else -%}
+      <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=2400&auto=format&fit=crop&q=80"
+           alt="Luminaire de prestige" width="2400" loading="eager" fetchpriority="high">
+    {%- endif -%}
+    <div class="lux-hero__media-overlay"></div>
+  </div>
+
+  <!-- Glows -->
+  <div class="lux-hero__glow"  aria-hidden="true"></div>
+  <div class="lux-hero__glow2" aria-hidden="true"></div>
+
+  <!-- Scanline -->
+  <div class="lux-hero__scanline" aria-hidden="true"></div>
+
+  <!-- SVG geometry -->
+  <div class="lux-hero__geometry" aria-hidden="true">
+    <svg class="geo-circle" viewBox="0 0 520 520" fill="none">
+      <circle cx="260" cy="260" r="252" stroke="#C8A96B" stroke-width="0.4"/>
+      <circle cx="260" cy="260" r="196" stroke="#C8A96B" stroke-width="0.25"/>
+      <circle cx="260" cy="260" r="136" stroke="#E6B566" stroke-width="0.18"/>
+      <circle cx="260" cy="260" r="72"  stroke="#C8A96B" stroke-width="0.15"/>
+      <line x1="8"   y1="260" x2="512" y2="260" stroke="#C8A96B" stroke-width="0.25"/>
+      <line x1="260" y1="8"   x2="260" y2="512" stroke="#C8A96B" stroke-width="0.25"/>
+      <line x1="85"  y1="85"  x2="435" y2="435" stroke="#C8A96B" stroke-width="0.15"/>
+      <line x1="435" y1="85"  x2="85"  y2="435" stroke="#C8A96B" stroke-width="0.15"/>
+    </svg>
+    <svg class="geo-lines" viewBox="0 0 300 300" fill="none">
+      <rect x="20" y="20" width="260" height="260" stroke="#C8A96B" stroke-width="0.4"/>
+      <rect x="55" y="55" width="190" height="190" stroke="#E6B566" stroke-width="0.25"/>
+      <line x1="20" y1="20" x2="280" y2="280" stroke="#C8A96B" stroke-width="0.25"/>
+      <line x1="280" y1="20" x2="20" y2="280" stroke="#C8A96B" stroke-width="0.25"/>
+    </svg>
+  </div>
+
+  <!-- Giant ambient number -->
+  <span class="lux-hero__num" aria-hidden="true">01</span>
+
+  <!-- Main content -->
+  <div class="lux-hero__content">
+    <p class="lux-hero__eyebrow">{{ section.settings.eyebrow }}</p>
+    <h1 class="lux-hero__title">
+      <span class="lux-hero__title-line">
+        <span class="lux-hero__title-line-inner">{{ section.settings.title_line1 }}</span>
+      </span>
+      {%- if section.settings.title_line2 != blank -%}
+        <span class="lux-hero__title-line">
+          <span class="lux-hero__title-line-inner"><em>{{ section.settings.title_line2 }}</em></span>
+        </span>
+      {%- endif -%}
+    </h1>
+    {%- if section.settings.subheading != blank -%}
+      <p class="lux-hero__sub">{{ section.settings.subheading }}</p>
+    {%- endif -%}
+    <div class="lux-hero__cta">
+      {%- if section.settings.cta1_label != blank -%}
+        <a href="{{ section.settings.cta1_url }}" class="lux-hero__cta-primary">
+          {{ section.settings.cta1_label }}
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M1 6.5h11M7 2l5 4.5L7 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      {%- endif -%}
+      {%- if section.settings.cta2_label != blank -%}
+        <a href="{{ section.settings.cta2_url }}" class="lux-hero__cta-secondary">
+          {{ section.settings.cta2_label }}
+        </a>
+      {%- endif -%}
+    </div>
+  </div>
+
+  <!-- Trust -->
+  {%- assign trust_blocks = section.blocks | where: "type", "trust" -%}
+  {%- if trust_blocks.size > 0 -%}
+    <div class="lux-hero__trust">
+      {%- for block in trust_blocks -%}
+        <div class="lux-hero__trust-item" {{ block.shopify_attributes }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          {{ block.settings.text }}
+        </div>
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+
+  <!-- Scroll indicator -->
+  <div class="lux-hero__scroll" aria-hidden="true">
+    <div class="lux-hero__scroll-line"></div>
+    <span class="lux-hero__scroll-label">Défiler</span>
+  </div>
+
+</section>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ── Three.js 3D scene ── */
+  var canvas = document.getElementById('lux-hero-canvas');
+  if (!canvas || typeof THREE === 'undefined') { bootGSAP(); return; }
+
+  var W = window.innerWidth, H = window.innerHeight;
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  var scene  = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  /* Ambient gold particles */
+  var pCount = 380;
+  var pPos   = new Float32Array(pCount * 3);
+  var pSize  = new Float32Array(pCount);
+  for (var i = 0; i < pCount; i++) {
+    pPos[i*3]   = (Math.random() - 0.5) * 22;
+    pPos[i*3+1] = (Math.random() - 0.5) * 14;
+    pPos[i*3+2] = (Math.random() - 0.5) * 10 - 2;
+    pSize[i]    = Math.random() * 2.5 + 0.5;
+  }
+  var pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  pGeo.setAttribute('size',     new THREE.BufferAttribute(pSize, 1));
+  var pMat = new THREE.PointsMaterial({
+    color:       0xC8A96B,
+    size:        0.028,
+    transparent: true,
+    opacity:     0.55,
+    sizeAttenuation: true
+  });
+  var particles = new THREE.Points(pGeo, pMat);
+  scene.add(particles);
+
+  /* Secondary fine dust */
+  var dCount = 200;
+  var dPos   = new Float32Array(dCount * 3);
+  for (var d = 0; d < dCount; d++) {
+    dPos[d*3]   = (Math.random() - 0.5) * 18;
+    dPos[d*3+1] = (Math.random() - 0.5) * 12;
+    dPos[d*3+2] = (Math.random() - 0.5) * 6;
+  }
+  var dGeo = new THREE.BufferGeometry();
+  dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+  var dMat = new THREE.PointsMaterial({ color: 0xE6B566, size: 0.012, transparent: true, opacity: 0.30 });
+  var dust = new THREE.Points(dGeo, dMat);
+  scene.add(dust);
+
+  /* Wireframe pendant lamp (right side) */
+  var lampGroup = new THREE.Group();
+
+  var wireMat   = new THREE.MeshBasicMaterial({ color: 0xC8A96B, wireframe: true, transparent: true, opacity: 0.13 });
+  var wireMat2  = new THREE.MeshBasicMaterial({ color: 0xE6B566, wireframe: true, transparent: true, opacity: 0.09 });
+  var glowMat   = new THREE.MeshBasicMaterial({ color: 0xF0C070, transparent: true, opacity: 0.22 });
+
+  // Pendant shade (cone)
+  var coneGeo  = new THREE.ConeGeometry(1.1, 1.6, 10, 1, true);
+  var cone     = new THREE.Mesh(coneGeo, wireMat);
+  cone.position.y = 0;
+  lampGroup.add(cone);
+
+  // Inner cone (details)
+  var cone2Geo = new THREE.ConeGeometry(0.8, 1.2, 6, 1, true);
+  var cone2    = new THREE.Mesh(cone2Geo, wireMat2);
+  cone2.position.y = 0.1;
+  lampGroup.add(cone2);
+
+  // Top ring
+  var ringGeo  = new THREE.TorusGeometry(0.55, 0.025, 6, 20);
+  var ring     = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xC8A96B, transparent: true, opacity: 0.25 }));
+  ring.position.y = 0.78;
+  lampGroup.add(ring);
+
+  // Cord (cylinder)
+  var cordGeo  = new THREE.CylinderGeometry(0.012, 0.012, 2.2, 4);
+  var cord     = new THREE.Mesh(cordGeo, new THREE.MeshBasicMaterial({ color: 0xC8A96B, transparent: true, opacity: 0.20 }));
+  cord.position.y = 1.9;
+  lampGroup.add(cord);
+
+  // Light bulb (sphere)
+  var bulbGeo  = new THREE.SphereGeometry(0.22, 12, 12);
+  var bulb     = new THREE.Mesh(bulbGeo, glowMat);
+  bulb.position.y = -0.15;
+  lampGroup.add(bulb);
+
+  // Outer sphere (aura)
+  var auraGeo  = new THREE.SphereGeometry(0.45, 8, 8);
+  var auraMat  = new THREE.MeshBasicMaterial({ color: 0xF0C070, wireframe: true, transparent: true, opacity: 0.06 });
+  var aura     = new THREE.Mesh(auraGeo, auraMat);
+  aura.position.y = -0.15;
+  lampGroup.add(aura);
+
+  lampGroup.position.set(2.8, 0.8, -1.5);
+  scene.add(lampGroup);
+
+  /* Second smaller lamp (left, deeper) */
+  var lamp2 = new THREE.Group();
+  var cone3Geo = new THREE.ConeGeometry(0.7, 1.0, 8, 1, true);
+  lamp2.add(new THREE.Mesh(cone3Geo, new THREE.MeshBasicMaterial({ color: 0xC8A96B, wireframe: true, transparent: true, opacity: 0.07 })));
+  var bulb2Geo = new THREE.SphereGeometry(0.13, 8, 8);
+  var bulb2    = new THREE.Mesh(bulb2Geo, new THREE.MeshBasicMaterial({ color: 0xF0C070, transparent: true, opacity: 0.15 }));
+  bulb2.position.y = -0.1;
+  lamp2.add(bulb2);
+  lamp2.position.set(-3.5, 1.5, -3.5);
+  scene.add(lamp2);
+
+  /* Floating geometric ring */
+  var ringBigGeo = new THREE.TorusGeometry(2.2, 0.018, 6, 60);
+  var ringBig    = new THREE.Mesh(ringBigGeo, new THREE.MeshBasicMaterial({ color: 0xC8A96B, transparent: true, opacity: 0.06 }));
+  ringBig.rotation.x = Math.PI / 4;
+  ringBig.position.set(1, -0.5, -3);
+  scene.add(ringBig);
+
+  /* Mouse tracking */
+  var mx = 0, my = 0, tmx = 0, tmy = 0;
+  var mouseGlow = document.getElementById('hero-mouse-glow');
+  var heroEl    = document.getElementById('lux-hero');
+
+  heroEl && heroEl.addEventListener('mousemove', function(e) {
+    mx = (e.clientX / W - 0.5) * 2;
+    my = -(e.clientY / H - 0.5) * 2;
+    if (mouseGlow) {
+      mouseGlow.style.left = e.clientX + 'px';
+      mouseGlow.style.top  = e.clientY + 'px';
+      mouseGlow.style.opacity = '1';
+    }
+  });
+  heroEl && heroEl.addEventListener('mouseleave', function() {
+    if (mouseGlow) mouseGlow.style.opacity = '0';
+  });
+
+  /* Resize */
+  window.addEventListener('resize', function() {
+    W = window.innerWidth; H = window.innerHeight;
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+  });
+
+  /* Animation loop */
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t  = clock.getElapsedTime();
+
+    // Smooth mouse follow
+    tmx += (mx - tmx) * 0.04;
+    tmy += (my - tmy) * 0.04;
+
+    // Particles drift
+    particles.rotation.y = t * 0.012;
+    particles.rotation.x = t * 0.005;
+    dust.rotation.y = -t * 0.008;
+
+    // Main lamp: sway + mouse parallax
+    lampGroup.rotation.y = Math.sin(t * 0.28) * 0.15 + tmx * 0.12;
+    lampGroup.rotation.z = Math.sin(t * 0.18) * 0.04;
+    lampGroup.position.y = 0.8 + Math.sin(t * 0.45) * 0.18;
+    lampGroup.position.x = 2.8 + tmx * 0.3;
+
+    // Bulb pulse
+    var pulse = 0.18 + Math.sin(t * 2.2) * 0.04;
+    bulb.material.opacity = pulse;
+    aura.material.opacity = Math.sin(t * 1.8) * 0.03 + 0.05;
+
+    // Second lamp
+    lamp2.rotation.y = t * 0.1;
+    lamp2.position.y = 1.5 + Math.sin(t * 0.6 + 1.2) * 0.12;
+
+    // Ring
+    ringBig.rotation.y = t * 0.08;
+    ringBig.rotation.z = t * 0.04;
+
+    // Camera parallax
+    camera.position.x += (tmx * 0.4 - camera.position.x) * 0.03;
+    camera.position.y += (tmy * 0.25 - camera.position.y) * 0.03;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  /* ── GSAP entrance animations ── */
+  bootGSAP();
+
+  function bootGSAP() {
+    if (typeof gsap === 'undefined') { fallbackAnim(); return; }
+
+    var hero = document.getElementById('lux-hero');
+    if (!hero) return;
+
+    var tl = gsap.timeline({ delay: 0.25 });
+
+    // Eyebrow
+    tl.to('.lux-hero__eyebrow', { opacity: 1, x: 0, duration: 0.9, ease: 'power3.out' }, 0);
+
+    // Title lines
+    tl.to('.lux-hero__title-line-inner', {
+      opacity: 1, y: '0%', duration: 1.1, stagger: 0.14, ease: 'power4.out'
+    }, 0.2);
+
+    // Subheading
+    tl.to('.lux-hero__sub', { opacity: 1, y: 0, duration: 1.0, ease: 'power3.out' }, 0.55);
+
+    // CTAs
+    tl.to('.lux-hero__cta', { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }, 0.75);
+
+    // Trust row
+    tl.to('.lux-hero__trust', { opacity: 1, duration: 1.1, ease: 'power2.out' }, 1.0);
+
+    // Scroll indicator
+    tl.to('.lux-hero__scroll', { opacity: 1, duration: 0.8, ease: 'power2.out' }, 1.2);
+
+    // Geometry
+    tl.to('.lux-hero__geometry', { opacity: 1, duration: 2.0, ease: 'power1.out' }, 0.4);
+
+    // Title underline trigger
+    setTimeout(function() {
+      hero.classList.add('lux-hero--animated');
+    }, 1800);
+  }
+
+  function fallbackAnim() {
+    var els = document.querySelectorAll('.lux-hero__eyebrow,.lux-hero__title-line-inner,.lux-hero__sub,.lux-hero__cta,.lux-hero__trust,.lux-hero__scroll,.lux-hero__geometry');
+    els.forEach(function(el, i) {
+      setTimeout(function() {
+        el.style.transition = 'opacity 0.9s ease, transform 0.9s ease';
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      }, i * 120);
+    });
+  }
+
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Hero cinématique 3D",
+  "tag": "div",
+  "settings": [
+    { "type": "text",         "id": "eyebrow",     "label": "Surtitre",                        "default": "Éclairage de prestige" },
+    { "type": "text",         "id": "title_line1", "label": "Titre — Ligne 1",                 "default": "La lumière comme" },
+    { "type": "text",         "id": "title_line2", "label": "Titre — Ligne 2 (italique doré)", "default": "art de vivre" },
+    { "type": "textarea",     "id": "subheading",  "label": "Sous-titre",                      "default": "Des luminaires de designers internationaux pour transformer chaque espace en une expérience sensorielle unique." },
+    { "type": "text",         "id": "cta1_label",  "label": "Bouton principal — Texte",        "default": "Découvrir les collections" },
+    { "type": "url",          "id": "cta1_url",    "label": "Bouton principal — URL" },
+    { "type": "text",         "id": "cta2_label",  "label": "Bouton secondaire — Texte",       "default": "Notre univers" },
+    { "type": "url",          "id": "cta2_url",    "label": "Bouton secondaire — URL" },
+    { "type": "image_picker", "id": "image",       "label": "Image de fond" },
+    { "type": "text",         "id": "image_alt",   "label": "Texte alt image",                 "default": "Luminaire de prestige" },
+    { "type": "text",         "id": "video",       "label": "URL vidéo MP4 (prioritaire)" }
+  ],
+  "blocks": [
+    {
+      "type": "trust",
+      "name": "Badge de confiance",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Texte", "default": "Livraison offerte dès 500€" }
+      ]
+    }
+  ],
+  "max_blocks": 4,
+  "presets": [
+    {
+      "name": "Hero cinématique 3D",
+      "blocks": [
+        { "type": "trust", "settings": { "text": "Livraison offerte dès 500€" } },
+        { "type": "trust", "settings": { "text": "Garantie 5 ans" } },
+        { "type": "trust", "settings": { "text": "Designers certifiés" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
