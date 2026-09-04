@@ -262,7 +262,9 @@
               {% if product.compare_at_price > product.price %}
                 <span class="prod-card__badge">Promo</span>
               {% endif %}
-              {% if product.created_at > 'now' | date: '%s' | minus: 2592000 | date: '%Y-%m-%dT%H:%M:%SZ' %}
+              {% assign days_old = product.created_at | date: '%s' | plus: 0 %}
+              {% assign cutoff = 'now' | date: '%s' | minus: 2592000 %}
+              {% if days_old > cutoff %}
                 <span class="prod-card__badge prod-card__badge--new">Nouveau</span>
               {% endif %}
 
