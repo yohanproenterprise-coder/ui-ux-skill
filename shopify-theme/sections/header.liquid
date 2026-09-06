@@ -258,6 +258,244 @@
 })();
 </script>
 
+<!-- ═══════════════════════════════ CART DRAWER ═══════════════════════════════ -->
+<style>
+.cart-drawer-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(10,7,4,.55); backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .4s ease;
+}
+.cart-drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+.cart-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(420px, 100vw);
+  background: #FDFAF5;
+  z-index: 601;
+  display: flex; flex-direction: column;
+  transform: translateX(105%);
+  transition: transform .5s cubic-bezier(.16,1,.3,1);
+  box-shadow: -20px 0 80px rgba(10,7,4,.25);
+}
+.cart-drawer.open { transform: none; }
+
+.cart-drawer__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 28px;
+  border-bottom: 1px solid rgba(22,18,13,.08);
+  flex-shrink: 0;
+}
+.cart-drawer__head-title {
+  font-size: .8rem; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: #2A1C10;
+}
+.cart-drawer__head-count {
+  font-size: .7rem; color: #8a7060; margin-left: 6px;
+}
+.cart-drawer__close {
+  background: none; border: none; cursor: pointer;
+  color: #8a7060; padding: 6px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s, color .2s;
+}
+.cart-drawer__close:hover { background: rgba(22,18,13,.06); color: #2A1C10; }
+
+.cart-drawer__items {
+  flex: 1; overflow-y: auto; padding: 16px 28px;
+}
+.cart-drawer__items::-webkit-scrollbar { width: 4px; }
+.cart-drawer__items::-webkit-scrollbar-thumb { background: rgba(196,150,58,.3); border-radius: 4px; }
+
+.cart-drawer__empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 14px; color: #8a7060;
+}
+.cart-drawer__empty-icon { font-size: 3rem; opacity: .18; }
+.cart-drawer__empty-text { font-size: .82rem; }
+.cart-drawer__empty a {
+  font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: #C4963A; text-decoration: none; border-bottom: 1px solid rgba(196,150,58,.3);
+}
+
+.cart-item {
+  display: flex; gap: 14px; padding: 16px 0;
+  border-bottom: 1px solid rgba(22,18,13,.07);
+}
+.cart-item__img {
+  width: 72px; height: 72px; flex-shrink: 0;
+  border-radius: 10px; object-fit: cover; background: #F5EDE0;
+}
+.cart-item__info { flex: 1; min-width: 0; }
+.cart-item__title {
+  font-size: .82rem; font-weight: 600; color: #2A1C10;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
+}
+.cart-item__variant { font-size: .72rem; color: #8a7060; margin-bottom: 8px; }
+.cart-item__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cart-item__price { font-size: .88rem; font-weight: 700; color: #C4963A; }
+.cart-item__qty-row { display: flex; align-items: center; gap: 6px; }
+.cart-item__qty-btn {
+  width: 28px; height: 28px; border: 1px solid rgba(22,18,13,.15);
+  background: transparent; border-radius: 50%; font-size: 16px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #2A1C10; transition: all .2s; font-family: inherit; padding: 0;
+}
+.cart-item__qty-btn:hover { background: #2A1C10; color: #fff; border-color: #2A1C10; }
+.cart-item__qty-num { font-size: .82rem; font-weight: 600; color: #2A1C10; min-width: 20px; text-align: center; }
+.cart-item__remove {
+  background: none; border: none; cursor: pointer; color: #b0a090; padding: 4px;
+  font-size: 16px; line-height: 1; transition: color .2s; flex-shrink: 0;
+}
+.cart-item__remove:hover { color: #e8472a; }
+
+.cart-drawer__foot {
+  border-top: 1px solid rgba(22,18,13,.08);
+  padding: 20px 28px; flex-shrink: 0;
+  background: #FDFAF5;
+}
+.cart-drawer__subtotal {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.cart-drawer__subtotal-label { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #8a7060; }
+.cart-drawer__subtotal-price { font-size: 1.1rem; font-weight: 700; color: #2A1C10; }
+.cart-drawer__shipping-note { font-size: .68rem; color: #b0a090; margin-bottom: 16px; }
+.cart-drawer__checkout {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 17px;
+  background: linear-gradient(135deg,#C4963A,#d9b16e);
+  color: #fff; border: none; border-radius: 999px;
+  font-weight: 800; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 10px 28px rgba(196,150,58,.35);
+  text-decoration: none;
+  transition: transform .18s, box-shadow .18s;
+}
+.cart-drawer__checkout:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(196,150,58,.45); }
+.cart-drawer__view {
+  display: block; text-align: center; margin-top: 10px;
+  font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: #8a7060; text-decoration: none; transition: color .2s;
+}
+.cart-drawer__view:hover { color: #2A1C10; }
+</style>
+
+<div class="cart-drawer-overlay" id="cartOverlay"></div>
+<div class="cart-drawer" id="cartDrawer" aria-label="Panier" role="dialog" aria-modal="true">
+  <div class="cart-drawer__head">
+    <span>
+      <span class="cart-drawer__head-title">Mon panier</span>
+      <span class="cart-drawer__head-count" id="drawerCount"></span>
+    </span>
+    <button class="cart-drawer__close" id="cartDrawerClose" aria-label="Fermer le panier">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cart-drawer__items" id="cartDrawerItems">
+    <div class="cart-drawer__empty">
+      <span class="cart-drawer__empty-icon">✦</span>
+      <span class="cart-drawer__empty-text">Votre panier est vide</span>
+      <a href="/collections/all">Découvrir nos luminaires</a>
+    </div>
+  </div>
+  <div class="cart-drawer__foot" id="cartDrawerFoot" style="display:none;">
+    <div class="cart-drawer__subtotal">
+      <span class="cart-drawer__subtotal-label">Sous-total</span>
+      <span class="cart-drawer__subtotal-price" id="drawerTotal"></span>
+    </div>
+    <p class="cart-drawer__shipping-note">Livraison offerte dès 150 €</p>
+    <a class="cart-drawer__checkout" href="/checkout">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Passer commande
+    </a>
+    <a class="cart-drawer__view" href="/cart">Voir le panier complet</a>
+  </div>
+</div>
+
+<script>
+(function(){
+  var overlay  = document.getElementById('cartOverlay');
+  var drawer   = document.getElementById('cartDrawer');
+  var closeBtn = document.getElementById('cartDrawerClose');
+  var itemsEl  = document.getElementById('cartDrawerItems');
+  var footEl   = document.getElementById('cartDrawerFoot');
+  var totalEl  = document.getElementById('drawerTotal');
+  var countEl  = document.getElementById('drawerCount');
+  var headerCount = document.getElementById('headerCartCount');
+
+  function fmt(cents){ return (cents/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+
+  function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow=''; }
+  function openDrawer(){  drawer.classList.add('open');    overlay.classList.add('open');    document.body.style.overflow='hidden'; renderCart(); }
+
+  window.openCartDrawer = openDrawer;
+
+  overlay.addEventListener('click', closeDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDrawer(); });
+
+  /* Intercept header cart icon */
+  document.querySelectorAll('.header-luxe__cart').forEach(function(el){
+    el.addEventListener('click',function(e){ e.preventDefault(); openDrawer(); });
+  });
+
+  function renderCart(){
+    fetch('/cart.js').then(function(r){ return r.json(); }).then(function(cart){
+      var n=cart.item_count;
+      if(headerCount) headerCount.textContent=n>0?n:'';
+      if(countEl) countEl.textContent=n>0?'('+n+')':'';
+
+      if(n===0){
+        itemsEl.innerHTML='<div class="cart-drawer__empty"><span class="cart-drawer__empty-icon">✦</span><span class="cart-drawer__empty-text">Votre panier est vide</span><a href="/collections/all">Découvrir nos luminaires</a></div>';
+        if(footEl) footEl.style.display='none';
+        return;
+      }
+      if(footEl) footEl.style.display='block';
+      if(totalEl) totalEl.textContent=fmt(cart.total_price);
+
+      var html='';
+      cart.items.forEach(function(item){
+        var img=item.image?('<img class="cart-item__img" src="'+item.image.replace(/(\.\w+)$/,'_72x72$1')+'" alt="'+item.title+'" loading="lazy">'):'<div class="cart-item__img" style="background:#F5EDE0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;opacity:.15;">✦</div>';
+        var variant=item.variant_title&&item.variant_title!=='Default Title'?'<div class="cart-item__variant">'+item.variant_title+'</div>':'';
+        html+='<div class="cart-item" data-key="'+item.key+'">'
+          +img
+          +'<div class="cart-item__info">'
+            +'<div class="cart-item__title">'+item.product_title+'</div>'
+            +variant
+            +'<div class="cart-item__row">'
+              +'<span class="cart-item__price">'+fmt(item.final_line_price)+'</span>'
+              +'<div class="cart-item__qty-row">'
+                +'<button class="cart-item__qty-btn" onclick="cdQty(\''+item.key+'\','+item.quantity+',false)">−</button>'
+                +'<span class="cart-item__qty-num">'+item.quantity+'</span>'
+                +'<button class="cart-item__qty-btn" onclick="cdQty(\''+item.key+'\','+item.quantity+',true)">+</button>'
+              +'</div>'
+              +'<button class="cart-item__remove" onclick="cdRemove(\''+item.key+'\')" aria-label="Retirer">✕</button>'
+            +'</div>'
+          +'</div>'
+        +'</div>';
+      });
+      itemsEl.innerHTML=html;
+    });
+  }
+
+  window.cdQty=function(key,qty,inc){
+    var newQty=inc?qty+1:(qty>1?qty-1:0);
+    fetch('/cart/change.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,quantity:newQty})})
+      .then(function(r){ return r.json(); }).then(function(){ renderCart(); });
+  };
+  window.cdRemove=function(key){
+    fetch('/cart/change.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:key,quantity:0})})
+      .then(function(r){ return r.json(); }).then(function(){ renderCart(); });
+  };
+
+  /* Init count on page load */
+  fetch('/cart.js').then(function(r){ return r.json(); }).then(function(c){
+    if(headerCount) headerCount.textContent=c.item_count>0?c.item_count:'';
+  });
+})();
+</script>
+
 {% schema %}
 {
   "name": "Header luxe",

@@ -1,0 +1,275 @@
+<style>
+.fp-section {
+  padding: 80px 0;
+  background: {{ section.settings.bg_color | default: '#FDFAF5' }};
+}
+.fp-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.fp-header .eyebrow { margin-bottom: 10px; }
+.fp-header__title {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 300; color: #2A1C10; margin: 0 0 12px;
+}
+.fp-header__sub {
+  font-size: .88rem; color: #8a7060; max-width: 440px; margin: 0 auto; line-height: 1.7;
+}
+
+/* Tabs */
+.fp-tabs {
+  display: flex; justify-content: center; gap: 6px;
+  margin-bottom: 36px;
+}
+.fp-tab {
+  font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: #8a7060; background: none; border: 1px solid rgba(22,18,13,.12);
+  border-radius: 999px; padding: 8px 18px; cursor: pointer; font-family: inherit;
+  transition: all .25s ease;
+}
+.fp-tab.active, .fp-tab:hover {
+  background: #2A1C10; color: #fff; border-color: #2A1C10;
+}
+
+/* Grid */
+.fp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+@media(max-width:1024px){ .fp-grid { grid-template-columns: repeat(3,1fr); } }
+@media(max-width:700px)  { .fp-grid { grid-template-columns: repeat(2,1fr); gap: 14px; } }
+
+/* Card */
+.fp-card {
+  text-decoration: none; color: inherit;
+  display: flex; flex-direction: column;
+}
+.fp-card__img-wrap {
+  position: relative;
+  border-radius: 16px; overflow: hidden;
+  aspect-ratio: 3/4; background: #F5EDE0; margin-bottom: 14px;
+}
+.fp-card__img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform .7s cubic-bezier(.25,.46,.45,.94);
+}
+.fp-card:hover .fp-card__img { transform: scale(1.07); }
+
+.fp-card__badge {
+  position: absolute; top: 12px; left: 12px;
+  font-size: .56rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 20px; z-index: 2;
+}
+.fp-card__badge--new  { background: #2A1C10; color: #C4963A; }
+.fp-card__badge--sale { background: #e8472a; color: #fff; }
+
+.fp-card__quick-add {
+  position: absolute; bottom: 12px; left: 12px; right: 12px;
+  background: rgba(10,7,4,.82); backdrop-filter: blur(8px);
+  color: #C4963A; border: 1px solid rgba(196,150,58,.3);
+  border-radius: 12px; padding: 11px 16px;
+  font-size: .62rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; font-family: inherit;
+  opacity: 0; transform: translateY(6px);
+  transition: opacity .3s ease, transform .3s ease;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.fp-card:hover .fp-card__quick-add { opacity: 1; transform: translateY(0); }
+.fp-card__quick-add:hover { background: #C4963A; color: #fff; border-color: #C4963A; }
+
+.fp-card__type {
+  font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  color: #C4963A; margin-bottom: 5px;
+}
+.fp-card__title {
+  font-size: .95rem; font-weight: 600; color: #2A1C10;
+  margin-bottom: 6px; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fp-card__price-row { display: flex; align-items: center; gap: 8px; }
+.fp-card__price { font-size: .9rem; font-weight: 700; color: #2A1C10; }
+.fp-card__compare { font-size: .82rem; color: #b0a090; text-decoration: line-through; }
+
+/* CTA */
+.fp-cta {
+  text-align: center; margin-top: 48px;
+}
+.fp-cta a {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: #2A1C10; text-decoration: none; border-bottom: 1px solid rgba(42,28,16,.3);
+  padding-bottom: 3px; transition: gap .3s, border-color .3s;
+}
+.fp-cta a:hover { gap: 16px; border-color: #C4963A; color: #C4963A; }
+.fp-cta svg { width: 13px; height: 13px; flex-shrink: 0; }
+</style>
+
+{% assign fp_col = collections[section.settings.collection] %}
+{% assign fp_col2 = collections[section.settings.collection_2] %}
+
+<section class="fp-section">
+  <div class="page-width">
+
+    <div class="fp-header">
+      <div class="eyebrow">{{ section.settings.eyebrow | default: 'Sélection' }}</div>
+      <h2 class="fp-header__title">{{ section.settings.title | default: 'Nos coups de cœur' }}</h2>
+      {% if section.settings.subtitle != blank %}
+        <p class="fp-header__sub">{{ section.settings.subtitle }}</p>
+      {% endif %}
+    </div>
+
+    {% if fp_col2 %}
+    <div class="fp-tabs">
+      <button class="fp-tab active" data-fp-tab="col1">{{ section.settings.tab1_label | default: 'Nouveautés' }}</button>
+      <button class="fp-tab" data-fp-tab="col2">{{ section.settings.tab2_label | default: 'Bestsellers' }}</button>
+    </div>
+    {% endif %}
+
+    <div class="fp-grid" id="fp-col1">
+      {% assign count = 0 %}
+      {% for product in fp_col.products %}
+        {% if count < section.settings.products_count %}
+          {% assign count = count | plus: 1 %}
+          <a class="fp-card" href="{{ product.url }}">
+            <div class="fp-card__img-wrap">
+              {% if product.featured_image %}
+                <img class="fp-card__img"
+                     src="{{ product.featured_image | image_url: width: 700 }}"
+                     alt="{{ product.featured_image.alt | default: product.title | escape }}"
+                     loading="lazy" width="700">
+              {% else %}
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:.1;">✦</div>
+              {% endif %}
+
+              {% if product.compare_at_price > product.price %}
+                <span class="fp-card__badge fp-card__badge--sale">Promo</span>
+              {% else %}
+                <span class="fp-card__badge fp-card__badge--new">Nouveau</span>
+              {% endif %}
+
+              <button class="fp-card__quick-add"
+                      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+                      data-product-title="{{ product.title | escape }}"
+                      onclick="event.preventDefault(); fpQuickAdd(this);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Ajouter
+              </button>
+            </div>
+            <div class="fp-card__type">{{ product.type | default: 'Luminaire' }}</div>
+            <div class="fp-card__title">{{ product.title }}</div>
+            <div class="fp-card__price-row">
+              <span class="fp-card__price">{{ product.price | money }}</span>
+              {% if product.compare_at_price > product.price %}
+                <span class="fp-card__compare">{{ product.compare_at_price | money }}</span>
+              {% endif %}
+            </div>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if fp_col2 %}
+    <div class="fp-grid" id="fp-col2" style="display:none;">
+      {% assign count2 = 0 %}
+      {% for product in fp_col2.products %}
+        {% if count2 < section.settings.products_count %}
+          {% assign count2 = count2 | plus: 1 %}
+          <a class="fp-card" href="{{ product.url }}">
+            <div class="fp-card__img-wrap">
+              {% if product.featured_image %}
+                <img class="fp-card__img"
+                     src="{{ product.featured_image | image_url: width: 700 }}"
+                     alt="{{ product.featured_image.alt | default: product.title | escape }}"
+                     loading="lazy" width="700">
+              {% else %}
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:.1;">✦</div>
+              {% endif %}
+              <button class="fp-card__quick-add"
+                      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+                      data-product-title="{{ product.title | escape }}"
+                      onclick="event.preventDefault(); fpQuickAdd(this);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Ajouter
+              </button>
+            </div>
+            <div class="fp-card__type">{{ product.type | default: 'Luminaire' }}</div>
+            <div class="fp-card__title">{{ product.title }}</div>
+            <div class="fp-card__price-row">
+              <span class="fp-card__price">{{ product.price | money }}</span>
+            </div>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if section.settings.cta_label != blank %}
+    <div class="fp-cta">
+      <a href="{{ section.settings.cta_url | default: '/collections/all' }}">
+        {{ section.settings.cta_label }}
+        <svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 6.5h11M7 2l5 4.5L7 11"/>
+        </svg>
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+<script>
+/* Tabs */
+(function(){
+  var tabs  = Array.from(document.querySelectorAll('[data-fp-tab]'));
+  var grids = { col1: document.getElementById('fp-col1'), col2: document.getElementById('fp-col2') };
+  tabs.forEach(function(btn){
+    btn.addEventListener('click',function(){
+      tabs.forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      Object.keys(grids).forEach(function(k){ if(grids[k]) grids[k].style.display='none'; });
+      var g=grids[this.dataset.fpTab];
+      if(g) g.style.display='grid';
+    });
+  });
+})();
+
+/* Quick add */
+function fpQuickAdd(btn){
+  var id=parseInt(btn.dataset.variantId);
+  var orig=btn.textContent;
+  btn.textContent='...';
+  fetch('/cart/add.js',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,quantity:1})})
+    .then(function(r){ return r.json(); })
+    .then(function(){
+      btn.textContent='✓ Ajouté';
+      if(typeof window.openCartDrawer==='function') window.openCartDrawer();
+      fetch('/cart.js').then(function(r){ return r.json(); }).then(function(c){
+        var cnt=document.getElementById('headerCartCount');
+        if(cnt) cnt.textContent=c.item_count>0?c.item_count:'';
+      });
+      setTimeout(function(){ btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Ajouter'; }, 2000);
+    })
+    .catch(function(){ btn.textContent=orig; });
+}
+</script>
+
+{% schema %}
+{
+  "name": "Produits vedettes",
+  "settings": [
+    { "type": "text",        "id": "eyebrow",          "label": "Eyebrow",                  "default": "Sélection" },
+    { "type": "text",        "id": "title",            "label": "Titre",                    "default": "Nos coups de cœur" },
+    { "type": "textarea",    "id": "subtitle",         "label": "Sous-titre" },
+    { "type": "collection",  "id": "collection",       "label": "Collection principale" },
+    { "type": "text",        "id": "tab1_label",       "label": "Onglet 1",                 "default": "Nouveautés" },
+    { "type": "collection",  "id": "collection_2",     "label": "2e collection (optionnel)" },
+    { "type": "text",        "id": "tab2_label",       "label": "Onglet 2",                 "default": "Bestsellers" },
+    { "type": "range",       "id": "products_count",   "label": "Nb produits à afficher",   "min": 4, "max": 12, "step": 4, "default": 8 },
+    { "type": "text",        "id": "cta_label",        "label": "Texte bouton CTA",         "default": "Voir toute la collection" },
+    { "type": "url",         "id": "cta_url",          "label": "Lien CTA" },
+    { "type": "color",       "id": "bg_color",         "label": "Couleur de fond",          "default": "#FDFAF5" }
+  ],
+  "presets": [{ "name": "Produits vedettes" }]
+}
+{% endschema %}

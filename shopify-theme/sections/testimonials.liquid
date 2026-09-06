@@ -1,0 +1,230 @@
+<style>
+.testi-section {
+  padding: 88px 0;
+  background: {{ section.settings.bg | default: '#0F0A06' }};
+  position: relative; overflow: hidden;
+}
+
+/* Subtle ambient glow */
+.testi-section::before {
+  content: '';
+  position: absolute;
+  top: -40%; left: 50%;
+  transform: translateX(-50%);
+  width: 60vw; height: 60vw;
+  background: radial-gradient(circle, rgba(196,150,58,.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.testi-header {
+  text-align: center;
+  margin-bottom: 56px;
+  position: relative;
+}
+.testi-header .eyebrow { margin-bottom: 12px; color: rgba(196,150,58,.8); }
+.testi-header__title {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 300; color: #F5F1EA; margin: 0;
+}
+
+/* Stats row */
+.testi-stats {
+  display: flex; justify-content: center;
+  gap: 56px; margin-bottom: 60px;
+}
+.testi-stat { text-align: center; }
+.testi-stat__num {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 300; color: #C4963A; display: block; line-height: 1;
+}
+.testi-stat__label {
+  font-size: .65rem; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: rgba(245,241,234,.4); margin-top: 6px;
+}
+@media(max-width:600px){ .testi-stats { gap: 28px; } }
+
+/* Grid */
+.testi-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 20px;
+}
+@media(max-width:900px){ .testi-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:560px){ .testi-grid { grid-template-columns: 1fr; } }
+
+.testi-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(196,150,58,.12);
+  border-radius: 20px; padding: 28px;
+  position: relative;
+  transition: border-color .3s ease, background .3s ease;
+}
+.testi-card:hover {
+  border-color: rgba(196,150,58,.28);
+  background: rgba(255,255,255,.06);
+}
+
+.testi-card__stars {
+  color: #C4963A; font-size: .9rem; letter-spacing: 3px;
+  margin-bottom: 16px; display: block;
+}
+.testi-card__quote {
+  font-size: .88rem; line-height: 1.8; color: rgba(245,241,234,.75);
+  font-style: italic; margin-bottom: 20px;
+}
+.testi-card__author {
+  display: flex; align-items: center; gap: 12px;
+}
+.testi-card__avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, rgba(196,150,58,.3), rgba(196,150,58,.1));
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; color: #C4963A; font-weight: 700; flex-shrink: 0;
+}
+.testi-card__name {
+  font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: #F5F1EA; margin-bottom: 2px;
+}
+.testi-card__city {
+  font-size: .68rem; color: rgba(245,241,234,.4); letter-spacing: .04em;
+}
+
+/* Verified badge */
+.testi-card__verified {
+  position: absolute; top: 20px; right: 20px;
+  font-size: .58rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(196,150,58,.7);
+  background: rgba(196,150,58,.08); border: 1px solid rgba(196,150,58,.15);
+  padding: 3px 8px; border-radius: 20px;
+}
+</style>
+
+<section class="testi-section">
+  <div class="page-width">
+
+    <div class="testi-header">
+      <div class="eyebrow">{{ section.settings.eyebrow | default: 'Témoignages' }}</div>
+      <h2 class="testi-header__title">{{ section.settings.title | default: 'Ce que disent nos clients' }}</h2>
+    </div>
+
+    <div class="testi-stats">
+      <div class="testi-stat">
+        <span class="testi-stat__num">{{ section.settings.stat1_num | default: '4.9' }}</span>
+        <div class="testi-stat__label">{{ section.settings.stat1_label | default: 'Note moyenne' }}</div>
+      </div>
+      <div class="testi-stat">
+        <span class="testi-stat__num">{{ section.settings.stat2_num | default: '2 400+' }}</span>
+        <div class="testi-stat__label">{{ section.settings.stat2_label | default: 'Clients satisfaits' }}</div>
+      </div>
+      <div class="testi-stat">
+        <span class="testi-stat__num">{{ section.settings.stat3_num | default: '98%' }}</span>
+        <div class="testi-stat__label">{{ section.settings.stat3_label | default: 'Recommandent' }}</div>
+      </div>
+    </div>
+
+    <div class="testi-grid">
+      {% for i in (1..6) %}
+        {% assign qkey = 'review_' | append: i | append: '_text' %}
+        {% assign akey = 'review_' | append: i | append: '_author' %}
+        {% assign ckey = 'review_' | append: i | append: '_city' %}
+        {% if section.settings[qkey] != blank %}
+          <div class="testi-card">
+            <span class="testi-card__verified">✓ Vérifié</span>
+            <span class="testi-card__stars">★★★★★</span>
+            <p class="testi-card__quote">"{{ section.settings[qkey] }}"</p>
+            <div class="testi-card__author">
+              <div class="testi-card__avatar">{{ section.settings[akey] | default: 'C' | slice: 0 }}</div>
+              <div>
+                <div class="testi-card__name">{{ section.settings[akey] | default: 'Client vérifié' }}</div>
+                <div class="testi-card__city">{{ section.settings[ckey] }}</div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      {% if section.settings.review_1_text == blank %}
+        <div class="testi-card">
+          <span class="testi-card__verified">✓ Vérifié</span>
+          <span class="testi-card__stars">★★★★★</span>
+          <p class="testi-card__quote">"Une qualité qui dépasse toutes mes attentes. Ma suspension est arrivée en 2 jours, parfaitement emballée. Mon salon est transformé."</p>
+          <div class="testi-card__author">
+            <div class="testi-card__avatar">M</div>
+            <div>
+              <div class="testi-card__name">Marie L.</div>
+              <div class="testi-card__city">Paris, 7e</div>
+            </div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <span class="testi-card__verified">✓ Vérifié</span>
+          <span class="testi-card__stars">★★★★★</span>
+          <p class="testi-card__quote">"Service client réactif, livraison express. La finition est impeccable — exactement comme sur les photos, voire encore plus belle en vrai."</p>
+          <div class="testi-card__author">
+            <div class="testi-card__avatar">T</div>
+            <div>
+              <div class="testi-card__name">Thomas R.</div>
+              <div class="testi-card__city">Lyon, Confluence</div>
+            </div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <span class="testi-card__verified">✓ Vérifié</span>
+          <span class="testi-card__stars">★★★★★</span>
+          <p class="testi-card__quote">"J'ai commandé deux appliques pour ma salle de bain. Le résultat est digne d'un hôtel 5 étoiles. Je recommande sans hésiter."</p>
+          <div class="testi-card__author">
+            <div class="testi-card__avatar">C</div>
+            <div>
+              <div class="testi-card__name">Camille D.</div>
+              <div class="testi-card__city">Bordeaux</div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Témoignages",
+  "settings": [
+    { "type": "text",  "id": "eyebrow", "label": "Eyebrow",  "default": "Témoignages" },
+    { "type": "text",  "id": "title",   "label": "Titre",    "default": "Ce que disent nos clients" },
+    { "type": "color", "id": "bg",      "label": "Fond",     "default": "#0F0A06" },
+    { "type": "header","content": "Statistiques" },
+    { "type": "text",  "id": "stat1_num",   "label": "Stat 1 — nombre", "default": "4.9" },
+    { "type": "text",  "id": "stat1_label", "label": "Stat 1 — label",  "default": "Note moyenne" },
+    { "type": "text",  "id": "stat2_num",   "label": "Stat 2 — nombre", "default": "2 400+" },
+    { "type": "text",  "id": "stat2_label", "label": "Stat 2 — label",  "default": "Clients satisfaits" },
+    { "type": "text",  "id": "stat3_num",   "label": "Stat 3 — nombre", "default": "98%" },
+    { "type": "text",  "id": "stat3_label", "label": "Stat 3 — label",  "default": "Recommandent" },
+    { "type": "header","content": "Avis 1" },
+    { "type": "textarea","id": "review_1_text",   "label": "Texte" },
+    { "type": "text",   "id": "review_1_author", "label": "Prénom Nom" },
+    { "type": "text",   "id": "review_1_city",   "label": "Ville" },
+    { "type": "header","content": "Avis 2" },
+    { "type": "textarea","id": "review_2_text",   "label": "Texte" },
+    { "type": "text",   "id": "review_2_author", "label": "Prénom Nom" },
+    { "type": "text",   "id": "review_2_city",   "label": "Ville" },
+    { "type": "header","content": "Avis 3" },
+    { "type": "textarea","id": "review_3_text",   "label": "Texte" },
+    { "type": "text",   "id": "review_3_author", "label": "Prénom Nom" },
+    { "type": "text",   "id": "review_3_city",   "label": "Ville" },
+    { "type": "header","content": "Avis 4" },
+    { "type": "textarea","id": "review_4_text",   "label": "Texte" },
+    { "type": "text",   "id": "review_4_author", "label": "Prénom Nom" },
+    { "type": "text",   "id": "review_4_city",   "label": "Ville" },
+    { "type": "header","content": "Avis 5" },
+    { "type": "textarea","id": "review_5_text",   "label": "Texte" },
+    { "type": "text",   "id": "review_5_author", "label": "Prénom Nom" },
+    { "type": "text",   "id": "review_5_city",   "label": "Ville" },
+    { "type": "header","content": "Avis 6" },
+    { "type": "textarea","id": "review_6_text",   "label": "Texte" },
+    { "type": "text",   "id": "review_6_author", "label": "Prénom Nom" },
+    { "type": "text",   "id": "review_6_city",   "label": "Ville" }
+  ],
+  "presets": [{ "name": "Témoignages" }]
+}
+{% endschema %}
