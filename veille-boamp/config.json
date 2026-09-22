@@ -1,0 +1,24 @@
+{
+  "niche": "Nettoyage et propreté",
+  "jours": 7,
+  "mots_cles": [
+    "nettoyage",
+    "propreté",
+    "entretien des locaux",
+    "entretien ménager",
+    "vitrerie",
+    "lavage des vitres",
+    "désinfection",
+    "hygiène des locaux"
+  ],
+  "mots_exclus": [
+    "voirie",
+    "assainissement",
+    "curage",
+    "canalisations",
+    "espaces verts"
+  ],
+  "departements": ["75", "92", "93", "94"],
+  "zone_stricte": true,
+  "delai_min_jours": 7
+}
