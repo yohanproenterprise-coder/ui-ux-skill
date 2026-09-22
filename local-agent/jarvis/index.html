@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis</title>
+<style>
+:root {
+  --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --border: #2a2f3a;
+  --text: #e6e8ee; --muted: #8b93a5; --accent: #6ea8fe; --accent-ink: #0b1220;
+  --ok: #4cc38a; --warn: #f0b429; --err: #f06a6a; --user: #25406b;
+  --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f0f2f5; --border: #dde1e8;
+    --text: #1b1f27; --muted: #5f6878; --accent: #2f6fdb; --accent-ink: #ffffff;
+    --user: #dbe7fb;
+  }
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
+       display: flex; flex-direction: column; }
+header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border);
+         background: var(--panel); flex-wrap: wrap; }
+header h1 { font-size: 17px; margin: 0; letter-spacing: .5px; flex: 1; min-width: 0; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; }
+header h1 span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+select, button, textarea, input { font: inherit; color: var(--text); }
+select, .btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+               cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+main { flex: 1; overflow-y: auto; padding: 20px 16px 8px; }
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.msg { padding: 10px 14px; border-radius: 12px; max-width: 100%; overflow-wrap: anywhere; }
+.user { background: var(--user); align-self: flex-end; max-width: 80%; white-space: pre-wrap; }
+.bot { background: var(--panel); border: 1px solid var(--border); }
+.bot p { margin: .4em 0; }
+.bot pre { background: var(--panel-2); padding: 10px; border-radius: 8px; overflow-x: auto; font: 13px/1.45 var(--mono); }
+.bot code { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+.bot pre code { background: none; padding: 0; }
+.bot a { color: var(--accent); }
+details.tool { border: 1px dashed var(--border); border-radius: 10px; padding: 6px 12px; color: var(--muted);
+               font-size: 13px; }
+details.tool summary { cursor: pointer; font-family: var(--mono); white-space: nowrap; overflow: hidden;
+                       text-overflow: ellipsis; }
+details.tool pre { white-space: pre-wrap; font: 12px/1.4 var(--mono); max-height: 320px; overflow: auto; }
+.info { color: var(--muted); font-size: 13px; text-align: center; }
+.info.warn { color: var(--warn); } .info.error { color: var(--err); }
+#plan { position: sticky; top: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+        padding: 8px 14px; font-size: 13px; display: none; z-index: 2; }
+#plan div { color: var(--muted); } #plan .en_cours { color: var(--text); font-weight: 600; }
+#plan .fait { color: var(--ok); text-decoration: line-through; }
+footer { padding: 10px 16px 14px; background: var(--bg); }
+.bar { max-width: 860px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; background: var(--panel);
+       border: 1px solid var(--border); border-radius: 14px; padding: 8px; }
+textarea { flex: 1; resize: none; border: 0; background: transparent; outline: none; max-height: 200px;
+           padding: 6px; min-height: 36px; }
+.icon { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2);
+        cursor: pointer; font-size: 17px; flex: none; }
+.icon.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.icon.rec { background: var(--err); color: #fff; }
+#thumbs { max-width: 860px; margin: 0 auto 6px; display: flex; gap: 6px; }
+#thumbs img { height: 54px; border-radius: 6px; border: 1px solid var(--border); }
+.typing::after { content: "▍"; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 14px;
+         max-width: min(560px, 92vw); padding: 18px; }
+dialog::backdrop { background: rgba(0,0,0,.5); }
+dialog pre { white-space: pre-wrap; background: var(--panel-2); padding: 10px; border-radius: 8px;
+             font: 13px/1.45 var(--mono); max-height: 300px; overflow: auto; }
+.row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
+dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); }
+.hello { text-align: center; color: var(--muted); margin-top: 12vh; }
+.hello h2 { color: var(--text); font-weight: 600; }
+@media (max-width: 600px) { header h1 span { display: none; } .user { max-width: 92%; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Jarvis<span id="where"></span></h1>
+  <select id="provider" title="Cerveau utilisé"></select>
+  <button class="btn" id="auto" title="Exécuter sans demander confirmation">Auto</button>
+  <button class="btn" id="voice" title="Lire les réponses à voix haute">Voix</button>
+  <button class="btn" id="keys" title="Clés API gratuites">Clés</button>
+  <button class="btn" id="new">Nouveau</button>
+</header>
+<main id="main"><div class="wrap" id="log">
+  <div id="plan"></div>
+  <div class="hello" id="hello"><h2>Bonjour, que veux-tu que je fasse ?</h2>
+    <p>Crée un site, analyse un PDF, range tes fichiers, regarde ton écran, cherche sur le web…</p></div>
+</div></main>
+<footer>
+  <div id="thumbs"></div>
+  <div class="bar">
+    <button class="icon" id="attach" title="Joindre une image">📎</button>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <textarea id="input" rows="1" placeholder="Écris ta demande… (Entrée pour envoyer, Maj+Entrée pour aller à la ligne)"></textarea>
+    <button class="icon" id="mic" title="Parler">🎤</button>
+    <button class="icon primary" id="send" title="Envoyer">➤</button>
+  </div>
+</footer>
+
+<dialog id="confirm">
+  <strong>Jarvis demande l'autorisation</strong>
+  <pre id="confirmText"></pre>
+  <div class="row">
+    <button class="btn" data-a="no">Refuser</button>
+    <button class="btn" data-a="always">Toujours autoriser</button>
+    <button class="btn on" data-a="yes">Autoriser</button>
+  </div>
+</dialog>
+
+<dialog id="keysDlg">
+  <strong>Clés API gratuites (optionnel)</strong>
+  <p style="color:var(--muted);font-size:13px">Un modèle cloud gratuit est bien plus rapide et intelligent que le modèle local sur ce PC.
+     Si son quota est épuisé, Jarvis repasse automatiquement en local.</p>
+  <label>Fournisseur <select id="keyProvider">
+    <option value="gemini">Gemini (Google) — aistudio.google.com/apikey</option>
+    <option value="groq">Groq — console.groq.com/keys</option>
+    <option value="openrouter">OpenRouter — openrouter.ai/settings/keys</option>
+  </select></label>
+  <p><input id="keyValue" placeholder="Colle ta clé ici" autocomplete="off"></p>
+  <div class="row"><button class="btn" data-k="close">Fermer</button><button class="btn on" data-k="save">Enregistrer</button></div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+let since = 0, state = {}, busy = false, bubble = null, bubbleText = "", turnText = "", images = [], confirmId = null;
+let speakOn = false;
+try { speakOn = localStorage.getItem("jarvis-voice") === "1"; } catch (e) {}
+
+const esc = s => s.replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+function md(src) {
+  const blocks = [];
+  src = src.replace(/```(\w*)\n?([\s\S]*?)(```|$)/g, (_, l, code) => { blocks.push(code); return `\u0000${blocks.length - 1}\u0000`; });
+  let h = esc(src)
+    .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/^#{1,4} (.*)$/gm, "<strong>$1</strong>")
+    .replace(/^\s*[-*] (.*)$/gm, "• $1")
+    .split(/\n{2,}/).map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+  return h.replace(/\u0000(\d+)\u0000/g, (_, i) => `<pre><code>${esc(blocks[i])}</code></pre>`);
+}
+function add(cls, html) {
+  $("hello")?.remove();
+  const el = document.createElement("div");
+  el.className = cls; el.innerHTML = html;
+  $("log").appendChild(el);
+  scroll();
+  return el;
+}
+function scroll() { const m = $("main"); if (m.scrollHeight - m.scrollTop - m.clientHeight < 200) m.scrollTop = m.scrollHeight; }
+function closeBubble() { if (bubble) bubble.classList.remove("typing"); bubble = null; bubbleText = ""; }
+
+function handle(e) {
+  switch (e.type) {
+    case "user":
+      closeBubble(); turnText = "";
+      add("msg user", esc(e.text.replace(/\n\[Image jointe[^\]]*\]/g, "\n🖼 image jointe")));
+      setBusy(true); break;
+    case "token":
+      if (!bubble) { bubble = add("msg bot typing", ""); }
+      bubbleText += e.text; turnText += e.text;
+      bubble.innerHTML = md(bubbleText); scroll(); break;
+    case "tool": {
+      closeBubble();
+      const det = document.createElement("details"); det.className = "tool"; det.dataset.pending = "1";
+      det.innerHTML = `<summary>→ ${esc(e.name)} ${esc(JSON.stringify(e.args).slice(0, 160))}</summary><pre>…</pre>`;
+      $("log").appendChild(det); scroll(); break; }
+    case "result": {
+      const det = [...document.querySelectorAll("details.tool[data-pending]")].pop();
+      if (det) { det.querySelector("pre").textContent = e.text; delete det.dataset.pending;
+                 if (/^ERREUR|REFUSÉ/.test(e.text)) det.querySelector("summary").style.color = "var(--err)"; }
+      break; }
+    case "info": add(`info ${e.level || ""}`, esc(e.text)); break;
+    case "plan":
+      $("plan").style.display = "block";
+      $("plan").innerHTML = "<strong>Plan</strong>" + e.steps.map(s =>
+        `<div class="${s.statut || ""}">${s.statut === "fait" ? "✔" : s.statut === "en_cours" ? "▶" : "○"} ${esc(s.etape || "")}</div>`).join("");
+      break;
+    case "confirm":
+      confirmId = e.id; $("confirmText").textContent = e.action;
+      if (!$("confirm").open) $("confirm").showModal(); break;
+    case "confirmed":
+      if (confirmId === e.id && $("confirm").open) $("confirm").close(); break;
+    case "done":
+      closeBubble(); setBusy(false);
+      if (speakOn && turnText && !replaying) say(turnText);
+      turnText = ""; break;
+  }
+}
+let replaying = true;
+async function poll() {
+  for (;;) {
+    try {
+      const evs = await (await fetch(`/events?since=${since}`)).json();
+      evs.forEach(e => { handle(e); since = e.i + 1; });
+      replaying = false;
+    } catch (err) { await new Promise(r => setTimeout(r, 2000)); }
+  }
+}
+function setBusy(b) {
+  busy = b;
+  $("send").textContent = b ? "■" : "➤";
+  $("send").title = b ? "Arrêter" : "Envoyer";
+}
+async function post(path, body) {
+  const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  return r.json();
+}
+async function refresh(s) {
+  state = s || await (await fetch("/state")).json();
+  $("provider").innerHTML = Object.entries(state.providers).map(([n, ok]) =>
+    `<option value="${n}" ${n === state.provider ? "selected" : ""} ${ok ? "" : "disabled"}>${n}${ok ? "" : " (clé requise)"}</option>`).join("");
+  $("where").textContent = `${state.model} · ${state.workdir}`;
+  $("auto").classList.toggle("on", state.auto);
+  $("voice").classList.toggle("on", speakOn);
+  if (state.busy) setBusy(true);
+}
+async function send() {
+  if (busy) { await post("/command", {cmd: "stop"}); return; }
+  const text = $("input").value.trim();
+  if (!text && !images.length) return;
+  const r = await post("/send", {text: text || "Regarde cette image.", images});
+  if (r.error) return add("info error", esc(r.error));
+  $("input").value = ""; images = []; $("thumbs").innerHTML = ""; grow();
+}
+function grow() { const t = $("input"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 200) + "px"; }
+function say(text) {
+  if (!("speechSynthesis" in window)) return;
+  const clean = text.replace(/```[\s\S]*?```/g, " ").replace(/[*_`#>|]/g, "").slice(0, 3000);
+  const u = new SpeechSynthesisUtterance(clean); u.lang = "fr-FR";
+  const v = speechSynthesis.getVoices().find(v => v.lang.startsWith("fr")); if (v) u.voice = v;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function addImages(files) {
+  [...files].filter(f => f.type.startsWith("image/")).forEach(f => {
+    const r = new FileReader();
+    r.onload = () => { images.push({name: f.name, data: r.result});
+      const im = document.createElement("img"); im.src = r.result; $("thumbs").appendChild(im); };
+    r.readAsDataURL(f);
+  });
+}
+
+$("send").onclick = send;
+$("input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("input").addEventListener("input", grow);
+$("input").addEventListener("paste", e => addImages(e.clipboardData.files));
+$("attach").onclick = () => $("file").click();
+$("file").onchange = e => addImages(e.target.files);
+document.addEventListener("dragover", e => e.preventDefault());
+document.addEventListener("drop", e => { e.preventDefault(); addImages(e.dataTransfer.files); });
+$("provider").onchange = async e => {
+  const r = await post("/command", {cmd: "provider", arg: e.target.value});
+  if (r.error) add("info error", esc(r.error)); refresh(r.error ? null : r);
+};
+$("auto").onclick = async () => {
+  if (!state.auto && !confirm("Mode Auto : Jarvis exécutera commandes et modifications SANS te demander. Continuer ?")) return;
+  refresh(await post("/command", {cmd: "auto", arg: !state.auto}));
+};
+$("voice").onclick = () => { speakOn = !speakOn; try { localStorage.setItem("jarvis-voice", speakOn ? "1" : "0"); } catch (e) {}
+  if (!speakOn) speechSynthesis.cancel(); refresh(state); };
+$("new").onclick = async () => { await post("/command", {cmd: "new"}); location.reload(); };
+$("confirm").addEventListener("click", async e => {
+  const a = e.target.dataset.a; if (!a) return;
+  await post("/confirm", {id: confirmId, ok: a !== "no", always: a === "always"});
+  $("confirm").close(); if (a === "always") refresh();
+});
+$("keys").onclick = () => $("keysDlg").showModal();
+$("keysDlg").addEventListener("click", async e => {
+  const k = e.target.dataset.k; if (!k) return;
+  if (k === "save" && $("keyValue").value.trim()) {
+    const r = await post("/command", {cmd: "key", arg: {provider: $("keyProvider").value, key: $("keyValue").value}});
+    $("keyValue").value = ""; refresh(r);
+    add("info", `Clé enregistrée. Choisis « ${$("keyProvider").value} » dans le menu en haut pour l'utiliser.`);
+  }
+  $("keysDlg").close();
+});
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+$("mic").onclick = async () => {
+  if (SR) {
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true;
+    rec.onresult = e => { $("input").value = [...e.results].map(r => r[0].transcript).join(""); grow(); };
+    rec.onend = () => { $("mic").classList.remove("rec"); rec = null; if ($("input").value.trim()) send(); };
+    rec.onerror = e => add("info warn", "Micro : " + e.error);
+    $("mic").classList.add("rec"); rec.start();
+  } else {
+    $("mic").classList.add("rec");
+    const r = await post("/command", {cmd: "listen"});
+    $("mic").classList.remove("rec");
+    if (r.text) { $("input").value = r.text; send(); } else add("info warn", esc(r.error || "Rien entendu."));
+  }
+};
+
+refresh(); poll();
+</script>
+</body>
+</html>
