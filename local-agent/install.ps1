@@ -32,10 +32,11 @@ if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
 [Environment]::SetEnvironmentVariable("OLLAMA_KV_CACHE_TYPE", "q8_0", "User")
 [Environment]::SetEnvironmentVariable("OLLAMA_MAX_LOADED_MODELS", "1", "User")
 $env:OLLAMA_FLASH_ATTENTION = "1"; $env:OLLAMA_KV_CACHE_TYPE = "q8_0"; $env:OLLAMA_MAX_LOADED_MODELS = "1"
+Write-Host "Démarrage d'Ollama (jusqu'à 1 minute)..."
 Get-Process ollama* -ErrorAction SilentlyContinue | Stop-Process -Force
 Start-Process ollama -ArgumentList "serve" -WindowStyle Hidden
 for ($i = 0; $i -lt 30; $i++) {
-  try { Invoke-RestMethod http://localhost:11434/api/tags -TimeoutSec 2 | Out-Null; break } catch { Start-Sleep 1 }
+  try { Invoke-RestMethod http://localhost:11434/api/tags -TimeoutSec 2 | Out-Null; Write-Host "Ollama est prêt."; break } catch { Write-Host "." -NoNewline; Start-Sleep 1 }
 }
 
 Step "Téléchargement des modèles (environ 6 Go, patience)"
