@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marchés Clairs — Appels d'offres pour entreprises de nettoyage</title>
+  <meta name="description" content="On repère les marchés publics de nettoyage en Île-de-France, on prépare votre dossier de réponse, vous n'avez plus qu'à signer.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #eef2f6;
+      --ink: #0f172a;
+      --ink-soft: #475569;
+      --line: #e2e8f0;
+      --navy: #0f172a;
+      --on-navy: #f8fafc;
+      --on-navy-soft: #cbd5e1;
+      --accent: #0f766e;
+      --accent-hover: #115e59;
+      --accent-soft: #ccfbf1;
+      --on-accent: #ffffff;
+      --warn: #b45309;
+      --ring: #0f766e;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);
+      --radius: 14px;
+      --ease: cubic-bezier(.2, .7, .2, 1);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0b1120;
+        --surface: #121a2b;
+        --surface-alt: #172136;
+        --ink: #e2e8f0;
+        --ink-soft: #94a3b8;
+        --line: #243049;
+        --navy: #060a14;
+        --on-navy: #f1f5f9;
+        --on-navy-soft: #a8b4c6;
+        --accent: #2dd4bf;
+        --accent-hover: #5eead4;
+        --accent-soft: #0f3b38;
+        --on-accent: #04201d;
+        --warn: #fbbf24;
+        --ring: #5eead4;
+        --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0b1120; --surface: #121a2b; --surface-alt: #172136; --ink: #e2e8f0;
+      --ink-soft: #94a3b8; --line: #243049; --navy: #060a14; --on-navy: #f1f5f9;
+      --on-navy-soft: #a8b4c6; --accent: #2dd4bf; --accent-hover: #5eead4;
+      --accent-soft: #0f3b38; --on-accent: #04201d; --warn: #fbbf24; --ring: #5eead4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .3);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font: 400 17px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { font-family: "Plus Jakarta Sans", Inter, system-ui, sans-serif; line-height: 1.15; margin: 0; }
+    p { margin: 0; }
+    a { color: inherit; }
+    img, svg { display: block; }
+    .wrap { width: min(1120px, 100% - 32px); margin-inline: auto; }
+    .skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: var(--on-accent); padding: 8px 14px; border-radius: 8px; z-index: 100; }
+    .skip:focus { left: 16px; }
+    :focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; border-radius: 6px; }
+    .icon { width: 22px; height: 22px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Boutons */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      min-height: 48px; padding: 12px 22px; border-radius: 999px; border: 2px solid transparent;
+      font: 600 16px/1.2 Inter, system-ui, sans-serif; text-decoration: none; cursor: pointer;
+      transition: background-color .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease), transform .15s var(--ease);
+      touch-action: manipulation;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: var(--accent); color: var(--on-accent); }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Navigation */
+    header.top { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .nav { display: flex; align-items: center; gap: 24px; min-height: 68px; }
+    .logo { display: flex; align-items: center; gap: 10px; font: 800 19px/1 "Plus Jakarta Sans", sans-serif; text-decoration: none; }
+    .logo-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+    .logo-mark .icon { width: 20px; height: 20px; }
+    .nav-links { display: flex; gap: 22px; margin-left: auto; }
+    .nav-links a { text-decoration: none; color: var(--ink-soft); font-weight: 500; font-size: 15px; padding: 10px 0; }
+    .nav-links a:hover { color: var(--ink); }
+    .nav .btn { min-height: 44px; padding: 10px 18px; font-size: 15px; }
+    @media (max-width: 820px) { .nav-links { display: none; } .nav .btn { margin-left: auto; } }
+
+    /* Hero */
+    .hero { padding: 64px 0 72px; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 48px; align-items: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+    :root[data-theme="dark"] .eyebrow { color: var(--accent-hover); }
+    .hero h1 { font-size: clamp(34px, 5vw, 54px); letter-spacing: -.02em; margin: 18px 0 18px; }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+    .lead { font-size: 19px; color: var(--ink-soft); max-width: 36em; }
+    .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .reassure { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 22px; color: var(--ink-soft); font-size: 15px; }
+    .reassure span { display: inline-flex; align-items: center; gap: 6px; }
+    .reassure .icon { width: 18px; height: 18px; color: var(--accent); }
+    @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } .hero { padding-top: 40px; } }
+
+    /* Aperçu du rapport */
+    .report { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 20px; }
+    .report-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 4px 4px 14px; border-bottom: 1px solid var(--line); }
+    .report-head strong { font-family: "Plus Jakarta Sans", sans-serif; font-size: 16px; }
+    .report-head span { color: var(--ink-soft); font-size: 13px; }
+    .tender { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: start; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+    .tender:last-child { border-bottom: 0; padding-bottom: 4px; }
+    .score { grid-row: span 2; width: 38px; height: 38px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 15px; }
+    .tender b { font-weight: 600; font-size: 15px; line-height: 1.35; }
+    .tender small { grid-column: 2; color: var(--ink-soft); font-size: 13px; }
+    .deadline { font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+    .deadline.soon { color: var(--warn); }
+    .report-note { margin-top: 12px; font-size: 12px; color: var(--ink-soft); text-align: center; }
+
+    /* Sections */
+    section { padding: 80px 0; }
+    .section-head { max-width: 720px; margin-bottom: 44px; }
+    .section-head h2 { font-size: clamp(28px, 3.6vw, 40px); letter-spacing: -.015em; }
+    .section-head p { margin-top: 14px; color: var(--ink-soft); font-size: 18px; }
+    .alt { background: var(--surface-alt); }
+
+    /* Chiffres */
+    .stats { background: var(--navy); color: var(--on-navy); padding: 56px 0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .stat b { display: block; font: 800 clamp(34px, 4.5vw, 46px)/1 "Plus Jakarta Sans", sans-serif; font-variant-numeric: tabular-nums; color: #5eead4; }
+    .stat p { margin-top: 10px; color: var(--on-navy-soft); font-size: 16px; }
+    .source { margin-top: 28px; font-size: 13px; color: var(--on-navy-soft); }
+    .source a { color: var(--on-navy); }
+    @media (max-width: 760px) { .stats-grid { grid-template-columns: 1fr; gap: 24px; } }
+
+    /* Étapes */
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; counter-reset: step; }
+    .step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; position: relative; }
+    .step::before { counter-increment: step; content: counter(step); position: absolute; top: 20px; right: 22px; font: 800 44px/1 "Plus Jakarta Sans", sans-serif; color: var(--line); }
+    .step-icon { width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin-bottom: 18px; }
+    .step h3 { font-size: 19px; margin-bottom: 8px; }
+    .step p { color: var(--ink-soft); font-size: 16px; }
+    .step.you { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .step.you p { color: inherit; opacity: .92; }
+    .step.you .step-icon { background: rgba(255, 255, 255, .18); color: inherit; }
+    .step.you::before { color: rgba(255, 255, 255, .25); }
+    @media (max-width: 980px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+
+    /* Avant / après */
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .panel { border-radius: var(--radius); padding: 28px; border: 1px solid var(--line); background: var(--surface); }
+    .panel h3 { font-size: 20px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+    .panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+    .panel li { display: flex; gap: 12px; align-items: flex-start; }
+    .panel li .icon { margin-top: 2px; }
+    .panel.before li .icon { color: var(--ink-soft); }
+    .panel.after { border: 2px solid var(--accent); }
+    .panel.after li .icon { color: var(--accent); }
+    @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+
+    /* Tarifs */
+    .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
+    .plan { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; display: flex; flex-direction: column; }
+    .plan.featured { border: 2px solid var(--accent); box-shadow: var(--shadow); position: relative; }
+    .badge { position: absolute; top: -13px; left: 28px; background: var(--accent); color: var(--on-accent); font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
+    .plan h3 { font-size: 20px; }
+    .plan .for { color: var(--ink-soft); font-size: 15px; margin-top: 6px; min-height: 48px; }
+    .price { margin: 18px 0 20px; font: 800 38px/1 "Plus Jakarta Sans", sans-serif; font-variant-numeric: tabular-nums; }
+    .price small { font: 500 15px/1 Inter, sans-serif; color: var(--ink-soft); }
+    .plan ul { list-style: none; padding: 0; margin: 0 0 26px; display: grid; gap: 10px; flex: 1; align-content: start; }
+    .plan li { display: flex; gap: 10px; font-size: 16px; }
+    .plan li .icon { width: 20px; height: 20px; color: var(--accent); margin-top: 3px; }
+    .plan .btn { width: 100%; }
+    .launch { margin-top: 28px; display: flex; gap: 14px; align-items: center; background: var(--accent-soft); border-radius: var(--radius); padding: 18px 22px; }
+    .launch .icon { color: var(--accent); width: 26px; height: 26px; }
+    .launch p { font-size: 16px; }
+    @media (max-width: 900px) { .pricing { grid-template-columns: 1fr; max-width: 520px; } }
+
+    /* IA + humain */
+    .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .trust-item { padding: 4px 0; }
+    .trust-item .step-icon { margin-bottom: 14px; }
+    .trust-item h3 { font-size: 18px; margin-bottom: 8px; }
+    .trust-item p { color: var(--ink-soft); font-size: 16px; }
+    @media (max-width: 820px) { .trust { grid-template-columns: 1fr; } }
+
+    /* FAQ */
+    .faq { max-width: 800px; display: grid; gap: 12px; }
+    details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+    summary { cursor: pointer; list-style: none; padding: 18px 22px; font-weight: 600; display: flex; justify-content: space-between; gap: 16px; align-items: center; min-height: 56px; }
+    summary::-webkit-details-marker { display: none; }
+    summary .icon { transition: transform .2s var(--ease); color: var(--ink-soft); }
+    details[open] summary .icon { transform: rotate(45deg); }
+    details p { padding: 0 22px 20px; color: var(--ink-soft); }
+
+    /* Contact */
+    .contact { background: var(--navy); color: var(--on-navy); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+    .contact h2 { font-size: clamp(28px, 3.6vw, 40px); }
+    .contact .intro { margin-top: 16px; color: var(--on-navy-soft); font-size: 18px; }
+    .contact .reassure { color: var(--on-navy-soft); }
+    .contact .reassure .icon { color: #5eead4; }
+    form { background: var(--surface); color: var(--ink); border-radius: 18px; padding: 28px; display: grid; gap: 18px; }
+    .field { display: grid; gap: 6px; }
+    label { font-weight: 600; font-size: 15px; }
+    label .req { color: var(--accent); }
+    input, select {
+      font: inherit; font-size: 16px; min-height: 48px; padding: 10px 14px; border-radius: 10px;
+      border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); width: 100%;
+      transition: border-color .2s var(--ease);
+    }
+    input:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+    input[aria-invalid="true"] { border-color: #dc2626; }
+    .error { color: #dc2626; font-size: 14px; min-height: 0; }
+    :root[data-theme="dark"] .error { color: #f87171; }
+    .hint { color: var(--ink-soft); font-size: 13px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-status { font-size: 15px; font-weight: 500; color: var(--accent); }
+    @media (max-width: 860px) { .contact-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } form { padding: 22px; } }
+
+    footer { padding: 32px 0; color: var(--ink-soft); font-size: 14px; border-top: 1px solid var(--line); }
+    .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+
+    /* Apparition douce */
+    .reveal { opacity: 0; transform: translateY(14px); transition: opacity .5s var(--ease), transform .5s var(--ease); }
+    .reveal.visible { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; transition: none; }
+      *, *::before, *::after { transition-duration: 0s !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#contenu">Aller au contenu</a>
+
+  <!-- Icônes (style Lucide) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 17v4M17 19h4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  </svg>
+
+  <header class="top">
+    <nav class="wrap nav" aria-label="Navigation principale">
+      <a class="logo" href="#top" aria-label="Marchés Clairs, accueil">
+        <span class="logo-mark"><svg class="icon"><use href="#i-sparkle"/></svg></span>
+        Marchés Clairs
+      </a>
+      <div class="nav-links">
+        <a href="#methode">Comment ça marche</a>
+        <a href="#tarifs">Tarifs</a>
+        <a href="#faq">Questions</a>
+      </div>
+      <a class="btn btn-primary" href="#contact">Liste gratuite</a>
+    </nav>
+  </header>
+
+  <main id="contenu">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow"><svg class="icon" style="width:16px;height:16px"><use href="#i-sparkle"/></svg> Entreprises de nettoyage · Île-de-France</span>
+          <h1>Gagnez des marchés publics <em>sans y passer vos soirées.</em></h1>
+          <p class="lead">Mairies, écoles, hôpitaux, collèges : chaque semaine, des contrats de nettoyage sont publiés près de chez vous. On les repère, on prépare votre dossier de réponse, vous n'avez plus qu'à relire et signer.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#contact">Recevoir la liste des marchés ouverts <svg class="icon" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
+            <a class="btn btn-ghost" href="#methode">Voir comment ça marche</a>
+          </div>
+          <div class="reassure">
+            <span><svg class="icon"><use href="#i-check"/></svg> Gratuit, sans engagement</span>
+            <span><svg class="icon"><use href="#i-check"/></svg> Réponse sous 48 h</span>
+            <span><svg class="icon"><use href="#i-check"/></svg> Aucune connaissance juridique requise</span>
+          </div>
+        </div>
+
+        <div class="report" role="img" aria-label="Exemple de rapport de veille : trois marchés de nettoyage ouverts, classés par pertinence avec leur date limite">
+          <div class="report-head">
+            <strong>Vos marchés de la semaine</strong>
+            <span>Dép. 92 · 93 · 94</span>
+          </div>
+          <div class="tender">
+            <span class="score">10</span>
+            <b>Nettoyage des locaux de la mairie et vitrerie</b>
+            <span class="deadline">J-23</span>
+            <small>Commune · Procédure adaptée</small>
+          </div>
+          <div class="tender">
+            <span class="score">8</span>
+            <b>Entretien ménager de trois groupes scolaires</b>
+            <span class="deadline">J-18</span>
+            <small>Ville · Appel d'offres ouvert</small>
+          </div>
+          <div class="tender">
+            <span class="score">6</span>
+            <b>Prestations de propreté des bureaux administratifs</b>
+            <span class="deadline soon">J-5</span>
+            <small>Établissement public · Procédure adaptée</small>
+          </div>
+          <p class="report-note">Exemple illustratif du rapport que vous recevez</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chiffres -->
+    <div class="stats">
+      <div class="wrap">
+        <div class="stats-grid">
+          <div class="stat reveal"><b>233&nbsp;Md€</b><p>de marchés publics passés en France en 2024, un record.</p></div>
+          <div class="stat reveal"><b>60&nbsp;%</b><p>des marchés sont remportés par des TPE et PME. Ils ne sont pas réservés aux grands groupes.</p></div>
+          <div class="stat reveal"><b>1&nbsp;sur&nbsp;2</b><p>Près d'une PME sur deux cite la complexité des dossiers comme un frein. C'est exactement ce qu'on prend en charge.</p></div>
+        </div>
+        <p class="source">Sources : recensement économique de la commande publique (ministère de l'Économie) ; Sénat, accès des PME à la commande publique.</p>
+      </div>
+    </div>
+
+    <!-- Méthode -->
+    <section id="methode">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>Quatre étapes, dont une seule pour vous</h2>
+          <p>Vous gardez la main sur les décisions. On s'occupe de tout ce qui prend du temps.</p>
+        </div>
+        <div class="steps">
+          <article class="step reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-search"/></svg></div>
+            <h3>On repère</h3>
+            <p>Chaque jour, on surveille les marchés publiés dans vos départements.</p>
+          </article>
+          <article class="step reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-filter"/></svg></div>
+            <h3>On sélectionne</h3>
+            <p>On garde ceux que vous pouvez vraiment gagner, selon votre taille et vos références.</p>
+          </article>
+          <article class="step reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-file"/></svg></div>
+            <h3>On rédige</h3>
+            <p>Mémoire technique, pièces administratives, calendrier : le dossier est prêt, adapté à l'acheteur.</p>
+          </article>
+          <article class="step you reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-pen"/></svg></div>
+            <h3>Vous signez</h3>
+            <p>Vous relisez, vous fixez votre prix, vous déposez. Environ 30 minutes.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Avant / après -->
+    <section class="alt">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>Ce qui change pour vous</h2>
+        </div>
+        <div class="compare">
+          <div class="panel before reveal">
+            <h3>Aujourd'hui</h3>
+            <ul>
+              <li><svg class="icon"><use href="#i-x"/></svg> Vous découvrez les marchés trop tard, ou jamais.</li>
+              <li><svg class="icon"><use href="#i-x"/></svg> Un dossier vous coûte deux ou trois soirées.</li>
+              <li><svg class="icon"><use href="#i-x"/></svg> Vous ne savez pas ce que l'acheteur attend vraiment.</li>
+              <li><svg class="icon"><use href="#i-x"/></svg> Vous répondez à un marché par an, au mieux.</li>
+            </ul>
+          </div>
+          <div class="panel after reveal">
+            <h3>Avec Marchés Clairs</h3>
+            <ul>
+              <li><svg class="icon"><use href="#i-check"/></svg> Chaque semaine, la liste des marchés faits pour vous.</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Un dossier complet, prêt à relire.</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Une réponse construite sur les critères de notation.</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Plus de réponses, donc plus de chances de gagner.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tarifs -->
+    <section id="tarifs">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>Des tarifs simples, sans engagement</h2>
+          <p>Un seul marché gagné représente souvent plusieurs années de contrat.</p>
+        </div>
+        <div class="pricing">
+          <article class="plan reveal">
+            <h3>Veille</h3>
+            <p class="for">Pour ceux qui veulent trouver les marchés et répondre eux-mêmes.</p>
+            <p class="price">149&nbsp;€ <small>HT / mois</small></p>
+            <ul>
+              <li><svg class="icon"><use href="#i-check"/></svg> Liste hebdomadaire des marchés de vos départements</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Tri par pertinence et par délai</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Alerte pour les marchés urgents</li>
+            </ul>
+            <a class="btn btn-ghost" href="#contact" data-offre="Veille">Choisir la veille</a>
+          </article>
+          <article class="plan featured reveal">
+            <span class="badge">Le plus choisi</span>
+            <h3>Dossier clé en main</h3>
+            <p class="for">On prépare votre réponse complète, vous relisez et vous déposez.</p>
+            <p class="price">490&nbsp;€ <small>HT / dossier</small></p>
+            <ul>
+              <li><svg class="icon"><use href="#i-check"/></svg> Veille incluse tant que vous êtes client</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Analyse du cahier des charges et des critères</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Mémoire technique rédigé sur mesure</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Pièces administratives préparées</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Relecture ensemble avant dépôt</li>
+            </ul>
+            <a class="btn btn-primary" href="#contact" data-offre="Dossier clé en main">Préparer mon premier dossier</a>
+          </article>
+          <article class="plan reveal">
+            <h3>Partenaire</h3>
+            <p class="for">Pour répondre régulièrement : vous payez surtout quand vous gagnez.</p>
+            <p class="price">290&nbsp;€ <small>HT / dossier + prime au succès</small></p>
+            <ul>
+              <li><svg class="icon"><use href="#i-check"/></svg> Tout le « Dossier clé en main »</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Prime uniquement si le marché est remporté</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Bibliothèque de vos références et attestations</li>
+              <li><svg class="icon"><use href="#i-check"/></svg> Point mensuel sur vos résultats</li>
+            </ul>
+            <a class="btn btn-ghost" href="#contact" data-offre="Partenaire">En parler</a>
+          </article>
+        </div>
+        <div class="launch reveal">
+          <svg class="icon"><use href="#i-gift"/></svg>
+          <p><strong>Offre de lancement :</strong> votre premier dossier est préparé à prix réduit, en échange de votre avis sur le service.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- IA + humain -->
+    <section class="alt">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>La rapidité de l'IA, la rigueur d'un humain</h2>
+          <p>On utilise l'intelligence artificielle pour aller vite. Mais chaque dossier est relu et adapté à la main : un acheteur public repère tout de suite une réponse générique.</p>
+        </div>
+        <div class="trust">
+          <div class="trust-item reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-clock"/></svg></div>
+            <h3>Rapide</h3>
+            <p>Un dossier prêt en quelques jours, même quand le délai de réponse est court.</p>
+          </div>
+          <div class="trust-item reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-user"/></svg></div>
+            <h3>Relu et personnalisé</h3>
+            <p>Vos équipes, vos méthodes et vos références, pas un texte copié-collé.</p>
+          </div>
+          <div class="trust-item reveal">
+            <div class="step-icon"><svg class="icon"><use href="#i-lock"/></svg></div>
+            <h3>Confidentiel</h3>
+            <p>Vos documents et vos prix restent privés et ne sont jamais partagés.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>Vos questions</h2>
+        </div>
+        <div class="faq">
+          <details class="reveal">
+            <summary>Mon entreprise est petite, j'ai vraiment mes chances ?<svg class="icon"><use href="#i-plus"/></svg></summary>
+            <p>Oui. Beaucoup de marchés de nettoyage sont découpés en petits lots (un bâtiment, une école) et passés en procédure adaptée, plus simple. Les TPE et PME remportent la majorité des marchés publics en nombre. On vous oriente vers ceux qui correspondent à votre taille.</p>
+          </details>
+          <details class="reveal">
+            <summary>Est-ce que j'ai le droit de me faire aider ?<svg class="icon"><use href="#i-plus"/></svg></summary>
+            <p>Oui, c'est courant et autorisé. C'est votre entreprise qui répond, signe et s'engage : vous relisez tout et vous fixez votre prix. On prépare le dossier, vous gardez la décision.</p>
+          </details>
+          <details class="reveal">
+            <summary>De quoi avez-vous besoin pour commencer ?<svg class="icon"><use href="#i-plus"/></svg></summary>
+            <p>Votre Kbis, vos attestations (URSSAF, impôts, assurance), la liste de vos clients et chantiers de référence, et une présentation de vos équipes et de votre matériel. On vous envoie une liste simple, et on la réutilise pour tous les dossiers suivants.</p>
+          </details>
+          <details class="reveal">
+            <summary>Et si on ne gagne pas ?<svg class="icon"><use href="#i-plus"/></svg></summary>
+            <p>Vous pouvez demander à l'acheteur les raisons du rejet et la note obtenue : on s'en sert pour améliorer le dossier suivant. Avec la formule Partenaire, la prime n'est due que si le marché est remporté.</p>
+          </details>
+          <details class="reveal">
+            <summary>Quels départements couvrez-vous ?<svg class="icon"><use href="#i-plus"/></svg></summary>
+            <p>Paris et toute l'Île-de-France. La veille peut aussi couvrir d'autres départements si vous intervenez ailleurs.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact" id="contact">
+      <div class="wrap contact-grid">
+        <div class="reveal">
+          <h2>Recevez gratuitement la liste des marchés ouverts dans votre département</h2>
+          <p class="intro">Indiquez vos départements, on vous envoie sous 48 h les marchés de nettoyage en cours, avec leur date limite. Sans engagement.</p>
+          <div class="reassure">
+            <span><svg class="icon"><use href="#i-check"/></svg> Gratuit</span>
+            <span><svg class="icon"><use href="#i-check"/></svg> Sans engagement</span>
+            <span><svg class="icon"><use href="#i-shield"/></svg> Vos données restent privées</span>
+          </div>
+        </div>
+
+        <form id="form" class="reveal" novalidate>
+          <div class="field">
+            <label for="entreprise">Nom de l'entreprise <span class="req" aria-hidden="true">*</span></label>
+            <input id="entreprise" name="entreprise" autocomplete="organization" required aria-describedby="err-entreprise">
+            <span class="error" id="err-entreprise" role="alert"></span>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label for="email">E-mail <span class="req" aria-hidden="true">*</span></label>
+              <input id="email" name="email" type="email" autocomplete="email" required aria-describedby="err-email">
+              <span class="error" id="err-email" role="alert"></span>
+            </div>
+            <div class="field">
+              <label for="tel">Téléphone</label>
+              <input id="tel" name="tel" type="tel" autocomplete="tel">
+            </div>
+          </div>
+          <div class="field">
+            <label for="departements">Départements visés <span class="req" aria-hidden="true">*</span></label>
+            <input id="departements" name="departements" required aria-describedby="hint-dep err-departements" placeholder="Ex. 92, 93, 94">
+            <span class="hint" id="hint-dep">Les départements où vous pouvez intervenir.</span>
+            <span class="error" id="err-departements" role="alert"></span>
+          </div>
+          <div class="field">
+            <label for="offre">Ce qui vous intéresse</label>
+            <select id="offre" name="offre">
+              <option>Juste la liste gratuite</option>
+              <option>Veille</option>
+              <option>Dossier clé en main</option>
+              <option>Partenaire</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit">Recevoir ma liste gratuite</button>
+          <p class="form-status" id="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <span>© <span id="year"></span> Marchés Clairs · Aide à la réponse aux marchés publics</span>
+      <span><a href="#top">Retour en haut</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // Adresse qui reçoit les demandes : à remplacer par la vôtre.
+    const CONTACT_EMAIL = 'contact@exemple.fr';
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Les boutons de tarifs pré-remplissent l'offre choisie
+    document.querySelectorAll('[data-offre]').forEach(function (lien) {
+      lien.addEventListener('click', function () {
+        document.getElementById('offre').value = lien.dataset.offre;
+      });
+    });
+
+    // Validation du formulaire puis ouverture du logiciel de messagerie
+    const form = document.getElementById('form');
+    const regles = {
+      entreprise: function (v) { return v ? '' : "Indiquez le nom de votre entreprise."; },
+      email: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? '' : 'Indiquez un e-mail valide, par exemple nom@entreprise.fr.'; },
+      departements: function (v) { return v ? '' : 'Indiquez au moins un département, par exemple 93.'; }
+    };
+    function verifier(champ) {
+      const message = regles[champ.name](champ.value.trim());
+      champ.setAttribute('aria-invalid', message ? 'true' : 'false');
+      document.getElementById('err-' + champ.name).textContent = message;
+      return !message;
+    }
+    Object.keys(regles).forEach(function (nom) {
+      form.elements[nom].addEventListener('blur', function (e) { verifier(e.target); });
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const invalides = Object.keys(regles).map(function (n) { return form.elements[n]; }).filter(function (c) { return !verifier(c); });
+      if (invalides.length) { invalides[0].focus(); return; }
+      const d = Object.fromEntries(new FormData(form));
+      const corps = 'Entreprise : ' + d.entreprise + '\nE-mail : ' + d.email + '\nTéléphone : ' + (d.tel || '-') +
+        '\nDépartements : ' + d.departements + '\nIntérêt : ' + d.offre;
+      window.location.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + encodeURIComponent('Liste des marchés - ' + d.entreprise) +
+        '&body=' + encodeURIComponent(corps);
+      document.getElementById('status').textContent = 'Merci ! Votre messagerie s\'ouvre pour envoyer la demande.';
+    });
+
+    // Apparition douce des sections
+    const items = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      const obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('visible'); obs.unobserve(en.target); } });
+      }, { threshold: 0.12 });
+      items.forEach(function (el) { obs.observe(el); });
+    } else {
+      items.forEach(function (el) { el.classList.add('visible'); });
+    }
+  </script>
+</body>
+</html>
