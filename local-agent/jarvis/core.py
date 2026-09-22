@@ -181,6 +181,8 @@ class Agent:
             self.messages.append({"role": "assistant", "content": "(interrompu par l'utilisateur)"})
         except llm.LLMError as e:
             msg = f"Erreur du modèle : {e}"
+            if "404" in str(e) or "not found" in str(e).lower() or "no longer available" in str(e):
+                msg += "\n→ Ce modèle n'existe plus : clique sur « Modèle » en haut pour en choisir un autre."
         self.save()
         self.ui.info(msg, "warn")
         self.ui.done("")

@@ -82,6 +82,7 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
 <header>
   <h1>Jarvis<span id="where"></span></h1>
   <select id="provider" title="Cerveau utilisé"></select>
+  <button class="btn" id="model" title="Changer le modèle du cerveau actuel">Modèle</button>
   <button class="btn" id="auto" title="Exécuter sans demander confirmation">Auto</button>
   <button class="btn" id="voice" title="Lire les réponses à voix haute">Voix</button>
   <button class="btn" id="keys" title="Clés API gratuites">Clés</button>
@@ -264,6 +265,12 @@ $("auto").onclick = async () => {
 };
 $("voice").onclick = () => { speakOn = !speakOn; try { localStorage.setItem("jarvis-voice", speakOn ? "1" : "0"); } catch (e) {}
   if (!speakOn) speechSynthesis.cancel(); refresh(state); };
+$("model").onclick = async () => {
+  const m = prompt(`Nom du modèle pour « ${state.provider} » :`, state.model);
+  if (!m || m === state.model) return;
+  const r = await post("/command", {cmd: "model", arg: m});
+  if (r.error) add("info error", esc(r.error)); else { refresh(r); add("info", `Modèle : ${m}`); }
+};
 $("new").onclick = async () => { await post("/command", {cmd: "new"}); location.reload(); };
 $("confirm").addEventListener("click", async e => {
   const a = e.target.dataset.a; if (!a) return;

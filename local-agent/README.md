@@ -15,7 +15,7 @@ Jarvis est un assistant autonome installé **sur ton PC**. Tu lui dis ce que tu 
 
 Ton ordinateur (i5 de portable, 8 Go de RAM, pas de carte graphique dédiée) peut faire tourner une IA locale, mais **seulement une petite, et lentement** (quelques mots par seconde, et 1 à 2 minutes pour la toute première réponse). Jarvis a donc deux cerveaux :
 
-| | Cerveau **local** (`qwen3:4b`) | Cerveau **cloud gratuit** (Gemini 2.5 Flash) |
+| | Cerveau **local** (`qwen3:4b`) | Cerveau **cloud gratuit** (Gemini Flash) |
 |---|---|---|
 | Coût | 0 € | 0 € (quota gratuit quotidien) |
 | Limite | aucune | nombre de requêtes par jour et par minute |
@@ -74,7 +74,7 @@ Tous les réglages sont dans `C:\Users\<toi>\.jarvis\config.json` :
 - `provider` : cerveau principal ; `fallback` : cerveau de secours.
 - `providers.local.model` : le modèle local. Sur ton PC : `qwen3:4b` (conseillé), `qwen3:1.7b` (plus rapide, moins intelligent). Installe un modèle avec `ollama pull NOM`.
 - `providers.local.ctx` : mémoire de travail du modèle local en tokens (8192 ; ne dépasse pas 12288 avec 8 Go de RAM).
-- `providers.gemini.model` : `gemini-2.5-flash`, ou `gemini-2.5-pro` (plus intelligent, quota plus faible).
+- `providers.gemini.model` : `gemini-3.6-flash` (tu peux le changer avec le bouton « Modèle »).
 - `workdir` : dossier de travail ; `max_steps` : nombre maximal d'actions par demande.
 
 La mémoire à long terme est dans `.jarvis\memoire.md` (modifiable à la main) et les conversations dans `.jarvis\sessions\`.

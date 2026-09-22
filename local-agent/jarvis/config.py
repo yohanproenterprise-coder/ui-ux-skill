@@ -19,7 +19,7 @@ PROVIDERS = {
     },
     "gemini": {
         "type": "openai", "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
-        "model": "gemini-2.5-flash", "vision_model": None, "ctx": 200000,
+        "model": "gemini-3.6-flash", "vision_model": None, "ctx": 200000,
         "key_url": "https://aistudio.google.com/apikey",
     },
     "groq": {
@@ -60,7 +60,7 @@ def load():
     cfg = copy.deepcopy(DEFAULTS)
     if CONFIG_FILE.exists():
         try:
-            _merge(cfg, json.loads(CONFIG_FILE.read_text(encoding="utf-8")))
+            _merge(cfg, json.loads(CONFIG_FILE.read_text(encoding="utf-8-sig")))
         except (json.JSONDecodeError, OSError) as e:
             print(f"Attention : config.json illisible ({e}), valeurs par défaut utilisées.")
     for name in cfg["providers"]:

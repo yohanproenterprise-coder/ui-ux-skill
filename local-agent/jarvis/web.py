@@ -117,6 +117,10 @@ class App:
             self.brain.use(arg)
             self.cfg["provider"] = arg
             config.save(self.cfg)
+        elif cmd == "model":
+            self.cfg["providers"][self.brain.name]["model"] = str(arg).strip()
+            config.save(self.cfg)
+            self.brain.use(self.brain.name)
         elif cmd == "key":
             name, key = arg.get("provider"), arg.get("key", "").strip()
             self.cfg["api_keys"][name] = key
