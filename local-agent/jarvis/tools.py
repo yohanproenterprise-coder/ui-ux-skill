@@ -14,8 +14,8 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from . import system
-from .config import CAPTURES_DIR, HOME, MEMORY_FILE
+from . import knowledge, scheduler, system
+from .config import CAPTURES_DIR, HOME, MEMORY_FILE, SKILLS_DIR
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "$RECYCLE.BIN"}
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
@@ -28,6 +28,7 @@ class Tools:
         self.workdir.mkdir(parents=True, exist_ok=True)
         self.ui, self.brain, self.auto = ui, brain, auto
         self.spawn = spawn  # fabrique de sous-agent (None dans un sous-agent)
+        self.screen = None  # géométrie de la dernière capture, pour cliquer
 
     def _path(self, p):
         p = Path(os.path.expanduser(str(p)))
@@ -208,12 +209,102 @@ class Tools:
     def screenshot(self, question=None):
         CAPTURES_DIR.mkdir(parents=True, exist_ok=True)
         path = CAPTURES_DIR / f"ecran-{datetime.datetime.now():%Y%m%d-%H%M%S}.png"
-        err = system.screenshot(path)
+        err, geo = system.screenshot(path)
         if err:
             return "ERREUR capture : " + err
+        self.screen = geo
+        size = f" (image de {geo['width']}x{geo['height']} px)" if geo else ""
         if question:
-            return f"Capture : {path}\n" + self.look_at_image(str(path), question)
-        return f"Capture enregistrée : {path} (utilise look_at_image pour l'analyser)"
+            if geo:
+                question += (f"\nL'image fait {geo['width']}x{geo['height']} pixels. Pour chaque élément utile "
+                             "(bouton, champ, lien), donne ses coordonnées x,y en pixels sur cette image.")
+            return f"Capture : {path}{size}\n" + self.look_at_image(str(path), question)
+        return f"Capture enregistrée : {path}{size} (utilise look_at_image pour l'analyser)"
+
+    # ----------------------------------------------------- souris & clavier --
+    def _need_screen(self):
+        if not self.screen:
+            raise RuntimeError("fais d'abord un screenshot : les coordonnées se lisent sur la dernière capture")
+
+    def click(self, x, y, button="left", double=False):
+        self._need_screen()
+        g = self.screen
+        rx, ry = g["left"] + round(x * g["scale"]), g["top"] + round(y * g["scale"])
+        what = f"{'Double-c' if double else 'C'}lic {'droit ' if button == 'right' else ''}en ({x},{y})"
+        if not self._confirm(what):
+            return "REFUSÉ par l'utilisateur."
+        return system.click(rx, ry, button, double) or f"{what} effectué. Refais un screenshot pour vérifier."
+
+    def scroll(self, amount):
+        return system.scroll(amount) or f"Défilement de {amount} crans."
+
+    def type_text(self, text):
+        if not self._confirm(f"Taper au clavier : {text[:200]}"):
+            return "REFUSÉ par l'utilisateur."
+        return system.type_text(text) or "Texte tapé."
+
+    def press_keys(self, keys):
+        if not self._confirm(f"Appuyer sur les touches : {keys}"):
+            return "REFUSÉ par l'utilisateur."
+        return system.send_keys(keys) or f"Touches envoyées : {keys}"
+
+    def notify(self, title, message):
+        return system.notify(title, message) or "Notification affichée."
+
+    # ------------------------------------------------ rappels & planning --
+    def schedule(self, task, when, repeat="aucune", kind="rappel"):
+        item = scheduler.add(task, when, repeat, kind)
+        return (f"Programmé (id {item['id']}) pour le {item['at'].replace('T', ' à ')}, répétition : {repeat}. "
+                "Actif tant que Jarvis reste ouvert.")
+
+    def list_scheduled(self):
+        items = scheduler.listing()
+        return "\n".join(f"[{i['id']}] {i['at'].replace('T', ' ')} · {i['kind']} · {i['repeat']} · {i['task']}"
+                         for i in items) or "(rien de programmé)"
+
+    def cancel_scheduled(self, id):
+        return "Annulé." if scheduler.remove(id) else "ERREUR : id introuvable (voir list_scheduled)."
+
+    # --------------------------------------------------- connaissances --
+    def index_documents(self, path):
+        self.ui.info("lecture et indexation des documents…")
+        files, errors, total = knowledge.index_folder(self._path(path), lambda p: self.read_document(str(p)))
+        return f"{files} documents indexés ({errors} illisibles). Total : {total} passages dans la base."
+
+    def search_documents(self, query, k=6):
+        hits = knowledge.search(query, k)
+        if not hits:
+            return "(rien trouvé — as-tu indexé un dossier avec index_documents ?)"
+        return "\n\n".join(f"### {h['src']}\n{h['text']}" for h in hits)
+
+    # ------------------------------------------------------------ images --
+    def generate_image(self, prompt, path=None, width=1024, height=1024):
+        path = self._path(path or f"images/image-{datetime.datetime.now():%Y%m%d-%H%M%S}.png")
+        url = (f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}"
+               f"?width={int(width)}&height={int(height)}&nologo=true")
+        self.ui.info("génération de l'image (jusqu'à 1 minute)…")
+        data = self._get(url, raw=True)
+        kind = ".png" if data[:4] == b"\x89PNG" else ".jpg" if data[:3] == b"\xff\xd8\xff" else \
+            ".webp" if data[8:12] == b"WEBP" else None
+        if not kind:
+            return "ERREUR : le service d'images n'a pas renvoyé d'image. Réessaie plus tard."
+        path = path.with_suffix(kind)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return f"Image créée : {path} (utilise open_item pour l'afficher)"
+
+    # ------------------------------------------------------ compétences --
+    def use_skill(self, name):
+        p = SKILLS_DIR / f"{_slug(name)}.md"
+        if not p.exists():
+            return f"ERREUR : compétence inconnue. Disponibles : {', '.join(s[0] for s in list_skills()) or 'aucune'}"
+        return p.read_text(encoding="utf-8")
+
+    def save_skill(self, name, description, instructions):
+        SKILLS_DIR.mkdir(parents=True, exist_ok=True)
+        p = SKILLS_DIR / f"{_slug(name)}.md"
+        p.write_text(f"# {description}\n\n{instructions.strip()}\n", encoding="utf-8")
+        return f"Compétence « {_slug(name)} » enregistrée : je pourrai la réutiliser dans toutes les sessions."
 
     def open_item(self, target):
         system.open_item(target if re.match(r"^[a-z]+://|^www\.", target) or not self._path(target).exists()
@@ -263,6 +354,21 @@ class Tools:
             half = max_chars // 2
             result = f"{result[:half]}\n… ({len(result) - max_chars} caractères coupés) …\n{result[-half:]}"
         return result
+
+
+def _slug(name):
+    return re.sub(r"[^a-z0-9-]+", "-", name.lower()).strip("-")[:60] or "competence"
+
+
+def list_skills():
+    """[(nom, description)] des compétences enregistrées."""
+    if not SKILLS_DIR.exists():
+        return []
+    out = []
+    for p in sorted(SKILLS_DIR.glob("*.md")):
+        first = p.read_text(encoding="utf-8").split("\n", 1)[0].lstrip("# ").strip()
+        out.append((p.stem, first))
+    return out
 
 
 def _office_text(p):
@@ -336,6 +442,32 @@ TOOL_SPECS = [
     _tool("clipboard", "Lit (action=read) ou écrit (action=write) le presse-papiers.",
           {"action": {"type": "string", "enum": ["read", "write"]}, "text": S}, ["action"]),
     _tool("speak", "Dit un texte à voix haute.", {"text": S}, ["text"]),
+    _tool("click", "Clique à l'écran aux coordonnées x,y lues sur la DERNIÈRE capture (screenshot).",
+          {"x": I, "y": I, "button": {"type": "string", "enum": ["left", "right"]}, "double": {"type": "boolean"}},
+          ["x", "y"]),
+    _tool("scroll", "Fait défiler la fenêtre sous la souris (positif = haut, négatif = bas).", {"amount": I},
+          ["amount"]),
+    _tool("type_text", "Tape un texte dans la fenêtre active (clique d'abord dans le bon champ).", {"text": S},
+          ["text"]),
+    _tool("press_keys", "Appuie sur des touches, format SendKeys : {ENTER}, {TAB}, {ESC}, ^c (Ctrl+C), "
+          "^v, ^s, %{F4} (Alt+F4), %{TAB}, +{TAB} (Maj+Tab), {F5}, {DOWN}.", {"keys": S}, ["keys"]),
+    _tool("notify", "Affiche une notification Windows.", {"title": S, "message": S}, ["title", "message"]),
+    _tool("schedule", "Programme un rappel (notification) ou une tâche que Jarvis exécutera seul. "
+          "when : +20m, +2h, +1j, 14:30, demain 8:00, 2026-10-01 09:00.",
+          {"task": S, "when": S, "repeat": {"type": "string", "enum": list(scheduler.REPEATS)},
+           "kind": {"type": "string", "enum": ["rappel", "tache"]}}, ["task", "when"]),
+    _tool("list_scheduled", "Liste les rappels et tâches programmés.", {}),
+    _tool("cancel_scheduled", "Annule un rappel ou une tâche programmée.", {"id": S}, ["id"]),
+    _tool("index_documents", "Lit et indexe tous les documents d'un dossier (PDF, Word, Excel, texte…) "
+          "dans la base de connaissances.", {"path": S}, ["path"]),
+    _tool("search_documents", "Cherche dans la base de connaissances et renvoie les passages pertinents "
+          "avec leur fichier source.", {"query": S, "k": I}, ["query"]),
+    _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
+          {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
+    _tool("use_skill", "Charge les instructions d'une compétence enregistrée.", {"name": S}, ["name"]),
+    _tool("save_skill", "Enregistre une procédure réutilisable (compétence) quand l'utilisateur t'apprend "
+          "à faire quelque chose ou qu'une méthode a bien marché.",
+          {"name": S, "description": S, "instructions": S}, ["name", "description", "instructions"]),
     _tool("remember", "Mémorise un fait durable sur l'utilisateur ou ses projets (garde entre sessions).",
           {"fact": S}, ["fact"]),
     _tool("update_plan", "Définit ou met à jour le plan d'une tâche en plusieurs étapes.",

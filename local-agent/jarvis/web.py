@@ -10,7 +10,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import config, system
+from . import config, scheduler, system, updater
 from .core import Agent, Brain
 
 INDEX = Path(__file__).with_name("index.html")
@@ -72,6 +72,17 @@ class App:
         self.workdir = workdir
         self.agent = Agent(self.brain, self.ui, cfg, workdir, auto=cfg["auto"])
         self.busy = False
+        self.queue = []
+        scheduler.start(self.on_due)
+
+    def on_due(self, item):
+        if item["kind"] == "rappel":
+            system.notify("Rappel de Jarvis", item["task"])
+            self.ui.info(f"⏰ Rappel : {item['task']}", "warn")
+        else:
+            self.queue.append(item["task"])
+        if self.queue and not self.busy:
+            self.send("[Tâche planifiée, exécute-la puis résume le résultat] " + self.queue.pop(0), [])
 
     def state(self):
         return {"provider": self.brain.name, "model": self.brain.llm.model, "auto": self.agent.tools.auto,
@@ -92,8 +103,9 @@ class App:
             text += f"\n[Image jointe par l'utilisateur : {path} — utilise look_at_image pour la voir]"
         self.ui.emit(type="user", text=text)
 
+        self.busy = True
+
         def work():
-            self.busy = True
             try:
                 self.agent.run(text)
             except Exception as e:
@@ -101,6 +113,8 @@ class App:
                 self.ui.done("")
             finally:
                 self.busy = False
+                if self.queue:
+                    self.send("[Tâche planifiée, exécute-la puis résume le résultat] " + self.queue.pop(0), [])
         threading.Thread(target=work, daemon=True).start()
         return {"ok": True}
 
@@ -125,6 +139,8 @@ class App:
             name, key = arg.get("provider"), arg.get("key", "").strip()
             self.cfg["api_keys"][name] = key
             config.save(self.cfg)
+        elif cmd == "update":
+            return {**self.state(), "message": updater.update()}
         elif cmd == "listen":
             text, err = system.listen()
             return {"text": text, "error": err}

@@ -87,6 +87,7 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
   <button class="btn" id="voice" title="Lire les réponses à voix haute">Voix</button>
   <button class="btn" id="keys" title="Clés API gratuites">Clés</button>
   <button class="btn" id="new">Nouveau</button>
+  <button class="btn" id="update" title="Télécharger la dernière version de Jarvis">Mise à jour</button>
 </header>
 <main id="main"><div class="wrap" id="log">
   <div id="plan"></div>
@@ -270,6 +271,12 @@ $("model").onclick = async () => {
   if (!m || m === state.model) return;
   const r = await post("/command", {cmd: "model", arg: m});
   if (r.error) add("info error", esc(r.error)); else { refresh(r); add("info", `Modèle : ${m}`); }
+};
+$("update").onclick = async () => {
+  if (!confirm("Télécharger et installer la dernière version de Jarvis ? (tes réglages sont conservés)")) return;
+  add("info", "Mise à jour en cours…");
+  const r = await post("/command", {cmd: "update"});
+  add(r.error ? "info error" : "info warn", esc(r.error || r.message));
 };
 $("new").onclick = async () => { await post("/command", {cmd: "new"}); location.reload(); };
 $("confirm").addEventListener("click", async e => {

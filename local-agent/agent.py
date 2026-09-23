@@ -16,7 +16,7 @@ import threading
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from jarvis import config, system  # noqa: E402
+from jarvis import config, scheduler, system, updater  # noqa: E402
 from jarvis.config import MEMORY_FILE  # noqa: E402
 from jarvis.core import Agent, Brain  # noqa: E402
 from jarvis.llm import OllamaLLM  # noqa: E402
@@ -88,6 +88,8 @@ HELP = """Commandes :
   /cerveau NOM          changer de modèle : local, gemini, groq, openrouter
   /modele NOM           changer le modèle du cerveau actuel (ex: /modele qwen3:1.7b)
   /cle FOURNISSEUR CLÉ  enregistrer une clé API gratuite (ex: /cle gemini AIza...)
+  /taches               rappels et tâches programmés
+  /maj                  mettre Jarvis à jour
   /memoire              afficher la mémoire à long terme
   /reprendre            reprendre la dernière conversation
   /resume               résumer le contexte maintenant
@@ -121,6 +123,12 @@ def terminal(cfg, args):
             if brain.name == "local":
                 sys.exit(1)
     agent = Agent(brain, ui, cfg, cfg["workdir"], auto=cfg["auto"])
+
+    def on_due(item):
+        label = "Rappel" if item["kind"] == "rappel" else "Tâche prévue (lance l'interface web pour l'exécution auto)"
+        system.notify(f"Jarvis — {label}", item["task"])
+        say(f"\n  ⏰ {label} : {item['task']}", "yellow")
+    scheduler.start(on_due)
 
     if args.tache:
         agent.run(" ".join(args.tache))
@@ -177,6 +185,11 @@ def terminal(cfg, args):
                     cfg["api_keys"][name] = key.strip()
                     config.save(cfg)
                     say(f"Clé {name} enregistrée. Tape /cerveau {name} pour l'utiliser.", "cyan")
+            elif cmd == "/taches":
+                say(agent.tools.list_scheduled(), "cyan")
+            elif cmd == "/maj":
+                say("Téléchargement de la mise à jour…", "cyan")
+                say(updater.update(), "cyan")
             elif cmd == "/memoire":
                 say(MEMORY_FILE.read_text(encoding="utf-8") if MEMORY_FILE.exists() else "(vide)", "cyan")
             elif cmd == "/reprendre":
@@ -208,9 +221,13 @@ def main():
     ap.add_argument("--ctx", type=int, help="taille de contexte (tokens)")
     ap.add_argument("-d", "--dir", help="dossier de travail (par défaut ~/Jarvis)")
     ap.add_argument("--auto", action="store_true", help="aucune confirmation (prudence !)")
+    ap.add_argument("--maj", action="store_true", help="mettre Jarvis à jour depuis GitHub")
     ap.add_argument("--set-key", nargs=2, metavar=("FOURNISSEUR", "CLE"), help="enregistrer une clé API")
     a = ap.parse_args()
 
+    if a.maj:
+        print(updater.update())
+        return
     if a.set_key:
         cfg["api_keys"][a.set_key[0]] = a.set_key[1]
         if a.set_key[0] in cfg["providers"]:

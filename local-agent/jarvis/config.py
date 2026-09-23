@@ -10,6 +10,7 @@ CONFIG_FILE = HOME / "config.json"
 MEMORY_FILE = HOME / "memoire.md"
 SESSIONS_DIR = HOME / "sessions"
 CAPTURES_DIR = HOME / "captures"
+SKILLS_DIR = HOME / "competences"
 
 # "ctx" = fenêtre de contexte en tokens. 8192 est un bon maximum pour 8 Go de RAM.
 PROVIDERS = {

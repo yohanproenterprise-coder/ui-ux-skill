@@ -44,12 +44,27 @@ Ajoute une clé avec le bouton **Clés** de l'interface, puis choisis le cerveau
 | Ouvrir des applications, sites, dossiers | « Ouvre Excel » / « Ouvre YouTube » |
 | Presse-papiers | « Traduis en anglais ce que j'ai copié et remets-le dans le presse-papiers » |
 | Voix : parler et écouter | bouton 🎤 et bouton « Voix » |
+| **Piloter souris et clavier** | « Ouvre le Bloc-notes, écris une liste de courses et enregistre-la sur le Bureau » |
+| **Rappels et notifications** | « Rappelle-moi dans 20 minutes de sortir le linge » |
+| **Tâches automatiques** | « Chaque matin à 8h, résume-moi l'actualité et enregistre-la dans un fichier » |
+| **Base de connaissances** | « Indexe mon dossier Documents » puis « Quel est mon numéro de contrat d'assurance ? » |
+| **Création d'images** | « Crée une image d'un chat astronaute style aquarelle » |
+| **Compétences apprises** | « Apprends cette méthode pour faire mes factures : … » (il la réutilisera ensuite) |
 | Mémoire entre les sessions | « Retiens que je m'appelle … et que je travaille sur … » |
 | Plans pour les grosses tâches | il affiche et coche les étapes au fur et à mesure |
 | Sous-agents | il confie les longues recherches à un assistant secondaire |
 | Conversations sans fin | il résume automatiquement les vieux échanges |
 
 Jarvis travaille par défaut dans le dossier `C:\Users\<toi>\Jarvis`. Il peut aussi accéder à tout autre dossier si tu lui donnes le chemin.
+
+Bon à savoir :
+- Les rappels et tâches programmées ne se déclenchent que **quand Jarvis est ouvert**. Pour les tâches automatiques, utilise l'interface web.
+- Le pilotage souris/clavier marche mieux avec un cerveau cloud (Gemini) : le petit modèle local ne l'utilise pas.
+- La création d'images passe par le service gratuit Pollinations (internet requis).
+
+## Mettre à jour Jarvis
+
+Clique sur **Mise à jour** en haut de l'interface (ou tape `/maj` dans le terminal), puis ferme et relance Jarvis. Tes réglages, tes clés, ta mémoire et tes compétences sont conservés.
 
 ## Sécurité
 

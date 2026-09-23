@@ -7,9 +7,11 @@ import time
 
 from . import config, llm
 from .config import MEMORY_FILE, SESSIONS_DIR
-from .tools import TOOL_SPECS, Tools
+from .tools import TOOL_SPECS, Tools, list_skills
 
-SPEC_TOKENS = len(json.dumps(TOOL_SPECS, ensure_ascii=False)) // 3
+# Outils retirés quand le contexte est petit (modèle local) : trop coûteux et mal maîtrisés par un petit modèle
+HEAVY_TOOLS = {"click", "scroll", "type_text", "press_keys", "delegate", "download_file", "save_skill",
+               "index_documents", "cancel_scheduled"}
 
 
 class Brain:
@@ -31,6 +33,10 @@ class Brain:
     @property
     def ctx(self):
         return self.llm.ctx
+
+    @property
+    def active_ctx(self):
+        return self.backup.ctx if self.backup and time.time() < self.backup_until else self.llm.ctx
 
     @property
     def label(self):
@@ -63,6 +69,7 @@ class Brain:
 
 def system_prompt(workdir):
     memory = MEMORY_FILE.read_text(encoding="utf-8").strip() if MEMORY_FILE.exists() else "(vide)"
+    skills = "\n".join(f"- {n} : {d}" for n, d in list_skills()) or "(aucune pour l'instant)"
     shell = "PowerShell" if platform.system() == "Windows" else "sh"
     return f"""Tu es Jarvis, un assistant IA autonome qui tourne sur l'ordinateur de l'utilisateur et agit pour lui.
 Réponds en français, de façon claire et concise.
@@ -79,8 +86,18 @@ Règles :
 - Information récente ou incertaine : web_search puis fetch_url sur les meilleures sources.
 - Pour voir ce qu'il y a à l'écran : screenshot avec une question. Pour une image : look_at_image.
 - Grosse recherche indépendante : delegate à un sous-agent.
+- Piloter l'ordinateur : screenshot(question) pour voir et obtenir les coordonnées, puis click / type_text /
+  press_keys, puis un nouveau screenshot pour vérifier. Préfère open_item et run_command quand c'est possible.
+- « Rappelle-moi… », « chaque jour à… » : schedule (kind=rappel pour une notification, kind=tache pour
+  une action que tu feras toi-même à l'heure dite).
+- Questions sur les documents de l'utilisateur : search_documents (index_documents d'abord si besoin).
+- Avant une tâche, regarde si une compétence correspond (use_skill). Quand l'utilisateur t'apprend une
+  méthode, ou qu'une procédure complexe a réussi, enregistre-la avec save_skill.
 - Quand tu apprends un fait durable sur l'utilisateur (prénom, projets, préférences) : remember.
 - Termine par un résumé court et honnête : ce qui est fait, ce qui reste.
+
+Compétences disponibles :
+{skills}
 
 Mémoire à long terme :
 {memory}"""
@@ -96,15 +113,21 @@ class Agent:
         self.session_file = SESSIONS_DIR / f"{datetime.datetime.now():%Y%m%d-%H%M%S}.json"
 
     # ------------------------------------------------------------ contexte --
+    def _specs(self):
+        if self.brain.active_ctx >= 16000:
+            return self.specs
+        return [t for t in self.specs if t["function"]["name"] not in HEAVY_TOOLS]
+
     def _tokens(self):
-        return SPEC_TOKENS + sum(len(json.dumps(m, ensure_ascii=False)) for m in self.messages) // 3
+        spec = len(json.dumps(self._specs(), ensure_ascii=False)) // 3
+        return spec + sum(len(json.dumps(m, ensure_ascii=False)) for m in self.messages) // 3
 
     def _max_tool_chars(self):
-        return int(min(20000, max(3000, self.brain.ctx * 0.6)))
+        return int(min(20000, max(3000, self.brain.active_ctx * 0.6)))
 
     def compact(self, force=False):
         """Résume les anciens échanges pour ne jamais dépasser la fenêtre de contexte."""
-        if not force and self._tokens() < self.brain.ctx * 0.75:
+        if not force and self._tokens() < self.brain.active_ctx * 0.75:
             return
         cut = max(1, len(self.messages) - 6)
         while cut > 1 and self.messages[cut]["role"] == "tool":
@@ -117,7 +140,7 @@ class Agent:
             f"[{m['role']}] {(m.get('content') or '')[:1500]}"
             + "".join(f" <{c['name']} {json.dumps(c['args'], ensure_ascii=False)[:200]}>"
                       for c in m.get("tool_calls") or [])
-            for m in old)[-int(self.brain.ctx * 2):]
+            for m in old)[-int(self.brain.active_ctx * 2):]
         summary = self.brain.chat([
             {"role": "system", "content": "Tu résumes des sessions de travail de façon dense et factuelle."},
             {"role": "user", "content": "Résume cet historique : objectifs de l'utilisateur, décisions, fichiers "
@@ -160,7 +183,7 @@ class Agent:
         try:
             for _ in range(self.cfg.get("max_steps", 60)):
                 self.compact()
-                reply = self.brain.chat(self.messages, self.specs, self._token)
+                reply = self.brain.chat(self.messages, self._specs(), self._token)
                 self.messages.append(reply)
                 if not reply["tool_calls"]:
                     self.save()
