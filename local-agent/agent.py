@@ -21,7 +21,11 @@ from jarvis.config import MEMORY_FILE  # noqa: E402
 from jarvis.core import Agent, Brain  # noqa: E402
 from jarvis.llm import OllamaLLM  # noqa: E402
 
-if os.name == "nt":
+if sys.stdout is None:  # lancé sans fenêtre (pythonw, démarrage automatique) : on écrit dans un journal
+    _log_dir = config.HOME
+    _log_dir.mkdir(parents=True, exist_ok=True)
+    sys.stdout = sys.stderr = open(_log_dir / "jarvis.log", "a", encoding="utf-8", buffering=1)
+elif os.name == "nt":
     os.system("")  # active les couleurs ANSI dans la console Windows
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -89,6 +93,8 @@ HELP = """Commandes :
   /modele NOM           changer le modèle du cerveau actuel (ex: /modele qwen3:1.7b)
   /cle FOURNISSEUR CLÉ  enregistrer une clé API gratuite (ex: /cle gemini AIza...)
   /taches               rappels et tâches programmés
+  /email ADRESSE MDP     configurer ta boîte mail (mot de passe d'application)
+  /demarrage            lancer Jarvis au démarrage de Windows (oui/non)
   /maj                  mettre Jarvis à jour
   /memoire              afficher la mémoire à long terme
   /reprendre            reprendre la dernière conversation
@@ -185,6 +191,18 @@ def terminal(cfg, args):
                     cfg["api_keys"][name] = key.strip()
                     config.save(cfg)
                     say(f"Clé {name} enregistrée. Tape /cerveau {name} pour l'utiliser.", "cyan")
+            elif cmd == "/email":
+                address, _, password = arg.partition(" ")
+                if "@" not in address or not password.strip():
+                    say("Usage : /email adresse@exemple.fr MOT_DE_PASSE_APPLICATION", "yellow")
+                else:
+                    cfg["email"] = {"address": address, "password": password.strip()}
+                    config.save(cfg)
+                    say("Boîte mail enregistrée. Test : " + agent.tools.read_emails(3), "cyan")
+            elif cmd == "/demarrage":
+                on = not system.startup_enabled()
+                err = system.set_startup(on, updater.APP_DIR)
+                say(err or f"Démarrage automatique {'activé' if on else 'désactivé'}.", "cyan")
             elif cmd == "/taches":
                 say(agent.tools.list_scheduled(), "cyan")
             elif cmd == "/maj":
@@ -216,6 +234,8 @@ def main():
     ap.add_argument("tache", nargs="*", help="tâche à exécuter directement")
     ap.add_argument("--web", action="store_true", help="ouvrir l'interface web")
     ap.add_argument("--port", type=int, default=7860)
+    ap.add_argument("--no-browser", action="store_true", help="ne pas ouvrir le navigateur (démarrage auto)")
+    ap.add_argument("--demarrage", choices=["on", "off"], help="lancer Jarvis au démarrage de Windows")
     ap.add_argument("-c", "--cerveau", help="fournisseur : local, gemini, groq, openrouter")
     ap.add_argument("-m", "--model", help="modèle à utiliser pour ce fournisseur")
     ap.add_argument("--ctx", type=int, help="taille de contexte (tokens)")
@@ -225,6 +245,10 @@ def main():
     ap.add_argument("--set-key", nargs=2, metavar=("FOURNISSEUR", "CLE"), help="enregistrer une clé API")
     a = ap.parse_args()
 
+    if a.demarrage:
+        err = system.set_startup(a.demarrage == "on", updater.APP_DIR)
+        print(err or f"Démarrage automatique {'activé' if a.demarrage == 'on' else 'désactivé'}.")
+        return
     if a.maj:
         print(updater.update())
         return
@@ -252,7 +276,7 @@ def main():
         if cfg["provider"] == "local" and check_local(cfg):
             print("Attention : " + check_local(cfg))
         try:
-            serve(cfg, cfg["workdir"], a.port)
+            serve(cfg, cfg["workdir"], a.port, open_browser=not a.no_browser)
         except ValueError as e:
             sys.exit(str(e))
     else:

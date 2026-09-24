@@ -73,6 +73,14 @@ dialog pre { white-space: pre-wrap; background: var(--panel-2); padding: 10px; b
              font: 13px/1.45 var(--mono); max-height: 300px; overflow: auto; }
 .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
 dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); }
+#settingsDlg { width: min(560px, 92vw); }
+#settingsDlg h3 { font-size: 14px; margin: 18px 0 4px; }
+.hint { color: var(--muted); font-size: 12.5px; font-weight: 400; margin: 2px 0 6px; }
+.line { display: flex; gap: 8px; margin-top: 6px; }
+.line input { flex: 1; }
+#settingsDlg select { width: 100%; }
+.check { display: block; font-size: 14px; }
+.check input { width: auto; margin: 0 8px 0 0; vertical-align: middle; }
 .hello { text-align: center; color: var(--muted); margin-top: 12vh; }
 .hello h2 { color: var(--text); font-weight: 600; }
 @media (max-width: 600px) { header h1 span { display: none; } .user { max-width: 92%; } }
@@ -85,9 +93,8 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
   <button class="btn" id="model" title="Changer le modèle du cerveau actuel">Modèle</button>
   <button class="btn" id="auto" title="Exécuter sans demander confirmation">Auto</button>
   <button class="btn" id="voice" title="Lire les réponses à voix haute">Voix</button>
-  <button class="btn" id="keys" title="Clés API gratuites">Clés</button>
   <button class="btn" id="new">Nouveau</button>
-  <button class="btn" id="update" title="Télécharger la dernière version de Jarvis">Mise à jour</button>
+  <button class="btn" id="settings" title="Clés, e-mail, démarrage, mise à jour">⚙ Réglages</button>
 </header>
 <main id="main"><div class="wrap" id="log">
   <div id="plan"></div>
@@ -115,17 +122,34 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
   </div>
 </dialog>
 
-<dialog id="keysDlg">
-  <strong>Clés API gratuites (optionnel)</strong>
-  <p style="color:var(--muted);font-size:13px">Un modèle cloud gratuit est bien plus rapide et intelligent que le modèle local sur ce PC.
-     Si son quota est épuisé, Jarvis repasse automatiquement en local.</p>
-  <label>Fournisseur <select id="keyProvider">
+<dialog id="settingsDlg">
+  <div class="row" style="justify-content:space-between;margin:0"><strong>Réglages</strong>
+    <button class="btn" data-s="close">Fermer</button></div>
+
+  <h3>Cerveaux cloud gratuits</h3>
+  <p class="hint">Bien plus rapides et intelligents que le modèle local. Si le quota est épuisé, Jarvis repasse en local.</p>
+  <select id="keyProvider">
     <option value="gemini">Gemini (Google) — aistudio.google.com/apikey</option>
     <option value="groq">Groq — console.groq.com/keys</option>
     <option value="openrouter">OpenRouter — openrouter.ai/settings/keys</option>
-  </select></label>
-  <p><input id="keyValue" placeholder="Colle ta clé ici" autocomplete="off"></p>
-  <div class="row"><button class="btn" data-k="close">Fermer</button><button class="btn on" data-k="save">Enregistrer</button></div>
+  </select>
+  <div class="line"><input id="keyValue" placeholder="Colle ta clé ici" autocomplete="off"><button class="btn on" data-s="key">Enregistrer</button></div>
+
+  <h3>E-mail <span id="emailState" class="hint"></span></h3>
+  <p class="hint">Pour que Jarvis lise et envoie tes e-mails. Il faut un <b>mot de passe d'application</b>
+    (Gmail : myaccount.google.com/apppasswords, avec la validation en 2 étapes activée). Jarvis te demande toujours avant d'envoyer.</p>
+  <input id="emailAddr" placeholder="adresse@exemple.fr" autocomplete="off">
+  <div class="line"><input id="emailPass" type="password" placeholder="Mot de passe d'application" autocomplete="new-password">
+    <button class="btn on" data-s="email">Enregistrer</button></div>
+  <div class="line"><button class="btn" data-s="emailTest">Tester la connexion</button><button class="btn" data-s="emailOff">Déconnecter</button></div>
+
+  <h3>Démarrage</h3>
+  <label class="check"><input type="checkbox" id="startup"> Lancer Jarvis en arrière-plan à l'ouverture de Windows
+    <span class="hint">(pour que les rappels et tâches marchent toujours ; l'icône Jarvis ouvre alors l'interface)</span></label>
+
+  <h3>Mise à jour</h3>
+  <div class="line"><button class="btn" data-s="update">Installer la dernière version</button></div>
+  <pre id="settingsMsg" hidden></pre>
 </dialog>
 
 <script>
@@ -272,28 +296,55 @@ $("model").onclick = async () => {
   const r = await post("/command", {cmd: "model", arg: m});
   if (r.error) add("info error", esc(r.error)); else { refresh(r); add("info", `Modèle : ${m}`); }
 };
-$("update").onclick = async () => {
-  if (!confirm("Télécharger et installer la dernière version de Jarvis ? (tes réglages sont conservés)")) return;
-  add("info", "Mise à jour en cours…");
-  const r = await post("/command", {cmd: "update"});
-  add(r.error ? "info error" : "info warn", esc(r.error || r.message));
-};
 $("new").onclick = async () => { await post("/command", {cmd: "new"}); location.reload(); };
 $("confirm").addEventListener("click", async e => {
   const a = e.target.dataset.a; if (!a) return;
   await post("/confirm", {id: confirmId, ok: a !== "no", always: a === "always"});
   $("confirm").close(); if (a === "always") refresh();
 });
-$("keys").onclick = () => $("keysDlg").showModal();
-$("keysDlg").addEventListener("click", async e => {
-  const k = e.target.dataset.k; if (!k) return;
-  if (k === "save" && $("keyValue").value.trim()) {
-    const r = await post("/command", {cmd: "key", arg: {provider: $("keyProvider").value, key: $("keyValue").value}});
-    $("keyValue").value = ""; refresh(r);
-    add("info", `Clé enregistrée. Choisis « ${$("keyProvider").value} » dans le menu en haut pour l'utiliser.`);
+$("settings").onclick = () => { fillSettings(); $("settingsDlg").showModal(); };
+function fillSettings() {
+  $("emailState").textContent = state.email ? `— connecté : ${state.email}` : "— non configuré";
+  $("emailAddr").value = state.email || "";
+  $("startup").checked = !!state.startup; $("startup").disabled = !state.windows;
+}
+function settingsMsg(text, isError) {
+  const m = $("settingsMsg"); m.hidden = false; m.textContent = text;
+  m.style.color = isError ? "var(--err)" : "var(--text)";
+}
+$("settingsDlg").addEventListener("click", async e => {
+  const s = e.target.dataset.s; if (!s) return;
+  if (s === "close") return $("settingsDlg").close();
+  let r;
+  if (s === "key") {
+    if (!$("keyValue").value.trim()) return;
+    r = await post("/command", {cmd: "key", arg: {provider: $("keyProvider").value, key: $("keyValue").value}});
+    $("keyValue").value = "";
+    if (!r.error) settingsMsg(`Clé enregistrée. Choisis « ${$("keyProvider").value} » dans le menu en haut pour l'utiliser.`);
+  } else if (s === "email") {
+    r = await post("/command", {cmd: "email", arg: {address: $("emailAddr").value, password: $("emailPass").value}});
+    $("emailPass").value = ""; if (!r.error) settingsMsg("Boîte mail enregistrée. Clique sur « Tester la connexion ».");
+  } else if (s === "emailOff") {
+    r = await post("/command", {cmd: "email", arg: {address: "", password: ""}});
+    if (!r.error) settingsMsg("Boîte mail déconnectée.");
+  } else if (s === "emailTest") {
+    settingsMsg("Connexion en cours…");
+    r = await post("/command", {cmd: "email_test"});
+    if (!r.error) settingsMsg(r.message);
+  } else if (s === "update") {
+    if (!confirm("Télécharger et installer la dernière version de Jarvis ? (tes réglages sont conservés)")) return;
+    settingsMsg("Téléchargement…");
+    r = await post("/command", {cmd: "update"});
+    if (!r.error) settingsMsg(r.message);
   }
-  $("keysDlg").close();
+  if (r && r.error) settingsMsg(r.error, true);
+  if (r && !r.error) { refresh(r); setTimeout(fillSettings, 50); }
 });
+$("startup").onchange = async e => {
+  const r = await post("/command", {cmd: "startup", arg: e.target.checked});
+  if (r.error) { settingsMsg(r.error, true); e.target.checked = !e.target.checked; }
+  else { refresh(r); settingsMsg(e.target.checked ? "Jarvis se lancera à l'ouverture de Windows." : "Démarrage automatique désactivé."); }
+};
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;

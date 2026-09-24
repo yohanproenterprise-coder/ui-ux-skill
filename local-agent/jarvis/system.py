@@ -1,12 +1,13 @@
 """Intégration avec le système : PowerShell, capture d'écran, voix, presse-papiers, ouverture."""
 
-import base64
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import webbrowser
+from pathlib import Path
 
 WINDOWS = os.name == "nt"
 MAC = sys.platform == "darwin"
@@ -14,12 +15,18 @@ MAC = sys.platform == "darwin"
 
 def powershell(script, env=None, timeout=120):
     """Exécute un script PowerShell et renvoie (code, sortie). Sortie forcée en UTF-8."""
-    script = "[Console]::OutputEncoding=[Text.Encoding]::UTF8;$ProgressPreference='SilentlyContinue';" + script
-    encoded = base64.b64encode(script.encode("utf-16-le")).decode()  # évite tout problème de guillemets
-    r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-                        "-EncodedCommand", encoded],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace",
-                       timeout=timeout, env={**os.environ, **(env or {})})
+    # Passer par un fichier .ps1 évite les problèmes de guillemets et les erreurs au format XML (CLIXML)
+    script = "[Console]::OutputEncoding=[Text.Encoding]::UTF8;$ProgressPreference='SilentlyContinue';\n" + script
+    with tempfile.NamedTemporaryFile("w", suffix=".ps1", delete=False, encoding="utf-8-sig") as f:
+        f.write(script)
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                            "-File", f.name],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=timeout, env={**os.environ, **(env or {})},
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    finally:
+        os.unlink(f.name)
     return r.returncode, ((r.stdout or "") + (r.stderr or "")).strip()
 
 
@@ -193,3 +200,32 @@ def open_item(target):
         os.startfile(target)
     else:
         subprocess.Popen(["open" if MAC else "xdg-open", target])
+
+
+# ------------------------------------------------------ démarrage Windows --
+def _startup_link():
+    return Path(os.environ.get("APPDATA", "")) / "Microsoft/Windows/Start Menu/Programs/Startup/Jarvis.lnk"
+
+
+def startup_enabled():
+    return WINDOWS and _startup_link().exists()
+
+
+def set_startup(enabled, app_dir):
+    """Lance Jarvis en arrière-plan (sans fenêtre) à l'ouverture de session Windows."""
+    if not WINDOWS:
+        return "Disponible uniquement sous Windows."
+    link = _startup_link()
+    if not enabled:
+        if link.exists():
+            link.unlink()
+        return None
+    exe = Path(sys.executable)
+    pythonw = exe.with_name("pythonw.exe")
+    code, out = powershell(
+        "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:J_LINK);"
+        "$s.TargetPath=$env:J_EXE;$s.Arguments=$env:J_ARGS;$s.WorkingDirectory=$env:J_DIR;"
+        "$s.WindowStyle=7;$s.Save()",
+        env={"J_LINK": str(link), "J_EXE": str(pythonw if pythonw.exists() else exe),
+             "J_ARGS": f'"{Path(app_dir) / "agent.py"}" --web --no-browser', "J_DIR": str(app_dir)})
+    return None if code == 0 else out

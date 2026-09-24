@@ -28,7 +28,7 @@ Ton ordinateur (i5 de portable, 8 Go de RAM, pas de carte graphique dédiée) pe
 
 Clé Gemini gratuite : https://aistudio.google.com/apikey (connexion avec un compte Google, bouton « Create API key »).
 Autres cerveaux gratuits possibles : Groq (https://console.groq.com/keys, extrêmement rapide) et OpenRouter (https://openrouter.ai/settings/keys).
-Ajoute une clé avec le bouton **Clés** de l'interface, puis choisis le cerveau dans le menu en haut.
+Ajoute une clé dans **⚙ Réglages** de l'interface, puis choisis le cerveau dans le menu en haut.
 
 ## Ce que Jarvis sait faire
 
@@ -57,14 +57,19 @@ Ajoute une clé avec le bouton **Clés** de l'interface, puis choisis le cerveau
 
 Jarvis travaille par défaut dans le dossier `C:\Users\<toi>\Jarvis`. Il peut aussi accéder à tout autre dossier si tu lui donnes le chemin.
 
+| **E-mails** | « Ai-je reçu des mails importants aujourd'hui ? » / « Réponds à Paul que je serai là à 18h » |
+| **Compétences intégrées** | « Fais le ménage sur mon PC » · « Range mes téléchargements » · « Fais un bilan de santé du PC » · « Fais-moi le résumé de l'actu » |
+
 Bon à savoir :
 - Les rappels et tâches programmées ne se déclenchent que **quand Jarvis est ouvert**. Pour les tâches automatiques, utilise l'interface web.
 - Le pilotage souris/clavier marche mieux avec un cerveau cloud (Gemini) : le petit modèle local ne l'utilise pas.
 - La création d'images passe par le service gratuit Pollinations (internet requis).
+- **Démarrage automatique** : dans ⚙ Réglages, coche « Lancer Jarvis à l'ouverture de Windows ». Jarvis tourne alors en arrière-plan (sans fenêtre) et l'icône Jarvis ouvre simplement l'interface.
+- **E-mails** : dans ⚙ Réglages > E-mail. Il faut un *mot de passe d'application* (Gmail : https://myaccount.google.com/apppasswords, validation en 2 étapes requise). Les adresses Hotmail/Outlook peuvent refuser ce type de connexion. Jarvis demande toujours ton accord avant d'envoyer un mail.
 
 ## Mettre à jour Jarvis
 
-Clique sur **Mise à jour** en haut de l'interface (ou tape `/maj` dans le terminal), puis ferme et relance Jarvis. Tes réglages, tes clés, ta mémoire et tes compétences sont conservés.
+Ouvre **⚙ Réglages > Installer la dernière version** (ou tape `/maj` dans le terminal), puis ferme et relance Jarvis. Tes réglages, tes clés, ta mémoire et tes compétences sont conservés.
 
 ## Sécurité
 

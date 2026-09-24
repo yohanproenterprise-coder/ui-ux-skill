@@ -127,7 +127,9 @@ class OpenAILLM:
         if m.get("tool_calls"):
             out["content"] = content or None
             out["tool_calls"] = [{"id": c["id"], "type": "function", "function": {
-                "name": c["name"], "arguments": json.dumps(c["args"], ensure_ascii=False)}}
+                "name": c["name"], "arguments": json.dumps(c["args"], ensure_ascii=False)},
+                # Gemini 3 exige qu'on lui renvoie la « signature de pensée » reçue avec l'appel
+                **({"extra_content": c["extra"]} if c.get("extra") else {})}
                 for c in m["tool_calls"]]
         return out
 
@@ -156,12 +158,15 @@ class OpenAILLM:
                         if on_token:
                             on_token(delta["content"])
                     for pos, tc in enumerate(delta.get("tool_calls") or []):
-                        slot = acc.setdefault(tc.get("index", pos), {"id": "", "name": "", "args": ""})
+                        slot = acc.setdefault(tc.get("index", pos), {"id": "", "name": "", "args": "", "extra": None})
+                        if tc.get("extra_content"):
+                            slot["extra"] = tc["extra_content"]
                         fn = tc.get("function") or {}
                         slot["id"] = tc.get("id") or slot["id"]
                         slot["name"] = fn.get("name") or slot["name"]
                         slot["args"] += fn.get("arguments") or ""
-        calls = [{"id": s["id"] or f"call_{i}", "name": s["name"], "args": _parse_args(s["args"])}
+        calls = [{"id": s["id"] or f"call_{i}", "name": s["name"], "args": _parse_args(s["args"]),
+                  **({"extra": s["extra"]} if s["extra"] else {})}
                  for i, s in sorted(acc.items())]
         return {"role": "assistant", "content": content, "tool_calls": calls}
 

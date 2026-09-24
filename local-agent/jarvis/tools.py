@@ -14,10 +14,11 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from . import knowledge, scheduler, system
+from . import emailer, knowledge, scheduler, system
 from .config import CAPTURES_DIR, HOME, MEMORY_FILE, SKILLS_DIR
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "$RECYCLE.BIN"}
+BUNDLED_SKILLS = Path(__file__).resolve().parent.parent / "competences"
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
                ".webp": "image/webp", ".gif": "image/gif", ".bmp": "image/bmp"}
 
@@ -293,9 +294,24 @@ class Tools:
         path.write_bytes(data)
         return f"Image créée : {path} (utilise open_item pour l'afficher)"
 
+    # ------------------------------------------------------------ e-mails --
+    def read_emails(self, count=10, unread_only=False, query="", folder="INBOX"):
+        return emailer.list_emails(self.brain.cfg, min(int(count), 50), unread_only, query, folder)
+
+    def read_email(self, uid, folder="INBOX"):
+        return emailer.read_email(self.brain.cfg, uid, folder)
+
+    def send_email(self, to, subject, body):
+        if not self._confirm(f"ENVOYER un e-mail à {to}\nObjet : {subject}\n\n{body}"):
+            return "REFUSÉ par l'utilisateur."
+        emailer.send_email(self.brain.cfg, to, subject, body)
+        return f"E-mail envoyé à {to}."
+
     # ------------------------------------------------------ compétences --
     def use_skill(self, name):
         p = SKILLS_DIR / f"{_slug(name)}.md"
+        if not p.exists():
+            p = BUNDLED_SKILLS / f"{_slug(name)}.md"
         if not p.exists():
             return f"ERREUR : compétence inconnue. Disponibles : {', '.join(s[0] for s in list_skills()) or 'aucune'}"
         return p.read_text(encoding="utf-8")
@@ -362,13 +378,12 @@ def _slug(name):
 
 def list_skills():
     """[(nom, description)] des compétences enregistrées."""
-    if not SKILLS_DIR.exists():
-        return []
-    out = []
-    for p in sorted(SKILLS_DIR.glob("*.md")):
-        first = p.read_text(encoding="utf-8").split("\n", 1)[0].lstrip("# ").strip()
-        out.append((p.stem, first))
-    return out
+    found = {}
+    for folder in (BUNDLED_SKILLS, SKILLS_DIR):  # celles de l'utilisateur remplacent celles fournies
+        if folder.exists():
+            for p in sorted(folder.glob("*.md")):
+                found[p.stem] = p.read_text(encoding="utf-8").split("\n", 1)[0].lstrip("# ").strip()
+    return sorted(found.items())
 
 
 def _office_text(p):
@@ -464,6 +479,11 @@ TOOL_SPECS = [
           "avec leur fichier source.", {"query": S, "k": I}, ["query"]),
     _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
           {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
+    _tool("read_emails", "Liste les e-mails récents (uid, date, expéditeur, objet). query filtre par mot.",
+          {"count": I, "unread_only": {"type": "boolean"}, "query": S, "folder": S}),
+    _tool("read_email", "Lit un e-mail complet à partir de son uid.", {"uid": S, "folder": S}, ["uid"]),
+    _tool("send_email", "Envoie un e-mail (l'utilisateur valide toujours avant l'envoi).",
+          {"to": S, "subject": S, "body": S}, ["to", "subject", "body"]),
     _tool("use_skill", "Charge les instructions d'une compétence enregistrée.", {"name": S}, ["name"]),
     _tool("save_skill", "Enregistre une procédure réutilisable (compétence) quand l'utilisateur t'apprend "
           "à faire quelque chose ou qu'une méthode a bien marché.",

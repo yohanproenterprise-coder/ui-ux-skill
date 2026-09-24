@@ -87,7 +87,9 @@ class App:
     def state(self):
         return {"provider": self.brain.name, "model": self.brain.llm.model, "auto": self.agent.tools.auto,
                 "busy": self.busy, "workdir": str(self.agent.tools.workdir),
-                "providers": {n: config.available(self.cfg, n) for n in self.cfg["providers"]}}
+                "providers": {n: config.available(self.cfg, n) for n in self.cfg["providers"]},
+                "email": (self.cfg.get("email") or {}).get("address", ""),
+                "startup": system.startup_enabled(), "windows": system.WINDOWS}
 
     def send(self, text, images):
         if self.busy:
@@ -139,6 +141,21 @@ class App:
             name, key = arg.get("provider"), arg.get("key", "").strip()
             self.cfg["api_keys"][name] = key
             config.save(self.cfg)
+        elif cmd == "email":
+            address, password = arg.get("address", "").strip(), arg.get("password", "").strip()
+            if address and password:
+                self.cfg["email"] = {"address": address, "password": password}
+            elif not address:
+                self.cfg.pop("email", None)
+            config.save(self.cfg)
+        elif cmd == "email_test":
+            from . import emailer
+            return {**self.state(), "message": "Connexion réussie. Derniers e-mails :\n"
+                    + emailer.list_emails(self.cfg, 3)}
+        elif cmd == "startup":
+            err = system.set_startup(bool(arg), updater.APP_DIR)
+            if err:
+                raise RuntimeError(err)
         elif cmd == "update":
             return {**self.state(), "message": updater.update()}
         elif cmd == "listen":
@@ -148,7 +165,7 @@ class App:
 
 
 def serve(cfg, workdir, port=7860, open_browser=True):
-    app = App(cfg, workdir)
+    app = None
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -203,8 +220,16 @@ def serve(cfg, workdir, port=7860, open_browser=True):
             except Exception as e:
                 self._json({"error": str(e)}, 400)
 
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     url = f"http://localhost:{port}"
+    # Sous Windows, SO_REUSEADDR laisserait deux Jarvis écouter le même port sans erreur
+    ThreadingHTTPServer.allow_reuse_address = not system.WINDOWS
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    except OSError:
+        print(f"Jarvis tourne déjà : j'ouvre {url}")
+        webbrowser.open(url)
+        return
+    app = App(cfg, workdir)
     print(f"Jarvis est prêt sur {url}  (ferme cette fenêtre pour l'arrêter)")
     if open_browser:
         threading.Timer(1, lambda: webbrowser.open(url)).start()
