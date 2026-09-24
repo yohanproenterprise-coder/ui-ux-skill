@@ -10,10 +10,11 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import config, scheduler, system, updater
+from . import config, remote, scheduler, system, updater
 from .core import Agent, Brain
 
 INDEX = Path(__file__).with_name("index.html")
+LOGIN = Path(__file__).with_name("login.html")
 
 
 class WebUI:
@@ -66,8 +67,10 @@ class WebUI:
 
 
 class App:
-    def __init__(self, cfg, workdir):
-        self.cfg, self.ui = cfg, WebUI()
+    def __init__(self, cfg, workdir, port=7860):
+        self.cfg, self.ui, self.port = cfg, WebUI(), port
+        self.bound_remote = False     # le serveur écoute-t-il le réseau local ?
+        self.restart_server = None    # rappel fourni par serve() pour réouvrir le serveur
         self.brain = Brain(cfg, self.ui)
         self.workdir = workdir
         self.agent = Agent(self.brain, self.ui, cfg, workdir, auto=cfg["auto"])
@@ -89,7 +92,10 @@ class App:
                 "busy": self.busy, "workdir": str(self.agent.tools.workdir),
                 "providers": {n: config.available(self.cfg, n) for n in self.cfg["providers"]},
                 "email": (self.cfg.get("email") or {}).get("address", ""),
-                "startup": system.startup_enabled(), "windows": system.WINDOWS}
+                "startup": system.startup_enabled(), "windows": system.WINDOWS,
+                "remote": remote.enabled(self.cfg), "remote_active": self.bound_remote,
+                "has_pin": bool((self.cfg.get("remote") or {}).get("pin_hash")),
+                "addresses": remote.addresses(self.port) if self.bound_remote else []}
 
     def send(self, text, images):
         if self.busy:
@@ -156,6 +162,17 @@ class App:
             err = system.set_startup(bool(arg), updater.APP_DIR)
             if err:
                 raise RuntimeError(err)
+        elif cmd == "remote":
+            if arg.get("pin"):
+                remote.set_pin(self.cfg, arg["pin"])
+            want = bool(arg.get("enabled"))
+            if want and not (self.cfg.get("remote") or {}).get("pin_hash"):
+                raise ValueError("Choisis d'abord un code PIN (au moins 6 chiffres).")
+            self.cfg.setdefault("remote", {})["enabled"] = want
+            config.save(self.cfg)
+            if want != self.bound_remote and self.restart_server:
+                self.restart_server()
+            return {**self.state(), "remote_active": want, "addresses": remote.addresses(self.port) if want else []}
         elif cmd == "update":
             return {**self.state(), "message": updater.update()}
         elif cmd == "listen":
@@ -166,47 +183,81 @@ class App:
 
 def serve(cfg, workdir, port=7860, open_browser=True):
     app = None
+    state = {"server": None, "again": True}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
 
-        def _json(self, data, code=200):
-            body = json.dumps(data, ensure_ascii=False).encode()
+        def _send(self, body, ctype, code=200, headers=()):
             self.send_response(code)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            for k, v in headers:
+                self.send_header(k, v)
             self.end_headers()
             self.wfile.write(body)
+
+        def _json(self, data, code=200, headers=()):
+            self._send(json.dumps(data, ensure_ascii=False).encode(), "application/json; charset=utf-8", code, headers)
 
         def _body(self):
             return json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
 
-        def _local(self):
-            # protège contre les requêtes venues d'autres sites ouverts dans le navigateur
+        def _is_pc(self):
+            return self.client_address[0] in ("127.0.0.1", "::1")
+
+        def _authed(self):
+            if self._is_pc():
+                return True
+            m = re.search(r"jarvis=([0-9a-f]{48})", self.headers.get("Cookie", ""))
+            return bool(m) and remote.token_ok(m.group(1))
+
+        def _same_origin(self):
+            # protège contre les requêtes envoyées par d'autres sites ouverts dans le navigateur
             origin = self.headers.get("Origin")
-            return origin is None or re.match(r"^http://(localhost|127\.0\.0\.1)(:\d+)?$", origin)
+            if origin is None:
+                return True
+            host = re.sub(r"^https?://", "", origin)
+            return host == self.headers.get("Host") or re.match(r"^(localhost|127\.0\.0\.1)(:\d+)?$", host)
 
         def do_GET(self):
-            if self.path == "/":
-                body = INDEX.read_bytes()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(body)))
-                self.end_headers()
-                self.wfile.write(body)
-            elif self.path == "/state":
+            path = self.path.split("?")[0]
+            if path == "/manifest.json":
+                return self._json({"name": "Jarvis", "short_name": "Jarvis", "start_url": "/", "display": "standalone",
+                                   "background_color": "#0f1115", "theme_color": "#0f1115", "lang": "fr",
+                                   "icons": [{"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+                                             {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"}]})
+            if path in ("/icon-192.png", "/icon-512.png", "/apple-touch-icon.png"):
+                return self._send(_icon(512 if "512" in path else 192 if "192" in path else 180), "image/png")
+            if not self._authed():
+                if path == "/":
+                    return self._send(LOGIN.read_bytes(), "text/html; charset=utf-8")
+                return self._json({"error": "non autorisé"}, 401)
+            if path == "/":
+                self._send(INDEX.read_bytes(), "text/html; charset=utf-8")
+            elif path == "/state":
                 self._json(app.state())
-            elif self.path.startswith("/events"):
+            elif path == "/events":
                 m = re.search(r"since=(\d+)", self.path)
                 self._json(app.ui.since(int(m.group(1)) if m else 0))
             else:
                 self._json({"error": "introuvable"}, 404)
 
         def do_POST(self):
-            if not self._local():
+            if not self._same_origin():
                 return self._json({"error": "origine refusée"}, 403)
             data = self._body()
+            if self.path == "/login":
+                ok, msg = remote.check_pin(app.cfg, data.get("pin"))
+                if not ok:
+                    return self._json({"error": msg}, 403)
+                token = remote.new_token(self.headers.get("User-Agent", ""))
+                return self._json({"ok": True}, headers=[("Set-Cookie", f"jarvis={token}; Path=/; HttpOnly; "
+                                                          "SameSite=Strict; Max-Age=31536000")])
+            if not self._authed():
+                return self._json({"error": "non autorisé"}, 401)
             try:
                 if self.path == "/send":
                     self._json(app.send(data.get("text", ""), data.get("images", [])))
@@ -223,17 +274,54 @@ def serve(cfg, workdir, port=7860, open_browser=True):
     url = f"http://localhost:{port}"
     # Sous Windows, SO_REUSEADDR laisserait deux Jarvis écouter le même port sans erreur
     ThreadingHTTPServer.allow_reuse_address = not system.WINDOWS
+
+    def open_server():
+        host = "0.0.0.0" if remote.enabled(cfg) else "127.0.0.1"
+        server = ThreadingHTTPServer((host, port), Handler)
+        if app:
+            app.bound_remote = host == "0.0.0.0"
+        return server
+
     try:
-        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+        state["server"] = open_server()
     except OSError:
         print(f"Jarvis tourne déjà : j'ouvre {url}")
         webbrowser.open(url)
         return
-    app = App(cfg, workdir)
+    app = App(cfg, workdir, port)
+    app.bound_remote = remote.enabled(cfg)
+
+    def restart():
+        # appelé depuis une requête : on ferme le serveur dans un autre fil, la boucle ci-dessous le rouvre
+        threading.Timer(0.3, state["server"].shutdown).start()
+    app.restart_server = restart
+
     print(f"Jarvis est prêt sur {url}  (ferme cette fenêtre pour l'arrêter)")
+    if app.bound_remote:
+        print("Accès téléphone activé : " + ", ".join(a["url"] for a in remote.addresses(port)))
     if open_browser:
         threading.Timer(1, lambda: webbrowser.open(url)).start()
     try:
-        server.serve_forever()
+        while True:
+            state["server"].serve_forever()
+            state["server"].server_close()
+            for _ in range(20):  # rouvre sur la nouvelle interface réseau
+                try:
+                    state["server"] = open_server()
+                    break
+                except OSError:
+                    time.sleep(0.25)
+            else:
+                print("Impossible de rouvrir le serveur.")
+                return
     except KeyboardInterrupt:
         pass
+
+
+_ICONS = {}
+
+
+def _icon(size):
+    if size not in _ICONS:
+        _ICONS[size] = remote.icon_png(size)
+    return _ICONS[size]

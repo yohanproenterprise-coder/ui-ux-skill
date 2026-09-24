@@ -2,7 +2,13 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Jarvis</title>
 <style>
 :root {
@@ -83,7 +89,22 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
 .check input { width: auto; margin: 0 8px 0 0; vertical-align: middle; }
 .hello { text-align: center; color: var(--muted); margin-top: 12vh; }
 .hello h2 { color: var(--text); font-weight: 600; }
-@media (max-width: 600px) { header h1 span { display: none; } .user { max-width: 92%; } }
+@media (max-width: 600px) {
+  header { padding: 8px 10px; gap: 6px; padding-top: max(8px, env(safe-area-inset-top)); }
+  header h1 span { display: none; }
+  header h1 { flex: 0 0 auto; }
+  header .lbl { display: none; }
+  select, .btn { padding: 5px 8px; font-size: 13.5px; }
+  #provider { flex: 1 0 50%; min-width: 0; order: 1; }
+  #settings { order: 2; }
+  header .btn:not(#settings) { order: 3; flex: 1; }
+  main { padding: 12px 10px 6px; }
+  .user { max-width: 92%; }
+  footer { padding: 8px 8px max(10px, env(safe-area-inset-bottom)); }
+  textarea { font-size: 16px; } /* évite le zoom automatique sur iPhone */
+}
+.addr { font: 15px var(--mono); user-select: all; background: var(--panel-2); padding: 6px 8px; border-radius: 8px;
+        display: inline-block; margin: 2px 0; }
 </style>
 </head>
 <body>
@@ -94,7 +115,7 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
   <button class="btn" id="auto" title="Exécuter sans demander confirmation">Auto</button>
   <button class="btn" id="voice" title="Lire les réponses à voix haute">Voix</button>
   <button class="btn" id="new">Nouveau</button>
-  <button class="btn" id="settings" title="Clés, e-mail, démarrage, mise à jour">⚙ Réglages</button>
+  <button class="btn" id="settings" title="Clés, e-mail, démarrage, mise à jour">⚙<span class="lbl"> Réglages</span></button>
 </header>
 <main id="main"><div class="wrap" id="log">
   <div id="plan"></div>
@@ -146,6 +167,13 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
   <h3>Démarrage</h3>
   <label class="check"><input type="checkbox" id="startup"> Lancer Jarvis en arrière-plan à l'ouverture de Windows
     <span class="hint">(pour que les rappels et tâches marchent toujours ; l'icône Jarvis ouvre alors l'interface)</span></label>
+
+  <h3>Téléphone</h3>
+  <p class="hint">Pilote Jarvis depuis ton téléphone. Protégé par un code PIN : sans lui, personne ne peut s'en servir.</p>
+  <div class="line"><input id="pin" type="password" inputmode="numeric" placeholder="Code PIN (6 chiffres minimum)" autocomplete="new-password">
+    <button class="btn on" data-s="pin">Enregistrer</button></div>
+  <label class="check" style="margin-top:8px"><input type="checkbox" id="remote"> Autoriser l'accès depuis mon téléphone</label>
+  <div id="remoteInfo" class="hint"></div>
 
   <h3>Mise à jour</h3>
   <div class="line"><button class="btn" data-s="update">Installer la dernière version</button></div>
@@ -223,7 +251,9 @@ let replaying = true;
 async function poll() {
   for (;;) {
     try {
-      const evs = await (await fetch(`/events?since=${since}`)).json();
+      const res = await fetch(`/events?since=${since}`);
+      if (res.status === 401) return location.reload();
+      const evs = await res.json();
       evs.forEach(e => { handle(e); since = e.i + 1; });
       replaying = false;
     } catch (err) { await new Promise(r => setTimeout(r, 2000)); }
@@ -236,6 +266,7 @@ function setBusy(b) {
 }
 async function post(path, body) {
   const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  if (r.status === 401) location.reload();
   return r.json();
 }
 async function refresh(s) {
@@ -307,6 +338,14 @@ function fillSettings() {
   $("emailState").textContent = state.email ? `— connecté : ${state.email}` : "— non configuré";
   $("emailAddr").value = state.email || "";
   $("startup").checked = !!state.startup; $("startup").disabled = !state.windows;
+  $("remote").checked = !!state.remote;
+  $("pin").placeholder = state.has_pin ? "Nouveau code PIN (facultatif)" : "Code PIN (6 chiffres minimum)";
+  $("remoteInfo").innerHTML = !state.remote_active ? "" :
+    "Sur ton téléphone, connecté au même Wi-Fi, ouvre le navigateur et tape :<br>" +
+    (state.addresses.length ? state.addresses.map(a => `<span class="addr">${esc(a.url)}</span> <small>(${esc(a.kind)})</small>`).join("<br>")
+                            : "(adresse introuvable : vérifie que le PC est connecté au Wi-Fi)") +
+    "<br>Puis, dans le menu du navigateur : « Ajouter à l'écran d'accueil ».<br>" +
+    "Si la page ne s'ouvre pas : Windows a peut-être bloqué l'accès (voir le guide, section Téléphone).";
 }
 function settingsMsg(text, isError) {
   const m = $("settingsMsg"); m.hidden = false; m.textContent = text;
@@ -331,6 +370,10 @@ $("settingsDlg").addEventListener("click", async e => {
     settingsMsg("Connexion en cours…");
     r = await post("/command", {cmd: "email_test"});
     if (!r.error) settingsMsg(r.message);
+  } else if (s === "pin") {
+    if (!$("pin").value.trim()) return;
+    r = await post("/command", {cmd: "remote", arg: {enabled: state.remote, pin: $("pin").value}});
+    $("pin").value = ""; if (!r.error) settingsMsg("Code PIN enregistré. Les téléphones déjà connectés devront le retaper.");
   } else if (s === "update") {
     if (!confirm("Télécharger et installer la dernière version de Jarvis ? (tes réglages sont conservés)")) return;
     settingsMsg("Téléchargement…");
@@ -340,6 +383,12 @@ $("settingsDlg").addEventListener("click", async e => {
   if (r && r.error) settingsMsg(r.error, true);
   if (r && !r.error) { refresh(r); setTimeout(fillSettings, 50); }
 });
+$("remote").onchange = async e => {
+  const r = await post("/command", {cmd: "remote", arg: {enabled: e.target.checked}});
+  if (r.error) { settingsMsg(r.error, true); e.target.checked = !e.target.checked; return; }
+  settingsMsg(e.target.checked ? "Accès téléphone activé." : "Accès téléphone désactivé : Jarvis n'est plus visible sur le réseau.");
+  await new Promise(res => setTimeout(res, 900)); refresh(r); setTimeout(fillSettings, 50);
+};
 $("startup").onchange = async e => {
   const r = await post("/command", {cmd: "startup", arg: e.target.checked});
   if (r.error) { settingsMsg(r.error, true); e.target.checked = !e.target.checked; }
@@ -364,6 +413,7 @@ $("mic").onclick = async () => {
   }
 };
 
+if (innerWidth < 600) $("input").placeholder = "Écris ta demande…";
 refresh(); poll();
 </script>
 </body>

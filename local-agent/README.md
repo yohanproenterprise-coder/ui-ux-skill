@@ -67,6 +67,25 @@ Bon à savoir :
 - **Démarrage automatique** : dans ⚙ Réglages, coche « Lancer Jarvis à l'ouverture de Windows ». Jarvis tourne alors en arrière-plan (sans fenêtre) et l'icône Jarvis ouvre simplement l'interface.
 - **E-mails** : dans ⚙ Réglages > E-mail. Il faut un *mot de passe d'application* (Gmail : https://myaccount.google.com/apppasswords, validation en 2 étapes requise). Les adresses Hotmail/Outlook peuvent refuser ce type de connexion. Jarvis demande toujours ton accord avant d'envoyer un mail.
 
+## Jarvis sur ton téléphone
+
+Ton téléphone devient la télécommande du Jarvis de ton PC : même intelligence, mêmes fichiers, mêmes capacités.
+
+1. Sur le PC : **⚙ Réglages > Téléphone**. Choisis un **code PIN** (au moins 6 chiffres), clique sur Enregistrer, puis coche **« Autoriser l'accès depuis mon téléphone »**.
+2. Windows peut afficher une fenêtre « Pare-feu » pour Python : coche **Réseaux privés** et clique sur **Autoriser**.
+3. Jarvis affiche une adresse du type `http://192.168.1.23:7860`. Sur ton téléphone, **connecté au même Wi-Fi**, tape-la dans le navigateur, puis entre ton code PIN.
+4. Pour avoir une vraie icône d'application :
+   - **Android (Chrome)** : menu ⋮ puis **Ajouter à l'écran d'accueil**.
+   - **iPhone (Safari)** : bouton Partager puis **Sur l'écran d'accueil**.
+
+À savoir :
+- Le PC doit être allumé, avec Jarvis ouvert. L'idéal : coche aussi « Lancer Jarvis à l'ouverture de Windows ».
+- Pour dicter, utilise le **micro du clavier de ton téléphone** : le bouton 🎤 de Jarvis ne fonctionne que sur le PC.
+- Après 5 mauvais codes, l'accès est bloqué 5 minutes. Changer le code PIN déconnecte tous les téléphones.
+- **Depuis l'extérieur (4G, ailleurs)** : installe l'application gratuite **Tailscale** (https://tailscale.com/download) sur le PC ET sur le téléphone, avec le même compte. Jarvis affichera alors une deuxième adresse en `http://100.x.x.x:7860`, qui marche de partout, de façon sécurisée.
+- **La page ne s'ouvre pas sur le téléphone ?** Vérifie que le téléphone est sur le même Wi-Fi, et que le réseau Wi-Fi du PC est en « Réseau privé » (Paramètres > Réseau et Internet > Wi-Fi > ton réseau). Sinon, ouvre PowerShell **en administrateur** et tape :
+  `New-NetFirewallRule -DisplayName "Jarvis" -Direction Inbound -Protocol TCP -LocalPort 7860 -Profile Private -Action Allow`
+
 ## Mettre à jour Jarvis
 
 Ouvre **⚙ Réglages > Installer la dernière version** (ou tape `/maj` dans le terminal), puis ferme et relance Jarvis. Tes réglages, tes clés, ta mémoire et tes compétences sont conservés.
