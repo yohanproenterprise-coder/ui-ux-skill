@@ -484,13 +484,15 @@ TOOL_SPECS = [
     _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
           {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
     _tool("edit_photo", "Retouche une photo, un dossier entier ou un motif (*.jpg). Réglages de -100 à +100. "
-          "Crée une copie (suffixe -retouche), l'original reste intact. Pour le Studio visuel, "
-          "dis à l'utilisateur de cliquer sur le bouton Studio.",
+          "Crée une copie (suffixe -retouche), l'original reste intact. Pour EFFACER un objet ou une personne "
+          "(le fond se reconstruit), dis à l'utilisateur d'utiliser la Gomme magique du Studio (bouton Studio).",
           {"path": S, "brightness": I, "contrast": I, "saturation": I, "sharpness": I,
            "auto": {"type": "boolean", "description": "amélioration automatique"},
            "filter": {"type": "string", "enum": photo.FILTERS}, "crop_ratio": {"type": "string", "description": "ex: 1:1, 4:5, 16:9"},
            "rotate": I, "flip": {"type": "string", "enum": ["horizontal", "vertical"]}, "max_size": I,
-           "blur": I, "vignette": I, "text": S,
+           "blur": I, "vignette": I, "text": S, "width": I, "height": I,
+           "upscale": {"type": "number", "description": "agrandissement, ex: 2 pour ×2"},
+           "denoise": {"type": "boolean", "description": "réduction du bruit"},
            "text_position": {"type": "string", "enum": ["bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "centre"]},
            "output_format": {"type": "string", "enum": ["jpeg", "png", "webp"]}, "quality": I, "out_dir": S},
           ["path"]),

@@ -66,10 +66,12 @@ Clique sur **Studio** en haut de Jarvis (ou « Retoucher une photo » sur l'accu
 - ouvre une photo (glisser-déposer, copier-coller, bouton, ou galerie des photos récentes du PC) ;
 - **Réglages** : amélioration automatique, exposition, contraste, hautes lumières, ombres, saturation, vibrance, température, teinte, netteté, flou, vignette, grain (double-clic sur un curseur pour le remettre à zéro) ;
 - **Filtres** : 11 filtres avec aperçu et intensité réglable ;
+- **Gomme magique** : peins sur un objet, une personne, un texte ou une tache, clique sur « Effacer » : le fond se reconstruit à partir de ce qui l'entoure (fonctionne le mieux sur ciel, mer, mur, sable, herbe ; pour une grande zone, efface en plusieurs fois) ;
+- **Améliorer la qualité** : un clic (réduction du bruit, clarté, netteté, niveaux), ou réglage fin avec les curseurs ;
 - **Recadrer** : formats carré, 4:5, 3:2, 16:9, 9:16 ou libre, rotation et miroir ;
 - **Texte** : signature ou légende ;
 - **Avant / après** (maintenir le bouton), Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ;
-- **Exporter** : JPEG, PNG ou WebP, taille au choix, enregistrement dans `Jarvis\photos`, téléchargement, ou envoi à Jarvis pour avoir son avis et une légende.
+- **Exporter et redimensionner** : JPEG, PNG ou WebP ; largeur et hauteur au pixel près (proportions verrouillables), formats prêts (4K, 2048, 1080 réseaux sociaux…) ou agrandissement ×2 / ×4 ; enregistrement dans `Jarvis\photos`, téléchargement, ou envoi à Jarvis pour avoir son avis et une légende.
 
 Tu peux aussi demander par écrit : *« Retouche cette photo : plus lumineuse, filtre vintage, format carré »* ou *« Réduis toutes les photos du dossier Vacances à 1080 px avec ma signature »*. Jarvis crée des copies, les originaux restent intacts.
 

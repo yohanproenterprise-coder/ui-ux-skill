@@ -109,6 +109,7 @@ def _text(img, text, position="bas-droite", size=None, color="#ffffff"):
 
 def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, filter=None, crop_ratio=None,
          rotate=0, flip=None, max_size=None, blur=0, vignette=0, text=None, text_position="bas-droite",
+         width=None, height=None, upscale=None, denoise=False,
          output_format=None, quality=90, out_dir=None, suffix="-retouche"):
     """Les réglages vont de -100 à +100 (0 = inchangé). Renvoie un compte rendu."""
     err = ensure_pillow()
@@ -123,6 +124,8 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
     done = []
     for f in files[:500]:
         img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
+        if denoise:
+            img = Image.blend(img, img.filter(ImageFilter.MedianFilter(3)), 0.6)
         if auto:
             img = ImageOps.autocontrast(img, cutoff=1)
             img = ImageEnhance.Color(img).enhance(1.1)
@@ -144,6 +147,14 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
             img = _vignette(img, float(vignette) / 100)
         if max_size:
             img.thumbnail((int(max_size), int(max_size)), Image.LANCZOS)
+        if upscale and float(upscale) > 1:
+            f = float(upscale)
+            img = img.resize((round(img.width * f), round(img.height * f)), Image.LANCZOS)
+            img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
+        if width or height:
+            w = int(width) if width else round(img.width * int(height) / img.height)
+            h = int(height) if height else round(img.height * int(width) / img.width)
+            img = img.resize((max(1, w), max(1, h)), Image.LANCZOS)
         if text:
             img = _text(img, text, text_position)
         fmt = (output_format or f.suffix.lstrip(".")).lower().replace("jpg", "jpeg")

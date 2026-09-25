@@ -2,13 +2,14 @@
 (() => {
   const DEFAULTS = {
     exposure: 0, contrast: 0, highlights: 0, shadows: 0, saturation: 0, vibrance: 0, temperature: 0, tint: 0,
-    sharpen: 0, blur: 0, vignette: 0, grain: 0, filter: "none", filterAmt: 100, rot: 0, flipH: false, flipV: false,
+    sharpen: 0, blur: 0, vignette: 0, grain: 0, denoise: 0, clarity: 0, filter: "none", filterAmt: 100, rot: 0, flipH: false, flipV: false,
     crop: null, levels: null, text: { value: "", size: 6, color: "#ffffff", pos: "bas-droite" }
   };
   const SLIDERS = [
     ["Lumière", [["exposure", "Exposition"], ["contrast", "Contraste"], ["highlights", "Hautes lumières"], ["shadows", "Ombres"]]],
     ["Couleur", [["saturation", "Saturation"], ["vibrance", "Vibrance"], ["temperature", "Température"], ["tint", "Teinte"]]],
-    ["Effets", [["sharpen", "Netteté", 0], ["blur", "Flou", 0], ["vignette", "Vignette", 0], ["grain", "Grain", 0]]]
+    ["Qualité", [["denoise", "Réduction du bruit", 0], ["clarity", "Clarté"], ["sharpen", "Netteté", 0]]],
+    ["Effets", [["blur", "Flou", 0], ["vignette", "Vignette", 0], ["grain", "Grain", 0]]]
   ];
   const clamp = v => v < 0 ? 0 : v > 255 ? 255 : v;
   const luma = (r, g, b) => .299 * r + .587 * g + .114 * b;
@@ -28,7 +29,8 @@
     drama: ["Dramatique", (r, g, b) => { const l = luma(r, g, b); return [(l + (r - l) * .7 - 128) * 1.4 + 128, (l + (g - l) * .7 - 128) * 1.4 + 128, (l + (b - l) * .7 - 128) * 1.4 + 128]; }]
   };
 
-  const S = { full: null, prev: null, name: "photo", p: clone(DEFAULTS), hist: [], fut: [], tab: "adjust", cropRatio: null, cropBox: null, compare: false };
+  const S = { full: null, prev: null, name: "photo", p: clone(DEFAULTS), hist: [], fut: [], tab: "adjust", cropRatio: null, cropBox: null,
+              compare: false, baseHist: [], erase: false };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   const el = (tag, attrs = {}, html = "") => { const e = document.createElement(tag); Object.assign(e, attrs); if (html) e.innerHTML = html; return e; };
   const q = s => document.querySelector(s);
@@ -58,22 +60,42 @@
           <div class="st-gallery" id="st-gallery"><span class="st-note">Chargement…</span></div>
         </div>
         <canvas id="st-canvas" hidden></canvas>
+        <canvas id="st-mask"></canvas>
+        <div class="st-busy" id="st-busy"><div class="reactor fast" style="--s:54px"><i></i><i></i><i></i></div><span>Reconstruction du fond…</span></div>
         <div id="st-crop"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
         <div class="st-badge" id="st-badge">Original</div>
       </div>
       <div class="st-panel">
         <div class="st-tabs">
           <button data-tab="adjust" class="on">Réglages</button><button data-tab="filters">Filtres</button>
-          <button data-tab="crop">Recadrer</button><button data-tab="text">Texte</button><button data-tab="export">Exporter</button>
+          <button data-tab="heal">Gomme magique</button><button data-tab="crop">Recadrer</button><button data-tab="text">Texte</button><button data-tab="export">Exporter</button>
         </div>
         <div class="st-pane on" data-pane="adjust">
-          <button class="st-btn primary wide" id="st-auto" style="margin:0 0 8px">✨ Amélioration automatique</button>
+          <div class="st-grid two" style="margin-bottom:8px">
+            <button class="st-btn primary" id="st-auto">✨ Auto</button>
+            <button class="st-btn primary" id="st-quality-btn">◆ Améliorer la qualité</button>
+          </div>
           <div id="st-sliders"></div>
         </div>
         <div class="st-pane" data-pane="filters">
           <div class="st-filters" id="st-filters"></div>
           <div class="st-row" style="margin-top:14px"><label>Intensité du filtre <span id="v-filterAmt">100</span></label>
             <input type="range" min="0" max="100" value="100" data-k="filterAmt"></div>
+        </div>
+        <div class="st-pane" data-pane="heal">
+          <p class="st-note" style="margin-top:0">Peins sur ce que tu veux faire disparaître (personne, objet, texte, tache…),
+            puis clique sur « Effacer ». Le fond se reconstruit à partir de ce qui l'entoure.</p>
+          <div class="st-row" style="margin-top:12px"><label>Taille du pinceau <span id="v-brush">30</span></label>
+            <input type="range" min="4" max="150" value="30" id="st-brush"></div>
+          <div class="st-grid two">
+            <button class="st-btn on" id="st-paint">🖌 Pinceau</button><button class="st-btn" id="st-erase">◌ Gomme</button>
+          </div>
+          <button class="st-btn primary wide" id="st-heal">✦ Effacer la zone peinte</button>
+          <button class="st-btn wide" id="st-mask-clear">Enlever le tracé</button>
+          <button class="st-btn wide" id="st-heal-undo" disabled>↶ Annuler la dernière gomme</button>
+          <div class="st-msg" id="st-heal-msg"></div>
+          <p class="st-note">Astuce : couvre bien tout l'objet, avec son ombre, en débordant un peu. Pour une grande zone,
+            efface en plusieurs fois. Plus le fond est régulier (ciel, mur, sable, herbe), plus le résultat est naturel.</p>
         </div>
         <div class="st-pane" data-pane="crop">
           <div class="st-label" style="margin-top:0">Format</div>
@@ -104,9 +126,17 @@
           <div class="st-row"><label>Format</label><select id="st-fmt">
             <option value="image/jpeg">JPEG (photos, léger)</option><option value="image/png">PNG (qualité maximale)</option><option value="image/webp">WebP (web, très léger)</option></select></div>
           <div class="st-row"><label>Qualité <span id="v-quality">90</span></label><input type="range" min="40" max="100" value="90" id="st-quality"></div>
-          <div class="st-row"><label>Taille</label><select id="st-size">
-            <option value="0">Originale</option><option value="3840">4K (3840 px)</option><option value="2048">Grande (2048 px)</option>
-            <option value="1080">Réseaux sociaux (1080 px)</option><option value="800">Petite (800 px)</option></select></div>
+          <div class="st-label" style="margin-top:4px">Redimensionner</div>
+          <div class="st-row"><select id="st-size">
+            <option value="1">Taille originale</option><option value="x2">Agrandir ×2</option><option value="x4">Agrandir ×4</option>
+            <option value="3840">4K (3840 px)</option><option value="2048">Grande (2048 px)</option>
+            <option value="1080">Réseaux sociaux (1080 px)</option><option value="800">Petite (800 px)</option>
+            <option value="custom">Personnalisée…</option></select></div>
+          <div class="st-grid two" style="align-items:end">
+            <div class="st-row"><label>Largeur (px)</label><input type="number" id="st-w" min="1" max="16000"></div>
+            <div class="st-row"><label>Hauteur (px)</label><input type="number" id="st-h" min="1" max="16000"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="st-lock" checked> Garder les proportions</label>
           <button class="st-btn primary wide" id="st-save">Enregistrer dans Jarvis</button>
           <button class="st-btn wide" id="st-download">Télécharger</button>
           <button class="st-btn wide" id="st-ask">Envoyer à Jarvis (conseils, légende…)</button>
@@ -118,6 +148,7 @@
     <input type="file" id="st-file" accept="image/*" hidden>`;
   document.body.appendChild(root);
   const canvas = q("#st-canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const mask = q("#st-mask"), mctx = mask.getContext("2d", { willReadFrequently: true });
 
   // curseurs
   const sl = q("#st-sliders");
@@ -142,15 +173,19 @@
     S.full = document.createElement("canvas");
     S.full.width = img.naturalWidth; S.full.height = img.naturalHeight;
     S.full.getContext("2d").drawImage(img, 0, 0);
-    const k = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
-    S.prev = document.createElement("canvas");
-    S.prev.width = Math.round(img.naturalWidth * k); S.prev.height = Math.round(img.naturalHeight * k);
-    S.prev.getContext("2d").drawImage(img, 0, 0, S.prev.width, S.prev.height);
+    makePrev(); S.baseHist = []; q("#st-heal-undo").disabled = true;
     S.name = (name || "photo").replace(/\.[^.]+$/, "");
     S.p = clone(DEFAULTS); S.hist = []; S.fut = [];
     q("#st-name").textContent = `${name || "photo"} · ${img.naturalWidth}×${img.naturalHeight}`;
     q("#st-empty").hidden = true; canvas.hidden = false;
     sync(); render(); buildFilterThumbs(); setTab(S.tab);
+  }
+  function makePrev() {
+    const k = Math.min(1, 1400 / Math.max(S.full.width, S.full.height));
+    S.prev = document.createElement("canvas");
+    S.prev.width = Math.round(S.full.width * k); S.prev.height = Math.round(S.full.height * k);
+    const c = S.prev.getContext("2d"); c.imageSmoothingQuality = "high"; c.drawImage(S.full, 0, 0, S.prev.width, S.prev.height);
+    mask.width = S.prev.width; mask.height = S.prev.height;
   }
   function openFile(f) {
     if (!f || !f.type.startsWith("image/")) return;
@@ -197,6 +232,12 @@
   function pixels(cv, p, full) {
     const c = cv.getContext("2d", { willReadFrequently: true }), W = cv.width, H = cv.height;
     const img = c.getImageData(0, 0, W, H), d = img.data;
+    const scale = Math.max(W, H) / 1400;
+    const dn = p.denoise / 100, cl = p.clarity / 100;
+    let B0, B1, B2, LB, L0;
+    if (dn) [B0, B1, B2] = [0, 1, 2].map(ch => boxBlur(chan(d, ch, W * H), W, H, Math.max(1, Math.round(1.5 * scale)), 2));
+    if (cl) { const L = new Float32Array(W * H); for (let j = 0; j < W * H; j++) L[j] = luma(d[j * 4], d[j * 4 + 1], d[j * 4 + 2]);
+      LB = boxBlur(L, W, H, Math.max(3, Math.round(18 * scale)), 3); L0 = L; }
     const lut = [0, 1, 2].map(ch => {
       const t = new Float32Array(256), lv = p.levels && p.levels[ch];
       const ex = Math.pow(2, p.exposure / 100), ct = p.contrast >= 0 ? 1 + p.contrast / 60 : 1 + p.contrast / 110;
@@ -211,8 +252,12 @@
     const sat = 1 + p.saturation / 100, vib = p.vibrance / 100, temp = p.temperature * .3, tint = p.tint * .25;
     const hl = p.highlights / 100, sh = p.shadows / 100, vg = p.vignette / 100, grain = p.grain * .35;
     const cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
-    for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i += 4) {
-      let r = lut[0][d[i]], g = lut[1][d[i + 1]], b = lut[2][d[i + 2]];
+    for (let y = 0, i = 0, j = 0; y < H; y++) for (let x = 0; x < W; x++, i += 4, j++) {
+      let r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
+      if (dn) { const e = Math.abs(r0 - B0[j]) + Math.abs(g0 - B1[j]) + Math.abs(b0 - B2[j]), w = dn * Math.exp(-(e * e) / 3200);
+        r0 += (B0[j] - r0) * w; g0 += (B1[j] - g0) * w; b0 += (B2[j] - b0) * w; }
+      let r = lut[0][clamp(r0) | 0], g = lut[1][clamp(g0) | 0], b = lut[2][clamp(b0) | 0];
+      if (cl) { const det = (L0[j] - LB[j]) * cl * 1.4; r += det; g += det; b += det; }
       if (hl || sh) {
         const l = luma(r, g, b) / 255;
         const adj = (sh > 0 ? sh * 70 * Math.pow(1 - l, 2) : sh * 50 * (1 - l)) + (hl < 0 ? hl * 70 * l * l : hl * 45 * l * l);
@@ -243,6 +288,20 @@
       c.clearRect(0, 0, W, H); c.drawImage(t, 0, 0);
     }
     drawText(c, W, H, p.text);
+  }
+  function chan(d, ch, n) { const a = new Float32Array(n); for (let j = 0; j < n; j++) a[j] = d[j * 4 + ch]; return a; }
+  function boxBlur(a, W, H, r, passes) {
+    // flou « boîte » séparable, répété pour approcher un flou gaussien
+    const src = Float32Array.from(a), tmp = new Float32Array(a.length), k = 1 / (2 * r + 1);
+    for (let pass = 0; pass < passes; pass++) {
+      for (let y = 0; y < H; y++) { const o = y * W; let s = 0;
+        for (let x = -r; x <= r; x++) s += src[o + Math.min(W - 1, Math.max(0, x))];
+        for (let x = 0; x < W; x++) { tmp[o + x] = s * k; s += src[o + Math.min(W - 1, x + r + 1)] - src[o + Math.max(0, x - r)]; } }
+      for (let x = 0; x < W; x++) { let s = 0;
+        for (let y = -r; y <= r; y++) s += tmp[Math.min(H - 1, Math.max(0, y)) * W + x];
+        for (let y = 0; y < H; y++) { src[y * W + x] = s * k; s += tmp[Math.min(H - 1, y + r + 1) * W + x] - tmp[Math.max(0, y - r) * W + x]; } }
+    }
+    return src;
   }
   function sharpen(img, W, H, a) {
     const s = new Uint8ClampedArray(img.data), d = img.data, k = 1 + 4 * a;
@@ -277,10 +336,12 @@
     let out;
     if (S.compare) out = geometry(S.prev, { ...DEFAULTS, rot: S.p.rot, flipH: S.p.flipH, flipV: S.p.flipV, crop: S.p.crop }, true);
     else if (cropping) { out = geometry(S.prev, S.p, false); pixels(out, { ...S.p, text: null }, false); }
+    else if (S.tab === "heal") { out = geometry(S.prev, { ...S.p, rot: 0, flipH: false, flipV: false }, false); pixels(out, { ...S.p, text: null }, false); }
     else out = process(S.prev, S.p, false);
     canvas.width = out.width; canvas.height = out.height; ctx.drawImage(out, 0, 0);
     q("#st-badge").style.display = S.compare ? "block" : "none";
     if (cropping) placeCrop();
+    placeMask();
   }
   function buildFilterThumbs() {
     const box = q("#st-filters"); box.innerHTML = "";
@@ -379,12 +440,9 @@
   q("#st-quality").oninput = e => q("#v-quality").textContent = e.target.value;
   function exportData() {
     let out = process(S.full, S.p, true);
-    const max = +q("#st-size").value;
-    if (max && Math.max(out.width, out.height) > max) {
-      const k = max / Math.max(out.width, out.height), t = document.createElement("canvas");
-      t.width = Math.round(out.width * k); t.height = Math.round(out.height * k);
-      const tc = t.getContext("2d"); tc.imageSmoothingQuality = "high"; tc.drawImage(out, 0, 0, t.width, t.height); out = t;
-    }
+    let tw = Math.round(+q("#st-w").value) || out.width, th = Math.round(+q("#st-h").value) || out.height;
+    if (tw * th > 60e6) { const f = Math.sqrt(60e6 / (tw * th)); tw = Math.floor(tw * f); th = Math.floor(th * f); }
+    if (tw !== out.width || th !== out.height) out = resample(out, tw, th);
     const fmt = q("#st-fmt").value, ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[fmt];
     if (fmt === "image/jpeg") { const t = document.createElement("canvas"); t.width = out.width; t.height = out.height;
       const tc = t.getContext("2d"); tc.fillStyle = "#fff"; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(out, 0, 0); out = t; }
@@ -403,11 +461,143 @@
     msg(`Téléchargée (${x.w}×${x.h}).`);
   });
   q("#st-ask").onclick = e => busyDo(e.target, async () => {
-    const sizeSel = q("#st-size"), old = sizeSel.value; sizeSel.value = "1080";
-    const x = exportData(); sizeSel.value = old;
+    const keep = [q("#st-size").value, q("#st-w").value, q("#st-h").value];
+    q("#st-size").value = "1080"; sizeFromPreset();
+    const x = exportData();
+    [q("#st-size").value, q("#st-w").value, q("#st-h").value] = keep;
     if (window.jarvisAttach) window.jarvisAttach(x.data, x.name, "Que penses-tu de cette photo retouchée ? Propose aussi une légende.");
     close();
   });
+
+  // -------------------------------------------------------- gomme magique --
+  function placeMask() {
+    if (S.tab !== "heal" || !S.prev || S.compare) { mask.style.display = "none"; return; }
+    const r = canvas.getBoundingClientRect(), sr = q("#st-stage").getBoundingClientRect();
+    Object.assign(mask.style, { display: "block", left: `${r.left - sr.left}px`, top: `${r.top - sr.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+  }
+  let painting = null;
+  const brushPos = e => { const r = mask.getBoundingClientRect(); return [(e.clientX - r.left) * mask.width / r.width, (e.clientY - r.top) * mask.height / r.height]; };
+  function stroke(a, b) {
+    const r = mask.getBoundingClientRect();
+    mctx.globalCompositeOperation = S.erase ? "destination-out" : "source-over";
+    mctx.strokeStyle = mctx.fillStyle = "#ff3d6e"; mctx.lineCap = mctx.lineJoin = "round";
+    mctx.lineWidth = +q("#st-brush").value * mask.width / r.width;
+    mctx.beginPath(); mctx.moveTo(a[0], a[1]); mctx.lineTo(b[0], b[1]); mctx.stroke();
+  }
+  mask.addEventListener("pointerdown", e => { e.preventDefault(); mask.setPointerCapture(e.pointerId); painting = brushPos(e); stroke(painting, painting); });
+  mask.addEventListener("pointermove", e => { if (!painting) return; const pt = brushPos(e); stroke(painting, pt); painting = pt; });
+  ["pointerup", "pointercancel"].forEach(ev => mask.addEventListener(ev, () => { painting = null; }));
+  q("#st-brush").oninput = e => q("#v-brush").textContent = e.target.value;
+  q("#st-paint").onclick = () => { S.erase = false; q("#st-paint").classList.add("on"); q("#st-erase").classList.remove("on"); };
+  q("#st-erase").onclick = () => { S.erase = true; q("#st-erase").classList.add("on"); q("#st-paint").classList.remove("on"); };
+  q("#st-mask-clear").onclick = () => mctx.clearRect(0, 0, mask.width, mask.height);
+  const healMsg = (t, err) => { const m = q("#st-heal-msg"); m.textContent = t; m.style.color = err ? "var(--err)" : "var(--ok)"; };
+
+  function runWorker(data) {
+    return new Promise((resolve, reject) => {
+      const w = new Worker("/inpaint.js");
+      w.onmessage = e => { w.terminate(); e.data.error ? reject(new Error(e.data.error)) : resolve(e.data.rgb); };
+      w.onerror = e => { w.terminate(); reject(new Error(e.message || "erreur du moteur")); };
+      w.postMessage(data, [data.rgb.buffer, data.hole.buffer]);
+    });
+  }
+  async function heal() {
+    if (!S.full) return;
+    const md = mctx.getImageData(0, 0, mask.width, mask.height).data;
+    let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+    for (let y = 0; y < mask.height; y++) for (let x = 0; x < mask.width; x++) if (md[(y * mask.width + x) * 4 + 3] > 20) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) return healMsg("Peins d'abord sur la zone à effacer.", true);
+    const k0 = S.full.width / mask.width, bw = (x1 - x0 + 1) * k0, bh = (y1 - y0 + 1) * k0;
+    const margin = Math.max(40 * k0, 1.2 * Math.max(bw, bh));
+    const rx = Math.max(0, Math.floor(x0 * k0 - margin)), ry = Math.max(0, Math.floor(y0 * k0 - margin));
+    const rw = Math.min(S.full.width, Math.ceil((x1 + 1) * k0 + margin)) - rx, rh = Math.min(S.full.height, Math.ceil((y1 + 1) * k0 + margin)) - ry;
+    const k = Math.min(1, 900 / Math.max(rw, rh)), ww = Math.max(8, Math.round(rw * k)), wh = Math.max(8, Math.round(rh * k));
+    // image et masque de travail
+    const work = document.createElement("canvas"); work.width = ww; work.height = wh;
+    const wc = work.getContext("2d", { willReadFrequently: true }); wc.imageSmoothingQuality = "high";
+    wc.drawImage(S.full, rx, ry, rw, rh, 0, 0, ww, wh);
+    const px = wc.getImageData(0, 0, ww, wh), rgb = new Float32Array(ww * wh * 3);
+    for (let i = 0; i < ww * wh; i++) { rgb[i * 3] = px.data[i * 4]; rgb[i * 3 + 1] = px.data[i * 4 + 1]; rgb[i * 3 + 2] = px.data[i * 4 + 2]; }
+    const mw = document.createElement("canvas"); mw.width = ww; mw.height = wh;
+    const mwc = mw.getContext("2d", { willReadFrequently: true });
+    mwc.drawImage(mask, rx / k0, ry / k0, rw / k0, rh / k0, 0, 0, ww, wh);
+    const ma = mwc.getImageData(0, 0, ww, wh).data, raw = new Uint8Array(ww * wh), hole = new Uint8Array(ww * wh);
+    for (let i = 0; i < ww * wh; i++) raw[i] = ma[i * 4 + 3] > 10 ? 1 : 0;
+    for (let y = 0; y < wh; y++) for (let x = 0; x < ww; x++) { // léger débord pour couvrir les contours
+      let h = 0; for (let dy = -2; dy <= 2 && !h; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < ww && yy < wh && raw[yy * ww + xx]) { h = 1; break; } }
+      hole[y * ww + x] = h; }
+    const holeCopy = hole.slice();
+    q("#st-busy").style.display = "flex"; q("#st-heal").disabled = true;
+    const t0 = performance.now();
+    try {
+      const out = await runWorker({ rgb, hole, W: ww, H: wh });
+      for (let i = 0; i < ww * wh; i++) { px.data[i * 4] = out[i * 3]; px.data[i * 4 + 1] = out[i * 3 + 1]; px.data[i * 4 + 2] = out[i * 3 + 2]; px.data[i * 4 + 3] = 255; }
+      wc.putImageData(px, 0, 0);
+      // masque adouci pour fondre la reconstruction dans la photo
+      const hm = new ImageData(ww, wh); for (let i = 0; i < ww * wh; i++) if (holeCopy[i]) { hm.data[i * 4 + 3] = 255; }
+      const hc = document.createElement("canvas"); hc.width = ww; hc.height = wh; hc.getContext("2d").putImageData(hm, 0, 0);
+      const fill = document.createElement("canvas"); fill.width = rw; fill.height = rh;
+      const fc = fill.getContext("2d"); fc.imageSmoothingQuality = "high"; fc.drawImage(work, 0, 0, rw, rh);
+      const soft = document.createElement("canvas"); soft.width = rw; soft.height = rh;
+      const sc = soft.getContext("2d"); sc.filter = `blur(${Math.max(1, 1.5 / k)}px)`; sc.drawImage(hc, 0, 0, rw, rh);
+      fc.globalCompositeOperation = "destination-in"; fc.drawImage(soft, 0, 0);
+      // sauvegarde pour annuler, puis application
+      const snap = document.createElement("canvas"); snap.width = S.full.width; snap.height = S.full.height; snap.getContext("2d").drawImage(S.full, 0, 0);
+      S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
+      S.full.getContext("2d").drawImage(fill, rx, ry);
+      makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = false;
+      healMsg(`Zone effacée en ${((performance.now() - t0) / 1000).toFixed(1)} s. Si une trace reste, repeins-la et recommence.`);
+    } catch (err) { healMsg("Échec : " + err.message, true); }
+    finally { q("#st-busy").style.display = "none"; q("#st-heal").disabled = false; }
+  }
+  q("#st-heal").onclick = heal;
+  q("#st-heal-undo").onclick = () => {
+    const snap = S.baseHist.pop(); if (!snap) return;
+    S.full = snap; makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = !S.baseHist.length; healMsg("Gomme annulée.");
+  };
+
+  // --------------------------------------------------------------- qualité --
+  q("#st-quality-btn").onclick = () => { if (!S.prev) return; S.p.levels = autoLevels(S.prev);
+    S.p.denoise = Math.max(S.p.denoise, 30); S.p.clarity = Math.max(S.p.clarity, 20); S.p.sharpen = Math.max(S.p.sharpen, 35);
+    S.p.vibrance = Math.max(S.p.vibrance, 10); commit(); sync(); render(); };
+
+  // --------------------------------------------------------- redimensionner --
+  function baseSize() {
+    if (!S.full) return [0, 0];
+    const rot = ((S.p.rot % 360) + 360) % 360, swap = rot === 90 || rot === 270;
+    let w = swap ? S.full.height : S.full.width, h = swap ? S.full.width : S.full.height;
+    if (S.p.crop) { w = Math.round(w * S.p.crop.w); h = Math.round(h * S.p.crop.h); }
+    return [Math.max(1, w), Math.max(1, h)];
+  }
+  function sizeFromPreset() {
+    const v = q("#st-size").value; if (v === "custom") return;
+    const [w, h] = baseSize(); let tw = w, th = h;
+    if (v === "x2" || v === "x4") { const f = v === "x2" ? 2 : 4; tw = w * f; th = h * f; }
+    else if (+v > 1) { const f = +v / Math.max(w, h); tw = Math.round(w * f); th = Math.round(h * f); }
+    q("#st-w").value = tw; q("#st-h").value = th;
+  }
+  q("#st-size").onchange = sizeFromPreset;
+  ["#st-w", "#st-h"].forEach(id => q(id).addEventListener("input", e => {
+    q("#st-size").value = "custom";
+    if (!q("#st-lock").checked) return;
+    const [w, h] = baseSize(), v = +e.target.value || 1;
+    if (id === "#st-w") q("#st-h").value = Math.max(1, Math.round(v * h / w)); else q("#st-w").value = Math.max(1, Math.round(v * w / h));
+  }));
+  function resample(src, tw, th) {
+    let cur = src;
+    // étapes successives (÷2 ou ×2) : bien plus net qu'un seul redimensionnement
+    while (cur.width / tw >= 2 || cur.width * 2 <= tw) {
+      const f = cur.width > tw ? .5 : 2, t = document.createElement("canvas");
+      t.width = Math.round(cur.width * f); t.height = Math.round(cur.height * f);
+      const c = t.getContext("2d"); c.imageSmoothingQuality = "high"; c.drawImage(cur, 0, 0, t.width, t.height); cur = t;
+    }
+    const out = document.createElement("canvas"); out.width = tw; out.height = th;
+    const oc = out.getContext("2d", { willReadFrequently: true }); oc.imageSmoothingQuality = "high"; oc.drawImage(cur, 0, 0, tw, th);
+    if (tw > src.width * 1.2) { const im = oc.getImageData(0, 0, tw, th); sharpen(im, tw, th, .35); oc.putImageData(im, 0, 0); }
+    return out;
+  }
 
   // ------------------------------------------------------------- navigation --
   function setTab(t) {
@@ -415,6 +605,7 @@
     root.querySelectorAll(".st-tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
     root.querySelectorAll(".st-pane").forEach(p => p.classList.toggle("on", p.dataset.pane === t));
     if (t !== "crop") { cropEl.style.display = "none"; S.cropBox = null; }
+    if (t === "export" && q("#st-size").value !== "custom") sizeFromPreset();
     render();
   }
   root.querySelector(".st-tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.tab); });
@@ -438,7 +629,7 @@
     else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") { e.preventDefault(); redo(); }
     else if (e.key === "Escape") close();
   });
-  addEventListener("resize", () => { if (S.tab === "crop") placeCrop(); });
+  addEventListener("resize", () => { if (S.tab === "crop") placeCrop(); placeMask(); });
   function close() { root.classList.remove("open"); }
   q("#st-close").onclick = close;
 

@@ -287,7 +287,7 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 return self._json({"error": "non autorisé"}, 401)
             if path == "/":
                 self._send(INDEX.read_bytes(), "text/html; charset=utf-8")
-            elif path in ("/studio.js", "/studio.css"):
+            elif path in ("/studio.js", "/studio.css", "/inpaint.js"):
                 self._send((Path(__file__).parent / path[1:]).read_bytes(),
                            "text/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")
             elif path == "/images":
