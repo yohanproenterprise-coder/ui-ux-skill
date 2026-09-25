@@ -91,6 +91,7 @@
             <button class="st-btn on" id="st-paint">🖌 Pinceau</button><button class="st-btn" id="st-erase">◌ Gomme</button>
           </div>
           <button class="st-btn primary wide" id="st-heal">✦ Effacer la zone peinte</button>
+          <button class="st-btn wide" id="st-heal-again" disabled>↻ Autre proposition</button>
           <button class="st-btn wide" id="st-mask-clear">Enlever le tracé</button>
           <button class="st-btn wide" id="st-heal-undo" disabled>↶ Annuler la dernière gomme</button>
           <div class="st-msg" id="st-heal-msg"></div>
@@ -501,8 +502,10 @@
       w.postMessage(data, [data.rgb.buffer, data.hole.buffer]);
     });
   }
-  async function heal() {
+  async function heal(variant = 0) {
     if (!S.full) return;
+    const maskCopy = document.createElement("canvas"); maskCopy.width = mask.width; maskCopy.height = mask.height;
+    maskCopy.getContext("2d").drawImage(mask, 0, 0);
     const md = mctx.getImageData(0, 0, mask.width, mask.height).data;
     let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
     for (let y = 0; y < mask.height; y++) for (let x = 0; x < mask.width; x++) if (md[(y * mask.width + x) * 4 + 3] > 20) {
@@ -532,7 +535,7 @@
     q("#st-busy").style.display = "flex"; q("#st-heal").disabled = true;
     const t0 = performance.now();
     try {
-      const out = await runWorker({ rgb, hole, W: ww, H: wh });
+      const out = await runWorker({ rgb, hole, W: ww, H: wh, fineR: [6, 4, 5][variant % 3] });
       for (let i = 0; i < ww * wh; i++) { px.data[i * 4] = out[i * 3]; px.data[i * 4 + 1] = out[i * 3 + 1]; px.data[i * 4 + 2] = out[i * 3 + 2]; px.data[i * 4 + 3] = 255; }
       wc.putImageData(px, 0, 0);
       // masque adouci pour fondre la reconstruction dans la photo
@@ -548,14 +551,22 @@
       S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
       S.full.getContext("2d").drawImage(fill, rx, ry);
       makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = false;
-      healMsg(`Zone effacée en ${((performance.now() - t0) / 1000).toFixed(1)} s. Si une trace reste, repeins-la et recommence.`);
+      S.lastHeal = { mask: maskCopy, variant }; q("#st-heal-again").disabled = false;
+      healMsg(`Zone effacée en ${((performance.now() - t0) / 1000).toFixed(1)} s. Pas convaincu ? « Autre proposition ». Une trace reste ? Repeins-la.`);
     } catch (err) { healMsg("Échec : " + err.message, true); }
     finally { q("#st-busy").style.display = "none"; q("#st-heal").disabled = false; }
   }
-  q("#st-heal").onclick = heal;
+  q("#st-heal").onclick = () => heal(0);
+  q("#st-heal-again").onclick = async () => {
+    // annule la dernière gomme et recalcule la même zone avec un autre réglage
+    const last = S.lastHeal, snap = S.baseHist.pop(); if (!last || !snap) return;
+    S.full = snap; makePrev(); mctx.drawImage(last.mask, 0, 0);
+    await heal(last.variant + 1);
+  };
   q("#st-heal-undo").onclick = () => {
     const snap = S.baseHist.pop(); if (!snap) return;
     S.full = snap; makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = !S.baseHist.length; healMsg("Gomme annulée.");
+    S.lastHeal = null; q("#st-heal-again").disabled = true;
   };
 
   // --------------------------------------------------------------- qualité --

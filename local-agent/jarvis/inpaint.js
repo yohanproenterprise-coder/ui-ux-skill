@@ -2,7 +2,7 @@
 // Algorithme multi-échelle par correspondance de motifs (PatchMatch + vote, méthode de Wexler et al.).
 // S'exécute dans un Web Worker : reçoit {rgb, hole, W, H} et renvoie {rgb}.
 "use strict";
-const R = 6; // rayon des motifs (13×13) : meilleur raccord des lignes (horizon, murs…)
+let R = 6; // rayon des motifs (13×13) : meilleur raccord des lignes (horizon, murs…)
 
 function down(l) {
   const W = l.W >> 1, H = l.H >> 1, rgb = new Float32Array(W * H * 3), hole = new Uint8Array(W * H);
@@ -50,7 +50,8 @@ function diffuse(rgb, hole, W, H) {
   }
 }
 
-function inpaint(rgb, hole, W, H) {
+function inpaint(rgb, hole, W, H, fineR = 6) {
+  R = 6;
   const levels = [{ rgb, hole, W, H }];
   for (;;) {
     const l = levels[levels.length - 1];
@@ -64,6 +65,7 @@ function inpaint(rgb, hole, W, H) {
 
   let prev = null;
   for (let L = levels.length - 1; L >= 0; L--) {
+    R = L === 0 ? fineR : 6; // motifs plus fins au dernier niveau : autre « proposition »
     const { hole, W, H } = levels[L], cur = new Float32Array(levels[L].rgb), N = W * H;
     // valeur initiale des pixels à remplir
     if (!prev) diffuse(cur, hole, W, H);
@@ -153,9 +155,9 @@ function inpaint(rgb, hole, W, H) {
 }
 
 self.onmessage = e => {
-  const { rgb, hole, W, H } = e.data;
+  const { rgb, hole, W, H, fineR } = e.data;
   try {
-    const out = inpaint(rgb, hole, W, H);
+    const out = inpaint(rgb, hole, W, H, fineR || 6);
     self.postMessage({ rgb: out }, [out.buffer]);
   } catch (err) {
     self.postMessage({ error: String(err && err.message || err) });
