@@ -68,7 +68,7 @@ Clique sur **Studio** en haut de Jarvis (ou « Retoucher une photo » sur l'accu
 - **Filtres** : 11 filtres avec aperçu et intensité réglable ;
 - **Gomme magique** : peins sur un objet, une personne, un texte ou une tache, clique sur « Effacer » : le fond se reconstruit à partir de ce qui l'entoure (fonctionne le mieux sur ciel, mer, mur, sable, herbe ; pour une grande zone, efface en plusieurs fois) ;
 - **IA de retouche (LaMa)** : dans la Gomme magique, choisis le moteur **✦ IA** puis « Installer l'IA de retouche » (une seule fois, ≈ 110 Mo). Elle reconstruit aussi les formes (bord d'une tasse cachée par une cuillère, meuble, personne en arrière-plan). Compte 5 à 20 secondes par retouche ; elle tourne sur ton PC, sans internet, et marche aussi depuis le téléphone ;
-- **Améliorer la qualité** : un clic (réduction du bruit, clarté, netteté, niveaux), ou réglage fin avec les curseurs ;
+- **✨ Améliorer automatiquement** : un clic, puis règle l'intensité. Jarvis analyse la photo et dose tout pour un rendu naturel : lumière (sans toucher aux teintes), balance des blancs légère, bruit de couleur retiré, netteté fine sans halos, relief discret ; la peau est protégée. Les curseurs « Réduction du bruit », « Clarté » et « Netteté » restent disponibles pour affiner ;
 - **Recadrer** : formats carré, 4:5, 3:2, 16:9, 9:16 ou libre, rotation et miroir ;
 - **Texte** : signature ou légende ;
 - **Avant / après** (maintenir le bouton), Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ;

@@ -2,7 +2,7 @@
 (() => {
   const DEFAULTS = {
     exposure: 0, contrast: 0, highlights: 0, shadows: 0, saturation: 0, vibrance: 0, temperature: 0, tint: 0,
-    sharpen: 0, blur: 0, vignette: 0, grain: 0, denoise: 0, clarity: 0, filter: "none", filterAmt: 100, rot: 0, flipH: false, flipV: false,
+    sharpen: 0, blur: 0, vignette: 0, grain: 0, denoise: 0, clarity: 0, enhance: 0, enh: null, filter: "none", filterAmt: 100, rot: 0, flipH: false, flipV: false,
     crop: null, levels: null, text: { value: "", size: 6, color: "#ffffff", pos: "bas-droite" }
   };
   const SLIDERS = [
@@ -71,10 +71,11 @@
           <button data-tab="heal">Gomme magique</button><button data-tab="crop">Recadrer</button><button data-tab="text">Texte</button><button data-tab="export">Exporter</button>
         </div>
         <div class="st-pane on" data-pane="adjust">
-          <div class="st-grid two" style="margin-bottom:8px">
-            <button class="st-btn primary" id="st-auto">✨ Auto</button>
-            <button class="st-btn primary" id="st-quality-btn">◆ Améliorer la qualité</button>
-          </div>
+          <button class="st-btn primary wide" id="st-enhance" style="margin:0 0 10px">✨ Améliorer automatiquement</button>
+          <div class="st-row"><label>Intensité de l'amélioration <span id="v-enhance">0</span></label>
+            <input type="range" min="0" max="100" value="0" data-k="enhance"></div>
+          <p class="st-note" style="margin:-4px 0 4px">Rendu naturel : lumière, balance des blancs, bruit et netteté sont dosés selon ta photo.
+            Les couleurs et la peau sont préservées.</p>
           <div id="st-sliders"></div>
         </div>
         <div class="st-pane" data-pane="filters">
@@ -166,7 +167,8 @@
         <input type="range" min="${min}" max="100" value="0" data-k="${k}"></div>`);
   }
   root.querySelectorAll("input[data-k]").forEach(inp => {
-    inp.addEventListener("input", () => { S.p[inp.dataset.k] = +inp.value; q(`#v-${inp.dataset.k}`).textContent = inp.value; schedule(); });
+    inp.addEventListener("input", () => { S.p[inp.dataset.k] = +inp.value;
+      if (inp.dataset.k === "enhance" && !S.p.enh && S.prev) S.p.enh = analyze(S.prev); q(`#v-${inp.dataset.k}`).textContent = inp.value; schedule(); });
     inp.addEventListener("change", commit);
     inp.addEventListener("dblclick", () => { S.p[inp.dataset.k] = inp.dataset.k === "filterAmt" ? 100 : 0; commit(); sync(); schedule(); });
   });
@@ -241,8 +243,9 @@
     const img = c.getImageData(0, 0, W, H), d = img.data;
     const scale = Math.max(W, H) / 1400;
     const dn = p.denoise / 100, cl = p.clarity / 100;
-    let B0, B1, B2, LB, L0;
-    if (dn) [B0, B1, B2] = [0, 1, 2].map(ch => boxBlur(chan(d, ch, W * H), W, H, Math.max(1, Math.round(1.5 * scale)), 2));
+    let LB, L0;
+    if (p.enhance > 0 && p.enh) enhance(d, W, H, p.enh, p.enhance / 100, scale);
+    if (dn) denoiseYCC(d, W, H, dn, dn * .6, scale);
     if (cl) { const L = new Float32Array(W * H); for (let j = 0; j < W * H; j++) L[j] = luma(d[j * 4], d[j * 4 + 1], d[j * 4 + 2]);
       LB = boxBlur(L, W, H, Math.max(3, Math.round(18 * scale)), 3); L0 = L; }
     const lut = [0, 1, 2].map(ch => {
@@ -260,10 +263,7 @@
     const hl = p.highlights / 100, sh = p.shadows / 100, vg = p.vignette / 100, grain = p.grain * .35;
     const cx = W / 2, cy = H / 2, maxd = Math.hypot(cx, cy);
     for (let y = 0, i = 0, j = 0; y < H; y++) for (let x = 0; x < W; x++, i += 4, j++) {
-      let r0 = d[i], g0 = d[i + 1], b0 = d[i + 2];
-      if (dn) { const e = Math.abs(r0 - B0[j]) + Math.abs(g0 - B1[j]) + Math.abs(b0 - B2[j]), w = dn * Math.exp(-(e * e) / 3200);
-        r0 += (B0[j] - r0) * w; g0 += (B1[j] - g0) * w; b0 += (B2[j] - b0) * w; }
-      let r = lut[0][clamp(r0) | 0], g = lut[1][clamp(g0) | 0], b = lut[2][clamp(b0) | 0];
+      let r = lut[0][d[i]], g = lut[1][d[i + 1]], b = lut[2][d[i + 2]];
       if (cl) { const det = (L0[j] - LB[j]) * cl * 1.4; r += det; g += det; b += det; }
       if (hl || sh) {
         const l = luma(r, g, b) / 255;
@@ -287,7 +287,7 @@
       if (grain) { const n = (Math.random() - .5) * grain; r += n; g += n; b += n; }
       d[i] = clamp(r); d[i + 1] = clamp(g); d[i + 2] = clamp(b);
     }
-    if (p.sharpen > 0) sharpen(img, W, H, p.sharpen / 100 * (full ? 1.2 : 1));
+    if (p.sharpen > 0) usm(d, W, H, p.sharpen / 100 * 1.1, Math.max(1, Math.round(1.1 * scale)), 3);
     c.putImageData(img, 0, 0);
     if (p.blur > 0) {
       const t = document.createElement("canvas"); t.width = W; t.height = H;
@@ -295,6 +295,102 @@
       c.clearRect(0, 0, W, H); c.drawImage(t, 0, 0);
     }
     drawText(c, W, H, p.text);
+  }
+  // ------------------------------------------------ amélioration naturelle --
+  function analyze(src) {
+    const k = Math.min(1, 480 / Math.max(src.width, src.height)), c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(src.width * k)); c.height = Math.max(1, Math.round(src.height * k));
+    const cx = c.getContext("2d", { willReadFrequently: true }); cx.drawImage(src, 0, 0, c.width, c.height);
+    const W = c.width, H = c.height, d = cx.getImageData(0, 0, W, H).data, n = W * H;
+    const hist = new Uint32Array(256), L = new Float32Array(n);
+    let sr = 0, sg = 0, sb = 0, cnt = 0;
+    for (let j = 0; j < n; j++) {
+      const r = d[j * 4], g = d[j * 4 + 1], b = d[j * 4 + 2], l = luma(r, g, b); L[j] = l; hist[l | 0]++;
+      if (l > 40 && l < 220 && Math.max(r, g, b) - Math.min(r, g, b) < 45) { sr += r; sg += g; sb += b; cnt++; }
+    }
+    const pct = q => { let s = 0; const t = q * n; for (let v = 0; v < 256; v++) { s += hist[v]; if (s >= t) return v; } return 255; };
+    // balance des blancs : seulement sur les tons neutres, et limitée pour rester naturelle
+    let wb = [1, 1, 1];
+    if (cnt > n * .03) { const m = (sr + sg + sb) / 3; wb = [m / sr, m / sg, m / sb].map(x => Math.min(1.07, Math.max(.93, x))); }
+    return { black: pct(.005), white: pct(.995), mid: pct(.5), wb, noise: noiseSigma(src) };
+  }
+  function noiseSigma(src) {
+    // estimation du bruit (méthode d'Immerkær) limitée aux zones unies de l'aperçu
+    const W = src.width, H = src.height, d = src.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, W, H).data, L = toY(d, W * H);
+    const vals = [], grads = [];
+    for (let y = 1; y < H - 1; y += 2) for (let x = 1; x < W - 1; x += 2) {
+      const j = y * W + x, a = L[j - W - 1], b = L[j - W], c = L[j - W + 1], dd = L[j - 1], e = L[j], f = L[j + 1], g = L[j + W - 1], h = L[j + W], i = L[j + W + 1];
+      vals.push(Math.abs(a - 2 * b + c - 2 * dd + 4 * e - 2 * f + g - 2 * h + i));
+      grads.push(Math.hypot(c + 2 * f + i - a - 2 * dd - g, g + 2 * h + i - a - 2 * b - c));
+    }
+    const lim = [...grads].sort((x, y) => x - y)[Math.floor(grads.length * .4)] || 0;
+    let sum = 0, n = 0; for (let k = 0; k < vals.length; k++) if (grads[k] <= lim) { sum += vals[k]; n++; }
+    return n ? Math.sqrt(Math.PI / 2) / 6 * sum / n : 0;
+  }
+  function enhance(d, W, H, e, a, scale) {
+    // 1. bruit : couleur nettement (disgracieuse), luminance légèrement et sans toucher aux détails
+    const nz = Math.min(1, Math.max(0, (e.noise - .8) / 2.5));
+    denoiseYCC(d, W, H, a * (.55 + .4 * nz), a * (.2 + .4 * nz), scale);
+    // 2. lumière : niveaux prudents, tons moyens, légère courbe en S (sur la luminance seule)
+    const lo = e.black < 45 ? e.black * .8 * a : 0, hi = e.white > 170 ? 255 - (255 - e.white) * .8 * a : 255;
+    const midN = Math.min(.9, Math.max(.05, (e.mid - lo) / Math.max(1, hi - lo)));
+    let gam = Math.min(1.3, Math.max(.72, Math.log(.46) / Math.log(midN)));
+    gam = 1 + (gam - 1) * .6 * a;
+    const lut = new Float32Array(257);
+    for (let v = 0; v <= 256; v++) {
+      let x = Math.min(1, Math.max(0, (Math.min(v, 255) - lo) / Math.max(1, hi - lo)));
+      x = Math.pow(x, gam); x += (x * x * (3 - 2 * x) - x) * .3 * a; lut[v] = x * 255;
+    }
+    const wr = 1 + (e.wb[0] - 1) * .8 * a, wg = 1 + (e.wb[1] - 1) * .8 * a, wbb = 1 + (e.wb[2] - 1) * .8 * a, vib = .16 * a;
+    for (let i = 0; i < d.length; i += 4) {
+      let r = d[i] * wr, g = d[i + 1] * wg, b = d[i + 2] * wbb;
+      const l = luma(r, g, b), li = Math.min(255, l), f = li - (li | 0);
+      const nl = lut[li | 0] * (1 - f) + lut[(li | 0) + 1] * f, ratio = l > .5 ? nl / l : 1;
+      r *= ratio; g *= ratio; b *= ratio;
+      const mx = Math.max(r, g, b);
+      if (mx > 255) { const L2 = luma(r, g, b); if (L2 < 255) { const t = (255 - L2) / (mx - L2); r = L2 + (r - L2) * t; g = L2 + (g - L2) * t; b = L2 + (b - L2) * t; } }
+      // vibrance douce, peau protégée
+      const l2 = luma(r, g, b), sat = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+      const skin = r > g && g > b && r > 70 && r - b > 15 && r - b < 130;
+      const k = 1 + vib * (1 - sat) * (skin ? .25 : 1);
+      d[i] = clamp(l2 + (r - l2) * k); d[i + 1] = clamp(l2 + (g - l2) * k); d[i + 2] = clamp(l2 + (b - l2) * k);
+    }
+    // 3. netteté fine sans halos ni bruit, puis un peu de relief
+    usm(d, W, H, .45 * a, Math.max(1, Math.round(1.1 * scale)), 5 + 2 * e.noise);
+    localContrast(d, W, H, .12 * a, Math.max(4, Math.round(22 * scale)));
+  }
+  function toY(d, n) { const Y = new Float32Array(n); for (let j = 0; j < n; j++) Y[j] = luma(d[j * 4], d[j * 4 + 1], d[j * 4 + 2]); return Y; }
+  function denoiseYCC(d, W, H, ac, al, scale) {
+    if (ac <= 0 && al <= 0) return;
+    const n = W * H, Y = toY(d, n), Cb = new Float32Array(n), Cr = new Float32Array(n);
+    for (let j = 0; j < n; j++) { Cb[j] = d[j * 4 + 2] - Y[j]; Cr[j] = d[j * 4] - Y[j]; }
+    const rc = Math.max(1, Math.round(2 * scale)), Yb = boxBlur(Y, W, H, rc, 2);
+    const Cb2 = boxBlur(Cb, W, H, rc, 2), Cr2 = boxBlur(Cr, W, H, rc, 2);
+    const Ys = al > 0 ? boxBlur(Y, W, H, Math.max(1, Math.round(scale)), 2) : null;
+    for (let j = 0; j < n; j++) {
+      const e = Y[j] - Yb[j], wc = ac * Math.exp(-(e * e) / 288); // pas de bavure de couleur sur les contours
+      let cb = Cb[j] + (Cb2[j] - Cb[j]) * wc, cr = Cr[j] + (Cr2[j] - Cr[j]) * wc, y = Y[j];
+      if (Ys) { const e2 = Y[j] - Ys[j]; y += (Ys[j] - y) * al * Math.exp(-(e2 * e2) / 128); }
+      const r = y + cr, b = y + cb, g = (y - .299 * r - .114 * b) / .587;
+      d[j * 4] = clamp(r); d[j * 4 + 1] = clamp(g); d[j * 4 + 2] = clamp(b);
+    }
+  }
+  function usm(d, W, H, amount, radius, thr) {
+    // masque flou sur la luminance, avec seuil doux (n'accentue pas le bruit) et limite anti-halo
+    const n = W * H, Y = toY(d, n), Yb = boxBlur(Y, W, H, radius, 2);
+    for (let j = 0; j < n; j++) {
+      let det = Y[j] - Yb[j]; const a = Math.abs(det);
+      if (a < thr) det *= a / thr;
+      const delta = Math.max(-22, Math.min(22, det * amount * 1.6));
+      d[j * 4] = clamp(d[j * 4] + delta); d[j * 4 + 1] = clamp(d[j * 4 + 1] + delta); d[j * 4 + 2] = clamp(d[j * 4 + 2] + delta);
+    }
+  }
+  function localContrast(d, W, H, amount, radius) {
+    const n = W * H, Y = toY(d, n), Yb = boxBlur(Y, W, H, radius, 3);
+    for (let j = 0; j < n; j++) {
+      const l = Y[j] / 255, delta = (Y[j] - Yb[j]) * amount * 4 * l * (1 - l) * 1.5;
+      d[j * 4] = clamp(d[j * 4] + delta); d[j * 4 + 1] = clamp(d[j * 4 + 1] + delta); d[j * 4 + 2] = clamp(d[j * 4 + 2] + delta);
+    }
   }
   function chan(d, ch, n) { const a = new Float32Array(n); for (let j = 0; j < n; j++) a[j] = d[j * 4 + ch]; return a; }
   function boxBlur(a, W, H, r, passes) {
@@ -620,9 +716,8 @@
   setEngine(S.engine);
 
   // --------------------------------------------------------------- qualité --
-  q("#st-quality-btn").onclick = () => { if (!S.prev) return; S.p.levels = autoLevels(S.prev);
-    S.p.denoise = Math.max(S.p.denoise, 30); S.p.clarity = Math.max(S.p.clarity, 20); S.p.sharpen = Math.max(S.p.sharpen, 35);
-    S.p.vibrance = Math.max(S.p.vibrance, 10); commit(); sync(); render(); };
+  q("#st-enhance").onclick = () => { if (!S.prev) return;
+    S.p.enh = analyze(S.prev); S.p.enhance = S.p.enhance > 0 ? S.p.enhance : 60; commit(); sync(); render(); };
 
   // --------------------------------------------------------- redimensionner --
   function baseSize() {
@@ -671,8 +766,6 @@
     render();
   }
   root.querySelector(".st-tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.tab); });
-  q("#st-auto").onclick = () => { if (!S.prev) return; S.p.levels = autoLevels(S.prev); S.p.vibrance = Math.max(S.p.vibrance, 18);
-    S.p.sharpen = Math.max(S.p.sharpen, 15); commit(); sync(); render(); };
   q("#st-reset").onclick = () => { if (!S.prev) return; S.p = clone(DEFAULTS); commit(); sync(); setTab("adjust"); };
   q("#st-undo").onclick = undo; q("#st-redo").onclick = redo;
   const cmp = q("#st-compare");
