@@ -58,7 +58,26 @@ Ajoute une clé dans **⚙ Réglages** de l'interface, puis choisis le cerveau d
 Jarvis travaille par défaut dans le dossier `C:\Users\<toi>\Jarvis`. Il peut aussi accéder à tout autre dossier si tu lui donnes le chemin.
 
 | **E-mails** | « Ai-je reçu des mails importants aujourd'hui ? » / « Réponds à Paul que je serai là à 18h » |
-| **Compétences intégrées** | « Fais le ménage sur mon PC » · « Range mes téléchargements » · « Fais un bilan de santé du PC » · « Fais-moi le résumé de l'actu » |
+| **Compétences intégrées** | voir la liste ci-dessous |
+
+### Les compétences intégrées
+
+| Demande | Ce que fait Jarvis |
+|---|---|
+| « Fais le ménage sur mon PC » | analyse l'espace disque, propose quoi nettoyer, met à la Corbeille (récupérable) |
+| « Range mes téléchargements » | trie par type de fichier, avec un journal pour annuler |
+| « Fais un bilan de santé du PC » | note sur 10 : mémoire, disque, batterie, démarrage, antivirus, mises à jour |
+| « Fais-moi le résumé de l'actu » | lit plusieurs journaux et résume l'essentiel (possible chaque matin) |
+| « Fais-moi un CV pour cette annonce » | CV + lettre de motivation adaptés, en PDF |
+| « Fais une lettre de résiliation / une facture » | document propre en PDF |
+| « Analyse mes dépenses » | classe tes relevés bancaires, rapport, abonnements cachés, conseils |
+| « Range mes photos » | classe par année et mois, repère les doublons |
+| « Sauvegarde mes fichiers sur ma clé USB » | copie sécurisée (ne supprime jamais rien) |
+| « Crée un site pour mon activité » | site moderne adapté au téléphone + mise en ligne gratuite |
+| « Prépare les repas de la semaine » | menu équilibré + liste de courses par rayon |
+| « Explique-moi / fais-moi réviser … » | explications, quiz, fiches et rappels de révision |
+
+Tu peux aussi lui en apprendre de nouvelles : « Apprends à faire … de cette façon : … ».
 
 Bon à savoir :
 - Les rappels et tâches programmées ne se déclenchent que **quand Jarvis est ouvert**. Pour les tâches automatiques, utilise l'interface web.
