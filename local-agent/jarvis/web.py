@@ -13,7 +13,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import config, remote, scheduler, system, updater
+from . import ai_inpaint, config, remote, scheduler, system, updater
 from .core import Agent, Brain
 
 INDEX = Path(__file__).with_name("index.html")
@@ -290,6 +290,8 @@ def serve(cfg, workdir, port=7860, open_browser=True):
             elif path in ("/studio.js", "/studio.css", "/inpaint.js"):
                 self._send((Path(__file__).parent / path[1:]).read_bytes(),
                            "text/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")
+            elif path == "/ai_status":
+                self._json(ai_inpaint.status())
             elif path == "/images":
                 self._json(app.recent_images())
             elif path == "/file":
@@ -325,6 +327,10 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/confirm":
                     app.ui.answer(data["id"], "always" if data.get("always") else bool(data.get("ok")))
                     self._json({"ok": True})
+                elif self.path == "/ai_install":
+                    self._json(ai_inpaint.install())
+                elif self.path == "/ai_inpaint":
+                    self._json({"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))})
                 elif self.path == "/save_image":
                     self._json(app.save_image(data.get("name"), data.get("data")))
                 elif self.path == "/command":

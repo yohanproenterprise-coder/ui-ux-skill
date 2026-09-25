@@ -73,3 +73,6 @@
   background: rgba(2, 5, 12, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); color: var(--cyan); font-size: 14px; z-index: 3; }
 .st-pane input[type=number] { width: 100%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line-2); background: rgba(2,6,14,.6); color: var(--text); }
 .st-pane .check { margin: 2px 0 12px; font-size: 13px; }
+.st-prog { height: 6px; border-radius: 6px; background: rgba(61,220,255,.12); margin-top: 8px; overflow: hidden; }
+.st-prog span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); box-shadow: 0 0 10px var(--cyan); transition: width .4s; }
+#st-ai-box { margin: 8px 0 0; }

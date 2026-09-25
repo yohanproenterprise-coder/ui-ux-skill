@@ -85,6 +85,12 @@
         <div class="st-pane" data-pane="heal">
           <p class="st-note" style="margin-top:0">Peins sur ce que tu veux faire disparaître (personne, objet, texte, tache…),
             puis clique sur « Effacer ». Le fond se reconstruit à partir de ce qui l'entoure.</p>
+          <div class="st-label">Moteur</div>
+          <div class="st-grid two">
+            <button class="st-btn" id="st-eng-classic" title="Instantané, idéal pour ciel, mer, murs, herbe">⚡ Classique</button>
+            <button class="st-btn" id="st-eng-ai" title="Intelligence artificielle LaMa : reconstruit les formes (bords d'objets, visages de fond…)">✦ IA</button>
+          </div>
+          <div id="st-ai-box" class="st-note" hidden></div>
           <div class="st-row" style="margin-top:12px"><label>Taille du pinceau <span id="v-brush">30</span></label>
             <input type="range" min="4" max="150" value="30" id="st-brush"></div>
           <div class="st-grid two">
@@ -512,10 +518,11 @@
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     if (x1 < 0) return healMsg("Peins d'abord sur la zone à effacer.", true);
     const k0 = S.full.width / mask.width, bw = (x1 - x0 + 1) * k0, bh = (y1 - y0 + 1) * k0;
-    const margin = Math.max(40 * k0, 1.2 * Math.max(bw, bh));
+    const ai = S.engine === "ai";
+    const margin = Math.max(40 * k0, (ai ? [1.0, 1.6, 0.7] : [1.2, 1.2, 1.2])[variant % 3] * Math.max(bw, bh));
     const rx = Math.max(0, Math.floor(x0 * k0 - margin)), ry = Math.max(0, Math.floor(y0 * k0 - margin));
     const rw = Math.min(S.full.width, Math.ceil((x1 + 1) * k0 + margin)) - rx, rh = Math.min(S.full.height, Math.ceil((y1 + 1) * k0 + margin)) - ry;
-    const k = Math.min(1, 900 / Math.max(rw, rh)), ww = Math.max(8, Math.round(rw * k)), wh = Math.max(8, Math.round(rh * k));
+    const k = Math.min(1, (ai ? 1024 : 900) / Math.max(rw, rh)), ww = Math.max(8, Math.round(rw * k)), wh = Math.max(8, Math.round(rh * k));
     // image et masque de travail
     const work = document.createElement("canvas"); work.width = ww; work.height = wh;
     const wc = work.getContext("2d", { willReadFrequently: true }); wc.imageSmoothingQuality = "high";
@@ -532,12 +539,25 @@
         const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < ww && yy < wh && raw[yy * ww + xx]) { h = 1; break; } }
       hole[y * ww + x] = h; }
     const holeCopy = hole.slice();
+    q("#st-busy span").textContent = ai ? "L'IA reconstruit la zone… (5 à 20 s)" : "Reconstruction du fond…";
     q("#st-busy").style.display = "flex"; q("#st-heal").disabled = true;
     const t0 = performance.now();
     try {
-      const out = await runWorker({ rgb, hole, W: ww, H: wh, fineR: [6, 4, 5][variant % 3] });
-      for (let i = 0; i < ww * wh; i++) { px.data[i * 4] = out[i * 3]; px.data[i * 4 + 1] = out[i * 3 + 1]; px.data[i * 4 + 2] = out[i * 3 + 2]; px.data[i * 4 + 3] = 255; }
-      wc.putImageData(px, 0, 0);
+      if (ai) {
+        // IA LaMa sur le PC : on envoie la zone et son masque, on récupère la zone reconstruite
+        const mk = new ImageData(ww, wh);
+        for (let i = 0; i < ww * wh; i++) { const v = hole[i] ? 255 : 0; mk.data[i * 4] = mk.data[i * 4 + 1] = mk.data[i * 4 + 2] = v; mk.data[i * 4 + 3] = 255; }
+        const mc = document.createElement("canvas"); mc.width = ww; mc.height = wh; mc.getContext("2d").putImageData(mk, 0, 0);
+        const r = await (await fetch("/ai_inpaint", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: work.toDataURL("image/png"), mask: mc.toDataURL("image/png") }) })).json();
+        if (r.error) throw new Error(r.error);
+        const im = new Image(); im.src = r.image; await im.decode();
+        wc.clearRect(0, 0, ww, wh); wc.drawImage(im, 0, 0, ww, wh);
+      } else {
+        const out = await runWorker({ rgb, hole, W: ww, H: wh, fineR: [6, 4, 5][variant % 3] });
+        for (let i = 0; i < ww * wh; i++) { px.data[i * 4] = out[i * 3]; px.data[i * 4 + 1] = out[i * 3 + 1]; px.data[i * 4 + 2] = out[i * 3 + 2]; px.data[i * 4 + 3] = 255; }
+        wc.putImageData(px, 0, 0);
+      }
       // masque adouci pour fondre la reconstruction dans la photo
       const hm = new ImageData(ww, wh); for (let i = 0; i < ww * wh; i++) if (holeCopy[i]) { hm.data[i * 4 + 3] = 255; }
       const hc = document.createElement("canvas"); hc.width = ww; hc.height = wh; hc.getContext("2d").putImageData(hm, 0, 0);
@@ -554,7 +574,7 @@
       S.lastHeal = { mask: maskCopy, variant }; q("#st-heal-again").disabled = false;
       healMsg(`Zone effacée en ${((performance.now() - t0) / 1000).toFixed(1)} s. Pas convaincu ? « Autre proposition ». Une trace reste ? Repeins-la.`);
     } catch (err) { healMsg("Échec : " + err.message, true); }
-    finally { q("#st-busy").style.display = "none"; q("#st-heal").disabled = false; }
+    finally { q("#st-busy").style.display = "none"; q("#st-heal").disabled = S.engine === "ai" && !(aiState && aiState.state === "ready"); }
   }
   q("#st-heal").onclick = () => heal(0);
   q("#st-heal-again").onclick = async () => {
@@ -568,6 +588,36 @@
     S.full = snap; makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = !S.baseHist.length; healMsg("Gomme annulée.");
     S.lastHeal = null; q("#st-heal-again").disabled = true;
   };
+
+  // ------------------------------------------------------------- moteur IA --
+  let aiState = null;
+  try { S.engine = localStorage.getItem("jarvis-heal-engine") || "classic"; } catch (e) { S.engine = "classic"; }
+  function setEngine(e) {
+    S.engine = e; try { localStorage.setItem("jarvis-heal-engine", e); } catch (err) {}
+    q("#st-eng-classic").classList.toggle("on", e === "classic"); q("#st-eng-ai").classList.toggle("on", e === "ai");
+    refreshAI();
+  }
+  async function refreshAI() {
+    const box = q("#st-ai-box");
+    if (S.engine !== "ai") { box.hidden = true; q("#st-heal").disabled = false; return; }
+    try { aiState = await (await fetch("/ai_status")).json(); } catch (e) { aiState = { state: "error", error: "Jarvis ne répond pas" }; }
+    box.hidden = false;
+    const ready = aiState.state === "ready";
+    q("#st-heal").disabled = !ready;
+    if (ready) box.innerHTML = "✦ IA LaMa prête. Idéale quand l'objet cache le bord d'un autre (tasse, meuble, personne…).";
+    else if (aiState.state === "installing")
+      box.innerHTML = `${esc2(aiState.step)}<div class="st-prog"><span style="width:${aiState.progress || 0}%"></span></div>`;
+    else box.innerHTML = (aiState.state === "error" ? `<span style="color:var(--err)">Échec : ${esc2(aiState.error)}</span><br>` : "") +
+      "L'IA de retouche s'installe une seule fois (≈ 110 Mo, quelques minutes). Elle fonctionne ensuite sans internet, sur ton PC." +
+      '<button class="st-btn primary wide" id="st-ai-install">Installer l\'IA de retouche</button>';
+    const btn = q("#st-ai-install");
+    if (btn) btn.onclick = async () => { await fetch("/ai_install", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); refreshAI(); };
+    if (aiState.state === "installing" && root.classList.contains("open")) setTimeout(refreshAI, 1000);
+  }
+  const esc2 = t => String(t || "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  q("#st-eng-classic").onclick = () => setEngine("classic");
+  q("#st-eng-ai").onclick = () => setEngine("ai");
+  setEngine(S.engine);
 
   // --------------------------------------------------------------- qualité --
   q("#st-quality-btn").onclick = () => { if (!S.prev) return; S.p.levels = autoLevels(S.prev);
@@ -617,6 +667,7 @@
     root.querySelectorAll(".st-pane").forEach(p => p.classList.toggle("on", p.dataset.pane === t));
     if (t !== "crop") { cropEl.style.display = "none"; S.cropBox = null; }
     if (t === "export" && q("#st-size").value !== "custom") sizeFromPreset();
+    if (t === "heal") refreshAI();
     render();
   }
   root.querySelector(".st-tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.tab); });
