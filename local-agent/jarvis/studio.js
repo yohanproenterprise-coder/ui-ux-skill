@@ -328,36 +328,32 @@
     return n ? Math.sqrt(Math.PI / 2) / 6 * sum / n : 0;
   }
   function enhance(d, W, H, e, a, scale) {
-    // 1. bruit : couleur nettement (disgracieuse), luminance légèrement et sans toucher aux détails
+    // Réglages volontairement prudents : on corrige, on ne transforme pas.
+    // 1. bruit : couleur surtout, luminance à peine (le grain naturel reste)
     const nz = Math.min(1, Math.max(0, (e.noise - .8) / 2.5));
-    denoiseYCC(d, W, H, a * (.55 + .4 * nz), a * (.2 + .4 * nz), scale);
-    // 2. lumière : niveaux prudents, tons moyens, légère courbe en S (sur la luminance seule)
-    const lo = e.black < 45 ? e.black * .8 * a : 0, hi = e.white > 170 ? 255 - (255 - e.white) * .8 * a : 255;
+    denoiseYCC(d, W, H, a * (.45 + .35 * nz), a * (.1 + .3 * nz), scale);
+    // 2. lumière : même courbe sur R, V, B (comme un logiciel photo), niveaux et tons moyens modérés
+    const lo = e.black < 40 ? e.black * .6 * a : 0, hi = e.white > 190 ? 255 - (255 - e.white) * .6 * a : 255;
     const midN = Math.min(.9, Math.max(.05, (e.mid - lo) / Math.max(1, hi - lo)));
-    let gam = Math.min(1.3, Math.max(.72, Math.log(.46) / Math.log(midN)));
-    gam = 1 + (gam - 1) * .6 * a;
-    const lut = new Float32Array(257);
-    for (let v = 0; v <= 256; v++) {
-      let x = Math.min(1, Math.max(0, (Math.min(v, 255) - lo) / Math.max(1, hi - lo)));
-      x = Math.pow(x, gam); x += (x * x * (3 - 2 * x) - x) * .3 * a; lut[v] = x * 255;
+    let gam = Math.min(1.2, Math.max(.8, Math.log(.46) / Math.log(midN)));
+    gam = 1 + (gam - 1) * .5 * a;
+    const lut = new Uint8ClampedArray(256);
+    for (let v = 0; v < 256; v++) {
+      let x = Math.min(1, Math.max(0, (v - lo) / Math.max(1, hi - lo)));
+      x = Math.pow(x, gam); x += (x * x * (3 - 2 * x) - x) * .18 * a; lut[v] = Math.round(x * 255);
     }
-    const wr = 1 + (e.wb[0] - 1) * .8 * a, wg = 1 + (e.wb[1] - 1) * .8 * a, wbb = 1 + (e.wb[2] - 1) * .8 * a, vib = .16 * a;
+    // balance des blancs très légère : l'ambiance (lumière chaude, soirée…) est conservée
+    const wf = .35 * a, wr = 1 + (e.wb[0] - 1) * wf, wg = 1 + (e.wb[1] - 1) * wf, wbb = 1 + (e.wb[2] - 1) * wf, vib = .08 * a;
     for (let i = 0; i < d.length; i += 4) {
-      let r = d[i] * wr, g = d[i + 1] * wg, b = d[i + 2] * wbb;
-      const l = luma(r, g, b), li = Math.min(255, l), f = li - (li | 0);
-      const nl = lut[li | 0] * (1 - f) + lut[(li | 0) + 1] * f, ratio = l > .5 ? nl / l : 1;
-      r *= ratio; g *= ratio; b *= ratio;
-      const mx = Math.max(r, g, b);
-      if (mx > 255) { const L2 = luma(r, g, b); if (L2 < 255) { const t = (255 - L2) / (mx - L2); r = L2 + (r - L2) * t; g = L2 + (g - L2) * t; b = L2 + (b - L2) * t; } }
-      // vibrance douce, peau protégée
-      const l2 = luma(r, g, b), sat = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+      let r = lut[clamp(d[i] * wr) | 0], g = lut[clamp(d[i + 1] * wg) | 0], b = lut[clamp(d[i + 2] * wbb) | 0];
+      const l = luma(r, g, b), sat = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
       const skin = r > g && g > b && r > 70 && r - b > 15 && r - b < 130;
-      const k = 1 + vib * (1 - sat) * (skin ? .25 : 1);
-      d[i] = clamp(l2 + (r - l2) * k); d[i + 1] = clamp(l2 + (g - l2) * k); d[i + 2] = clamp(l2 + (b - l2) * k);
+      const k = 1 + vib * (1 - sat) * (1 - sat) * (skin ? .2 : 1);
+      d[i] = clamp(l + (r - l) * k); d[i + 1] = clamp(l + (g - l) * k); d[i + 2] = clamp(l + (b - l) * k);
     }
-    // 3. netteté fine sans halos ni bruit, puis un peu de relief
-    usm(d, W, H, .45 * a, Math.max(1, Math.round(1.1 * scale)), 5 + 2 * e.noise);
-    localContrast(d, W, H, .12 * a, Math.max(4, Math.round(22 * scale)));
+    // 3. netteté fine, seuil élevé (pas de bruit accentué, pas de halo), relief à peine perceptible
+    usm(d, W, H, .28 * a, Math.max(1, Math.round(scale)), 6 + 2 * e.noise);
+    localContrast(d, W, H, .05 * a, Math.max(4, Math.round(22 * scale)));
   }
   function toY(d, n) { const Y = new Float32Array(n); for (let j = 0; j < n; j++) Y[j] = luma(d[j * 4], d[j * 4 + 1], d[j * 4 + 2]); return Y; }
   function denoiseYCC(d, W, H, ac, al, scale) {
@@ -717,7 +713,7 @@
 
   // --------------------------------------------------------------- qualité --
   q("#st-enhance").onclick = () => { if (!S.prev) return;
-    S.p.enh = analyze(S.prev); S.p.enhance = S.p.enhance > 0 ? S.p.enhance : 60; commit(); sync(); render(); };
+    S.p.enh = analyze(S.prev); S.p.enhance = S.p.enhance > 0 ? S.p.enhance : 40; commit(); sync(); render(); };
 
   // --------------------------------------------------------- redimensionner --
   function baseSize() {
