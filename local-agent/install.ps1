@@ -14,8 +14,8 @@ else {
   RefreshPath
   if (-not (PythonOk)) { Write-Host "Installe Python depuis https://www.python.org/downloads/ (coche 'Add Python to PATH') puis relance ce script." -ForegroundColor Red; Read-Host "Entrée pour quitter"; exit 1 }
 }
-python -m pip install --user --quiet --disable-pip-version-check pypdf
-Write-Host "Lecture des PDF activée (pypdf)."
+python -m pip install --user --quiet --disable-pip-version-check pypdf pillow
+Write-Host "Lecture des PDF (pypdf) et retouche photo (Pillow) activées."
 
 Step "Ollama (moteur des modèles locaux)"
 if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {

@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/studio.css">
 <title>Jarvis</title>
 <style>
 :root {
@@ -118,6 +119,8 @@ details.tool.err .st::before { content: "✕"; }
 details.tool.err .t-name { color: var(--err); }
 details.tool pre { margin: 0; padding: 10px 12px; border-top: 1px solid var(--line); white-space: pre-wrap;
   font: 12px/1.45 var(--mono); max-height: 320px; overflow: auto; color: #a9bdd6; }
+.studio-open { align-self: flex-start; margin-left: 44px; font-size: 12.5px; padding: 5px 12px; }
+@media (max-width: 640px) { .studio-open { margin-left: 0; } }
 .info { align-self: center; font-size: 12.5px; color: var(--muted); padding: 5px 12px; border-radius: 999px;
   background: rgba(8,14,26,.6); border: 1px solid var(--line); text-align: center; max-width: 92%; }
 .info.warn { color: var(--warn); border-color: rgba(255,200,87,.3); } .info.error { color: var(--err); border-color: rgba(255,107,122,.35); }
@@ -225,6 +228,7 @@ dialog input:focus { outline: none; border-color: var(--cyan); }
     </div>
   </div>
   <select id="provider" title="Cerveau utilisé" aria-label="Cerveau utilisé"></select>
+  <button class="pill" id="studioBtn" title="Studio photo : retouche tes photos"><svg><use href="#i-image"/></svg><span class="lbl">Studio</span></button>
   <button class="pill" id="model" title="Changer le modèle du cerveau actuel"><svg><use href="#i-cpu"/></svg><span class="lbl">Modèle</span></button>
   <button class="pill" id="auto" title="Exécuter sans demander confirmation"><svg><use href="#i-bolt"/></svg><span class="lbl">Auto</span></button>
   <button class="pill" id="voice" title="Lire les réponses à voix haute"><svg><use href="#i-vol"/></svg><span class="lbl">Voix</span></button>
@@ -244,7 +248,7 @@ dialog input:focus { outline: none; border-color: var(--cyan); }
       <button class="chip" data-q="Range mes téléchargements"><svg><use href="#i-folder"/></svg>Ranger mes téléchargements</button>
       <button class="chip" data-q="Regarde mon écran et dis-moi ce que tu vois"><svg><use href="#i-eye"/></svg>Regarder mon écran</button>
       <button class="chip" data-q="Rappelle-moi dans 20 minutes de faire une pause"><svg><use href="#i-clock"/></svg>Me faire un rappel</button>
-      <button class="chip" data-q="Crée une image d'un paysage futuriste au coucher du soleil"><svg><use href="#i-image"/></svg>Créer une image</button>
+      <button class="chip" data-studio="1"><svg><use href="#i-image"/></svg>Retoucher une photo</button>
     </div>
   </div>
 </div></main>
@@ -358,7 +362,11 @@ function handle(e) {
     case "result": {
       const det = [...document.querySelectorAll("details.tool[data-pending]")].pop();
       if (det) { det.querySelector("pre").textContent = e.text; delete det.dataset.pending;
-                 det.classList.add(/^ERREUR|REFUSÉ/.test(e.text) ? "err" : "ok"); }
+                 det.classList.add(/^ERREUR|REFUSÉ/.test(e.text) ? "err" : "ok");
+                 const pics = [...new Set(e.text.match(/(?:[A-Za-z]:\\|\/)[^\n"*?<>|]*?\.(?:jpe?g|png|webp)/gi) || [])].slice(0, 3);
+                 pics.forEach(path => { const b = document.createElement("button"); b.className = "pill studio-open";
+                   b.innerHTML = `<svg><use href="#i-image"/></svg>Ouvrir dans le Studio · ${esc(path.split(/[\\/]/).pop())}`;
+                   b.onclick = () => window.openStudio(path); det.after(b); }); }
       break; }
     case "info": add(`info ${e.level || ""}`, esc(e.text)); break;
     case "plan":
@@ -448,7 +456,16 @@ function addImages(files) {
 }
 
 $("send").onclick = send;
-document.querySelectorAll(".chip").forEach(c => c.onclick = () => { $("input").value = c.dataset.q; send(); });
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => {
+  if (c.dataset.studio) return window.openStudio();
+  $("input").value = c.dataset.q; send(); });
+$("studioBtn").onclick = () => window.openStudio();
+window.jarvisAttach = (data, name, question) => {
+  images.push({name, data});
+  const im = document.createElement("img"); im.src = data; $("thumbs").appendChild(im);
+  if (question && !$("input").value.trim()) $("input").value = question;
+  grow(); $("input").focus();
+};
 $("input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
 $("input").addEventListener("input", grow);
 $("input").addEventListener("paste", e => addImages(e.clipboardData.files));
@@ -561,5 +578,6 @@ $("mic").onclick = async () => {
 if (innerWidth < 640) $("input").placeholder = "Demande à Jarvis…";
 refresh(); poll();
 </script>
+<script src="/studio.js"></script>
 </body>
 </html>

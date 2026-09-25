@@ -14,7 +14,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-from . import emailer, knowledge, scheduler, system
+from . import emailer, knowledge, photo, scheduler, system
 from .config import CAPTURES_DIR, HOME, MEMORY_FILE, SKILLS_DIR
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "venv", "$RECYCLE.BIN"}
@@ -294,6 +294,10 @@ class Tools:
         path.write_bytes(data)
         return f"Image créée : {path} (utilise open_item pour l'afficher)"
 
+    def edit_photo(self, path, **settings):
+        self.ui.info("retouche en cours…")
+        return photo.edit(str(self._path(path)), **settings)
+
     # ------------------------------------------------------------ e-mails --
     def read_emails(self, count=10, unread_only=False, query="", folder="INBOX"):
         return emailer.list_emails(self.brain.cfg, min(int(count), 50), unread_only, query, folder)
@@ -479,6 +483,17 @@ TOOL_SPECS = [
           "avec leur fichier source.", {"query": S, "k": I}, ["query"]),
     _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
           {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
+    _tool("edit_photo", "Retouche une photo, un dossier entier ou un motif (*.jpg). Réglages de -100 à +100. "
+          "Crée une copie (suffixe -retouche), l'original reste intact. Pour le Studio visuel, "
+          "dis à l'utilisateur de cliquer sur le bouton Studio.",
+          {"path": S, "brightness": I, "contrast": I, "saturation": I, "sharpness": I,
+           "auto": {"type": "boolean", "description": "amélioration automatique"},
+           "filter": {"type": "string", "enum": photo.FILTERS}, "crop_ratio": {"type": "string", "description": "ex: 1:1, 4:5, 16:9"},
+           "rotate": I, "flip": {"type": "string", "enum": ["horizontal", "vertical"]}, "max_size": I,
+           "blur": I, "vignette": I, "text": S,
+           "text_position": {"type": "string", "enum": ["bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "centre"]},
+           "output_format": {"type": "string", "enum": ["jpeg", "png", "webp"]}, "quality": I, "out_dir": S},
+          ["path"]),
     _tool("read_emails", "Liste les e-mails récents (uid, date, expéditeur, objet). query filtre par mot.",
           {"count": I, "unread_only": {"type": "boolean"}, "query": S, "folder": S}),
     _tool("read_email", "Lit un e-mail complet à partir de son uid.", {"uid": S, "folder": S}, ["uid"]),

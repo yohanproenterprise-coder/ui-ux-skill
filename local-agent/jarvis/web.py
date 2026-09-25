@@ -1,9 +1,12 @@
 """Interface web locale : http://localhost:7860 (accessible uniquement depuis ce PC)."""
 
 import base64
+import mimetypes
+import os
 import json
 import re
 import threading
+import urllib.parse
 import time
 import uuid
 import webbrowser
@@ -86,6 +89,53 @@ class App:
             self.queue.append(item["task"])
         if self.queue and not self.busy:
             self.send("[Tâche planifiée, exécute-la puis résume le résultat] " + self.queue.pop(0), [])
+
+    # ---------------------------------------------------------- studio photo --
+    IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+
+    def _roots(self):
+        home = Path.home()
+        return [Path(self.agent.tools.workdir), config.HOME] + [home / d for d in ("Pictures", "Images", "Desktop",
+                                                                              "Downloads", "Documents", "OneDrive")]
+
+    def allowed_image(self, path):
+        p = Path(path).expanduser().resolve()
+        ok = p.suffix.lower() in self.IMG_EXT and p.is_file()
+        return p if ok and any(p.is_relative_to(r.resolve()) for r in self._roots() if r.exists()) else None
+
+    def recent_images(self, limit=80):
+        found = []
+        for root in self._roots():
+            if not root.exists():
+                continue
+            for dirpath, dirnames, filenames in os.walk(root):
+                depth = len(Path(dirpath).relative_to(root).parts)
+                dirnames[:] = [] if depth >= 3 else [d for d in dirnames if not d.startswith((".", "$")) and d != "node_modules"]
+                for f in filenames:
+                    if Path(f).suffix.lower() in self.IMG_EXT:
+                        p = Path(dirpath, f)
+                        try:
+                            found.append((p.stat().st_mtime, str(p)))
+                        except OSError:
+                            pass
+                if len(found) > 3000:
+                    break
+        found.sort(reverse=True)
+        return [{"path": p, "name": Path(p).name} for _, p in dict((p, (t, p)) for t, p in found).values()][:limit]
+
+    def save_image(self, name, data):
+        m = re.match(r"data:image/(png|jpeg|webp);base64,(.*)", data or "", re.S)
+        if not m:
+            raise ValueError("image invalide")
+        stem = re.sub(r"[^\w\-. ]+", "_", Path(name or "photo").stem)[:80] or "photo"
+        ext = {"jpeg": "jpg"}.get(m.group(1), m.group(1))
+        folder = Path(self.agent.tools.workdir) / "photos"
+        folder.mkdir(parents=True, exist_ok=True)
+        dest, n = folder / f"{stem}.{ext}", 2
+        while dest.exists():
+            dest, n = folder / f"{stem} ({n}).{ext}", n + 1
+        dest.write_bytes(base64.b64decode(m.group(2)))
+        return {"path": str(dest)}
 
     def state(self):
         return {"provider": self.brain.name, "model": self.brain.llm.model, "auto": self.agent.tools.auto,
@@ -237,6 +287,17 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 return self._json({"error": "non autorisé"}, 401)
             if path == "/":
                 self._send(INDEX.read_bytes(), "text/html; charset=utf-8")
+            elif path in ("/studio.js", "/studio.css"):
+                self._send((Path(__file__).parent / path[1:]).read_bytes(),
+                           "text/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")
+            elif path == "/images":
+                self._json(app.recent_images())
+            elif path == "/file":
+                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                p = app.allowed_image(q.get("path", [""])[0])
+                if not p:
+                    return self._json({"error": "fichier non autorisé"}, 403)
+                self._send(p.read_bytes(), mimetypes.guess_type(p.name)[0] or "application/octet-stream")
             elif path == "/state":
                 self._json(app.state())
             elif path == "/events":
@@ -264,6 +325,8 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/confirm":
                     app.ui.answer(data["id"], "always" if data.get("always") else bool(data.get("ok")))
                     self._json({"ok": True})
+                elif self.path == "/save_image":
+                    self._json(app.save_image(data.get("name"), data.get("data")))
                 elif self.path == "/command":
                     self._json(app.command(data.get("cmd"), data.get("arg")))
                 else:

@@ -60,6 +60,19 @@ Jarvis travaille par défaut dans le dossier `C:\Users\<toi>\Jarvis`. Il peut au
 | **E-mails** | « Ai-je reçu des mails importants aujourd'hui ? » / « Réponds à Paul que je serai là à 18h » |
 | **Compétences intégrées** | voir la liste ci-dessous |
 
+### Studio photo
+
+Clique sur **Studio** en haut de Jarvis (ou « Retoucher une photo » sur l'accueil) :
+- ouvre une photo (glisser-déposer, copier-coller, bouton, ou galerie des photos récentes du PC) ;
+- **Réglages** : amélioration automatique, exposition, contraste, hautes lumières, ombres, saturation, vibrance, température, teinte, netteté, flou, vignette, grain (double-clic sur un curseur pour le remettre à zéro) ;
+- **Filtres** : 11 filtres avec aperçu et intensité réglable ;
+- **Recadrer** : formats carré, 4:5, 3:2, 16:9, 9:16 ou libre, rotation et miroir ;
+- **Texte** : signature ou légende ;
+- **Avant / après** (maintenir le bouton), Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ;
+- **Exporter** : JPEG, PNG ou WebP, taille au choix, enregistrement dans `Jarvis\photos`, téléchargement, ou envoi à Jarvis pour avoir son avis et une légende.
+
+Tu peux aussi demander par écrit : *« Retouche cette photo : plus lumineuse, filtre vintage, format carré »* ou *« Réduis toutes les photos du dossier Vacances à 1080 px avec ma signature »*. Jarvis crée des copies, les originaux restent intacts.
+
 ### Les compétences intégrées
 
 | Demande | Ce que fait Jarvis |
