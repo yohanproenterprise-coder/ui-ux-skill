@@ -76,6 +76,13 @@
             <input type="range" min="0" max="100" value="0" data-k="enhance"></div>
           <p class="st-note" style="margin:-4px 0 4px">Rendu naturel : lumière, balance des blancs, bruit et netteté sont dosés selon ta photo.
             Les couleurs et la peau sont préservées.</p>
+          <div class="st-label">Agrandir avec l'IA</div>
+          <div class="st-grid two">
+            <button class="st-btn" id="st-up2" title="Double la taille en recréant les détails">✦ Agrandir ×2</button>
+            <button class="st-btn" id="st-up4" title="Quadruple la taille (petites photos)">✦ Agrandir ×4</button>
+          </div>
+          <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler l'agrandissement</button>
+          <div id="st-up-msg" class="st-note"></div>
           <div id="st-sliders"></div>
         </div>
         <div class="st-pane" data-pane="filters">
@@ -710,6 +717,52 @@
   q("#st-eng-classic").onclick = () => setEngine("classic");
   q("#st-eng-ai").onclick = () => setEngine("ai");
   setEngine(S.engine);
+
+  // ------------------------------------------------------- agrandissement IA --
+  async function aiUpscale(factor) {
+    if (!S.full) return;
+    const box = q("#st-up-msg");
+    let st; try { st = await (await fetch("/ai_status")).json(); } catch (e) { return box.textContent = "Jarvis ne répond pas."; }
+    if (!st.deps) {
+      box.innerHTML = "L'IA d'agrandissement a besoin d'un petit composant (≈ 20 Mo, une seule fois)." +
+        '<button class="st-btn primary wide" id="st-up-install">Installer</button>';
+      q("#st-up-install").onclick = async () => {
+        box.textContent = "Installation en cours…";
+        await fetch("/ai_install", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deps_only: true }) });
+        for (let i = 0; i < 600; i++) { await new Promise(r => setTimeout(r, 1500));
+          const s2 = await (await fetch("/ai_status")).json();
+          if (s2.deps) { box.textContent = "Composant installé. Clique à nouveau sur « Agrandir »."; return; }
+          if (s2.state === "error") { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(s2.error)}</span>`; return; } }
+      };
+      return;
+    }
+    if (Math.max(S.full.width, S.full.height) * factor > 8000)
+      return box.innerHTML = `<span style="color:var(--err)">Photo trop grande pour ×${factor} (limite 8000 px). Choisis ×2 ou réduis-la.</span>`;
+    const busy = q("#st-busy"), label = q("#st-busy span"); busy.style.display = "flex";
+    q("#st-up2").disabled = q("#st-up4").disabled = true;
+    const poll = setInterval(async () => { try { const s3 = await (await fetch("/ai_status")).json();
+      label.textContent = `L'IA agrandit la photo… ${s3.upscale.progress || 0} %`; } catch (e) {} }, 800);
+    label.textContent = "L'IA agrandit la photo…";
+    const t0 = performance.now();
+    try {
+      const big = S.full.width * S.full.height > 4e6;
+      const r = await (await fetch("/ai_upscale", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: S.full.toDataURL(big ? "image/jpeg" : "image/png", .96), factor }) })).json();
+      if (r.error) throw new Error(r.error);
+      const im = new Image(); im.src = r.image; await im.decode();
+      const snap = S.full; S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
+      const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext("2d").drawImage(im, 0, 0);
+      S.full = c; makePrev(); buildFilterThumbs(); render();
+      q("#st-name").textContent = `${S.name} · ${c.width}×${c.height}`;
+      q("#st-up-undo").hidden = false; q("#st-heal-undo").disabled = false;
+      box.textContent = `Agrandie à ${c.width}×${c.height} en ${((performance.now() - t0) / 1000).toFixed(0)} s. Pense à l'enregistrer dans « Exporter ».`;
+    } catch (err) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(err.message)}</span>`; }
+    finally { clearInterval(poll); busy.style.display = "none"; q("#st-up2").disabled = q("#st-up4").disabled = false; }
+  }
+  q("#st-up2").onclick = () => aiUpscale(2);
+  q("#st-up4").onclick = () => aiUpscale(4);
+  q("#st-up-undo").onclick = () => { q("#st-heal-undo").click(); q("#st-up-undo").hidden = true;
+    q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`; q("#st-up-msg").textContent = "Agrandissement annulé."; };
 
   // --------------------------------------------------------------- qualité --
   q("#st-enhance").onclick = () => { if (!S.prev) return;

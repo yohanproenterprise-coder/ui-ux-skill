@@ -18,13 +18,16 @@ import urllib.request
 from .config import HOME
 
 MODEL = HOME / "models" / "lama.onnx"
+UPSCALE_MODEL = __import__("pathlib").Path(__file__).resolve().parent / "models" / "upscale-x4.onnx"
 MODEL_URLS = [  # LaMa (Carve / OpenCV Zoo, licence Apache 2.0)
     "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/inpainting_lama/inpainting_lama_2025jan.onnx",
     "https://huggingface.co/Carve/LaMa-ONNX/resolve/main/lama_fp32.onnx",
 ]
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
+upscale_state = {"busy": False, "progress": 0}
 _session, _last_use, _lock = None, 0.0, threading.Lock()
+_up_session = None
 
 
 def _deps_ok():
@@ -38,11 +41,12 @@ def _deps_ok():
 
 
 def status():
+    extra = {"deps": _deps_ok(), "upscale": dict(upscale_state)}
     if state["state"] in ("installing", "error"):
-        return dict(state)
-    ready = MODEL.exists() and MODEL.stat().st_size > 50_000_000 and _deps_ok()
+        return {**state, **extra}
+    ready = MODEL.exists() and MODEL.stat().st_size > 50_000_000 and extra["deps"]
     state.update(state="ready" if ready else "absent")
-    return dict(state)
+    return {**state, **extra}
 
 
 def _pip(packages):
@@ -81,7 +85,7 @@ def _download():
     raise RuntimeError(f"téléchargement du modèle impossible ({last_err})")
 
 
-def install():
+def install(deps_only=False):
     """Lance l'installation en arrière-plan ; suivre l'avancement avec status()."""
     if state["state"] == "installing":
         return status()
@@ -97,6 +101,9 @@ def install():
                 hint = (" Installe le composant Microsoft « Visual C++ Redistributable » : "
                         "https://aka.ms/vs/17/release/vc_redist.x64.exe puis réessaie.") if "DLL" in str(e) else ""
                 raise RuntimeError(f"le moteur d'IA ne démarre pas ({e}).{hint}")
+            if deps_only:
+                state.update(state="absent", step="", progress=100)
+                return
             if not (MODEL.exists() and MODEL.stat().st_size > 50_000_000):
                 state.update(step="Téléchargement du modèle d'IA (≈ 92 Mo)…", progress=0)
                 _download()
@@ -159,6 +166,56 @@ def inpaint(image_data_url, mask_data_url):
     if out.max() <= 2:
         out = out * 255
     res = Image.fromarray(out.clip(0, 255).astype(np.uint8)).resize((side, side), Image.LANCZOS).crop((0, 0, w, h))
+    buf = io.BytesIO()
+    res.save(buf, "PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+# ------------------------------------------------------------ agrandissement --
+def upscale_image(img, factor=2, tile=256, pad=12):
+    """Agrandit une image PIL ×2 ou ×4 avec Real-ESRGAN (rendu naturel), par tuiles pour limiter la mémoire."""
+    global _up_session
+    import numpy as np
+    from PIL import Image
+    if not _deps_ok():
+        raise RuntimeError("L'IA n'est pas installée (bouton « Installer l'IA » dans le Studio).")
+    factor = 4 if int(factor) >= 4 else 2
+    w, h = img.size
+    if max(w, h) * factor > 8000:
+        raise RuntimeError(f"Image trop grande pour ×{factor} (résultat limité à 8000 px). Réduis-la d'abord ou choisis ×2.")
+    if _up_session is None:
+        import onnxruntime as ort
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = max(1, os.cpu_count() or 1)
+        opts.log_severity_level = 3
+        _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
+    src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
+    out = np.zeros((h * factor, w * factor, 3), dtype=np.uint8)
+    tiles = [(x, y) for y in range(0, h, tile) for x in range(0, w, tile)]
+    upscale_state.update(busy=True, progress=0)
+    try:
+        for n, (x, y) in enumerate(tiles):
+            x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + tile + pad), min(h, y + tile + pad)
+            inp = src[y0:y1, x0:x1].transpose(2, 0, 1)[None]
+            res = _up_session.run(None, {"input": inp})[0][0].transpose(1, 2, 0)
+            res = Image.fromarray((res.clip(0, 1) * 255).round().astype(np.uint8))
+            if factor != 4:  # ×4 puis réduction soignée : plus net qu'un ×2 direct
+                res = res.resize(((x1 - x0) * factor, (y1 - y0) * factor), Image.LANCZOS)
+            res = np.asarray(res)
+            cx0, cy0 = (x - x0) * factor, (y - y0) * factor
+            cw, ch = (min(w, x + tile) - x) * factor, (min(h, y + tile) - y) * factor
+            out[y * factor:y * factor + ch, x * factor:x * factor + cw] = res[cy0:cy0 + ch, cx0:cx0 + cw]
+            upscale_state["progress"] = int(100 * (n + 1) / len(tiles))
+    finally:
+        upscale_state["busy"] = False
+    # 35 % d'agrandissement classique : garde le grain réel (peau, matières) pour un rendu naturel
+    res = Image.fromarray(out)
+    return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.35)
+
+
+def upscale(image_data_url, factor=2):
+    img = _decode(image_data_url, "RGB")
+    res = upscale_image(img, factor)
     buf = io.BytesIO()
     res.save(buf, "PNG")
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()

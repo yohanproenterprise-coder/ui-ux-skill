@@ -328,7 +328,9 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                     app.ui.answer(data["id"], "always" if data.get("always") else bool(data.get("ok")))
                     self._json({"ok": True})
                 elif self.path == "/ai_install":
-                    self._json(ai_inpaint.install())
+                    self._json(ai_inpaint.install(deps_only=bool(data.get("deps_only"))))
+                elif self.path == "/ai_upscale":
+                    self._json({"image": ai_inpaint.upscale(data.get("image", ""), data.get("factor", 2))})
                 elif self.path == "/ai_inpaint":
                     self._json({"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))})
                 elif self.path == "/save_image":

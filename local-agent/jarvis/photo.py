@@ -148,9 +148,17 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
         if max_size:
             img.thumbnail((int(max_size), int(max_size)), Image.LANCZOS)
         if upscale and float(upscale) > 1:
-            f = float(upscale)
-            img = img.resize((round(img.width * f), round(img.height * f)), Image.LANCZOS)
-            img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
+            fac = float(upscale)
+            base = 4 if fac > 2 else 2
+            try:  # IA d'agrandissement (Real-ESRGAN) si elle est disponible, sinon méthode classique
+                from . import ai_inpaint
+                w0, h0 = img.size
+                img = ai_inpaint.upscale_image(img, base)
+                if fac != base:
+                    img = img.resize((round(w0 * fac), round(h0 * fac)), Image.LANCZOS)
+            except Exception:
+                img = img.resize((round(img.width * fac), round(img.height * fac)), Image.LANCZOS)
+                img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=60, threshold=2))
         if width or height:
             w = int(width) if width else round(img.width * int(height) / img.height)
             h = int(height) if height else round(img.height * int(width) / img.width)
