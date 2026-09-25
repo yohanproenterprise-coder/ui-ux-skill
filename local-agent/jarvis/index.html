@@ -3,149 +3,277 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
-<meta name="theme-color" content="#0f1115">
+<meta name="theme-color" content="#05080f">
+<meta name="color-scheme" content="dark">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <title>Jarvis</title>
 <style>
 :root {
-  --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --border: #2a2f3a;
-  --text: #e6e8ee; --muted: #8b93a5; --accent: #6ea8fe; --accent-ink: #0b1220;
-  --ok: #4cc38a; --warn: #f0b429; --err: #f06a6a; --user: #25406b;
-  --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
-}
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f0f2f5; --border: #dde1e8;
-    --text: #1b1f27; --muted: #5f6878; --accent: #2f6fdb; --accent-ink: #ffffff;
-    --user: #dbe7fb;
-  }
+  --bg: #05080f; --bg-2: #0a1220; --glass: rgba(13, 22, 38, .66); --glass-2: rgba(20, 34, 56, .72);
+  --line: rgba(120, 200, 255, .14); --line-2: rgba(120, 200, 255, .28);
+  --text: #e8f3ff; --muted: #8196b0; --faint: #52657d;
+  --cyan: #3ddcff; --blue: #1a8cff; --glow: rgba(61, 220, 255, .35);
+  --ok: #3ef0a1; --warn: #ffc857; --err: #ff6b7a;
+  --display: "Exo 2", "Segoe UI", system-ui, sans-serif;
+  --body: Inter, "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --r: 16px;
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--text); font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
-       display: flex; flex-direction: column; }
-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border);
-         background: var(--panel); flex-wrap: wrap; }
-header h1 { font-size: 17px; margin: 0; letter-spacing: .5px; flex: 1; min-width: 0; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis; }
-header h1 span { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
-select, button, textarea, input { font: inherit; color: var(--text); }
-select, .btn { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
-               cursor: pointer; }
-.btn:hover { border-color: var(--accent); }
-.btn.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-main { flex: 1; overflow-y: auto; padding: 20px 16px 8px; }
-.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-.msg { padding: 10px 14px; border-radius: 12px; max-width: 100%; overflow-wrap: anywhere; }
-.user { background: var(--user); align-self: flex-end; max-width: 80%; white-space: pre-wrap; }
-.bot { background: var(--panel); border: 1px solid var(--border); }
-.bot p { margin: .4em 0; }
-.bot pre { background: var(--panel-2); padding: 10px; border-radius: 8px; overflow-x: auto; font: 13px/1.45 var(--mono); }
-.bot code { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
-.bot pre code { background: none; padding: 0; }
-.bot a { color: var(--accent); }
-details.tool { border: 1px dashed var(--border); border-radius: 10px; padding: 6px 12px; color: var(--muted);
-               font-size: 13px; }
-details.tool summary { cursor: pointer; font-family: var(--mono); white-space: nowrap; overflow: hidden;
-                       text-overflow: ellipsis; }
-details.tool pre { white-space: pre-wrap; font: 12px/1.4 var(--mono); max-height: 320px; overflow: auto; }
-.info { color: var(--muted); font-size: 13px; text-align: center; }
-.info.warn { color: var(--warn); } .info.error { color: var(--err); }
-#plan { position: sticky; top: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-        padding: 8px 14px; font-size: 13px; display: none; z-index: 2; }
-#plan div { color: var(--muted); } #plan .en_cours { color: var(--text); font-weight: 600; }
-#plan .fait { color: var(--ok); text-decoration: line-through; }
-footer { padding: 10px 16px 14px; background: var(--bg); }
-.bar { max-width: 860px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; background: var(--panel);
-       border: 1px solid var(--border); border-radius: 14px; padding: 8px; }
-textarea { flex: 1; resize: none; border: 0; background: transparent; outline: none; max-height: 200px;
-           padding: 6px; min-height: 36px; }
-.icon { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel-2);
-        cursor: pointer; font-size: 17px; flex: none; }
-.icon.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.icon.rec { background: var(--err); color: #fff; }
-#thumbs { max-width: 860px; margin: 0 auto 6px; display: flex; gap: 6px; }
-#thumbs img { height: 54px; border-radius: 6px; border: 1px solid var(--border); }
-.typing::after { content: "▍"; animation: blink 1s steps(2) infinite; }
-@keyframes blink { 50% { opacity: 0; } }
-dialog { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 14px;
-         max-width: min(560px, 92vw); padding: 18px; }
-dialog::backdrop { background: rgba(0,0,0,.5); }
-dialog pre { white-space: pre-wrap; background: var(--panel-2); padding: 10px; border-radius: 8px;
-             font: 13px/1.45 var(--mono); max-height: 300px; overflow: auto; }
-.row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
-dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel-2); }
-#settingsDlg { width: min(560px, 92vw); }
-#settingsDlg h3 { font-size: 14px; margin: 18px 0 4px; }
-.hint { color: var(--muted); font-size: 12.5px; font-weight: 400; margin: 2px 0 6px; }
-.line { display: flex; gap: 8px; margin-top: 6px; }
-.line input { flex: 1; }
-#settingsDlg select { width: 100%; }
-.check { display: block; font-size: 14px; }
-.check input { width: auto; margin: 0 8px 0 0; vertical-align: middle; }
-.hello { text-align: center; color: var(--muted); margin-top: 12vh; }
-.hello h2 { color: var(--text); font-weight: 600; }
-@media (max-width: 600px) {
+body {
+  background:
+    radial-gradient(1100px 520px at 50% -12%, rgba(26, 140, 255, .20), transparent 62%),
+    radial-gradient(700px 480px at 105% 110%, rgba(61, 220, 255, .09), transparent 60%),
+    var(--bg);
+  color: var(--text); font: 15px/1.6 var(--body); display: flex; flex-direction: column; overflow: hidden;
+}
+body::before { /* grille holographique */
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 44px 44px; opacity: .35;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
+          mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 20%, transparent 75%);
+}
+header, main, footer { position: relative; z-index: 1; }
+button, select, textarea, input { font: inherit; color: var(--text); }
+svg { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- réacteur ---------- */
+.reactor { --s: 30px; width: var(--s); height: var(--s); position: relative; flex: none; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 9%, var(--cyan) 14%, rgba(61,220,255,.25) 32%, transparent 62%);
+  box-shadow: 0 0 calc(var(--s) * .45) var(--glow); }
+.reactor i { position: absolute; inset: 0; border-radius: 50%; border: calc(var(--s) * .045) solid transparent; }
+.reactor i:nth-child(1) { border-top-color: var(--cyan); border-bottom-color: var(--cyan); animation: spin 6s linear infinite; }
+.reactor i:nth-child(2) { inset: 16%; border-left-color: var(--blue); border-right-color: var(--blue); animation: spin 4s linear infinite reverse; }
+.reactor i:nth-child(3) { inset: -10%; border: 1px dashed rgba(61,220,255,.35); animation: spin 18s linear infinite; }
+.busy .reactor i:nth-child(1), .reactor.fast i:nth-child(1) { animation-duration: 1.1s; }
+.busy .reactor i:nth-child(2), .reactor.fast i:nth-child(2) { animation-duration: .8s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { box-shadow: 0 0 calc(var(--s) * .9) var(--glow); } }
+
+/* ---------- en-tête ---------- */
+header { display: flex; align-items: center; gap: 10px; padding: 10px 18px; flex-wrap: wrap;
+  background: linear-gradient(180deg, rgba(8, 14, 26, .92), rgba(8, 14, 26, .7)); border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.brand { display: flex; align-items: center; gap: 12px; margin-right: auto; min-width: 0; flex: 1 1 auto; }
+@media (min-width: 641px) { header { flex-wrap: nowrap; } header > * { flex-shrink: 0; } header > .brand { flex-shrink: 1; } }
+.brand h1 { font: 700 18px/1 var(--display); letter-spacing: .32em; margin: 0; text-shadow: 0 0 18px var(--glow); }
+.brand .sub { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; margin-top: 4px; }
+.brand .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); flex: none; }
+.busy .brand .dot { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+.pill, select { background: var(--glass); border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: border-color .2s, box-shadow .2s, background .2s; }
+select { appearance: none; -webkit-appearance: none; padding-right: 30px; font-weight: 500;
+  background: var(--glass) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233ddcff' stroke-width='3'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center; }
+select option { background: var(--bg-2); }
+.pill:hover, select:hover { border-color: var(--line-2); }
+.pill:focus-visible, select:focus-visible, .icon:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.pill.on { border-color: var(--cyan); background: rgba(61,220,255,.14); color: #fff; box-shadow: 0 0 16px rgba(61,220,255,.25); }
+.pill.primary { background: linear-gradient(135deg, var(--blue), var(--cyan)); border-color: transparent; color: #031423; font-weight: 600; }
+
+/* ---------- conversation ---------- */
+main { flex: 1; overflow-y: auto; padding: 22px 16px 10px; scroll-behavior: smooth; }
+.wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.msg { overflow-wrap: anywhere; animation: rise .25s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.user { align-self: flex-end; max-width: 78%; padding: 11px 16px; border-radius: 18px 18px 4px 18px; white-space: pre-wrap;
+  background: linear-gradient(135deg, rgba(26,140,255,.30), rgba(61,220,255,.14)); border: 1px solid rgba(61,220,255,.28); }
+.bot { position: relative; margin-left: 44px; padding: 12px 16px; border-radius: 4px 18px 18px 18px;
+  background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.bot::before { content: ""; position: absolute; left: -44px; top: 2px; width: 30px; height: 30px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 8%, var(--cyan) 14%, rgba(61,220,255,.2) 34%, transparent 62%);
+  border: 2px solid rgba(61,220,255,.55); box-shadow: 0 0 14px var(--glow); }
+.bot p { margin: .45em 0; } .bot p:first-child { margin-top: 0; } .bot p:last-child { margin-bottom: 0; }
+.bot strong { color: #fff; }
+.bot pre { background: rgba(2, 6, 14, .7); border: 1px solid var(--line); padding: 12px; border-radius: 10px; overflow-x: auto;
+  font: 13px/1.5 var(--mono); }
+.bot code { font-family: var(--mono); font-size: 13px; background: rgba(61,220,255,.1); color: #bfefff; padding: 1px 6px; border-radius: 5px; }
+.bot pre code { background: none; padding: 0; color: var(--text); }
+.bot a { color: var(--cyan); }
+.typing::after { content: ""; display: inline-block; width: 8px; height: 15px; margin-left: 3px; vertical-align: -2px;
+  background: var(--cyan); box-shadow: 0 0 8px var(--cyan); animation: blink .9s steps(2) infinite; }
+
+details.tool { margin-left: 44px; border: 1px solid var(--line); border-radius: 12px; background: rgba(8, 14, 26, .55);
+  font-size: 13px; color: var(--muted); animation: rise .2s ease-out; }
+details.tool summary { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; list-style: none; }
+details.tool summary::-webkit-details-marker { display: none; }
+details.tool .t-name { color: var(--text); font-weight: 600; white-space: nowrap; }
+details.tool .t-arg { font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+details.tool .st { width: 16px; height: 16px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+details.tool[data-pending] .st { border: 2px solid rgba(61,220,255,.25); border-top-color: var(--cyan); animation: spin .8s linear infinite; }
+details.tool.ok .st { background: rgba(62,240,161,.15); color: var(--ok); }
+details.tool.ok .st::before { content: "✓"; }
+details.tool.err .st { background: rgba(255,107,122,.15); color: var(--err); }
+details.tool.err .st::before { content: "✕"; }
+details.tool.err .t-name { color: var(--err); }
+details.tool pre { margin: 0; padding: 10px 12px; border-top: 1px solid var(--line); white-space: pre-wrap;
+  font: 12px/1.45 var(--mono); max-height: 320px; overflow: auto; color: #a9bdd6; }
+.info { align-self: center; font-size: 12.5px; color: var(--muted); padding: 5px 12px; border-radius: 999px;
+  background: rgba(8,14,26,.6); border: 1px solid var(--line); text-align: center; max-width: 92%; }
+.info.warn { color: var(--warn); border-color: rgba(255,200,87,.3); } .info.error { color: var(--err); border-color: rgba(255,107,122,.35); }
+
+/* ---------- plan ---------- */
+#plan { position: sticky; top: 0; z-index: 3; display: none; padding: 12px 16px; border-radius: var(--r);
+  background: var(--glass-2); border: 1px solid var(--line-2); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); font-size: 13.5px; }
+#plan .head { display: flex; justify-content: space-between; font: 600 12px var(--display); letter-spacing: .18em; color: var(--cyan); }
+#plan .bar { height: 3px; background: rgba(61,220,255,.12); border-radius: 3px; margin: 8px 0; overflow: hidden; }
+#plan .bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); box-shadow: 0 0 10px var(--cyan); transition: width .4s; }
+#plan div.s { color: var(--muted); padding: 1px 0; } #plan .en_cours { color: var(--text); font-weight: 600; }
+#plan .fait { color: var(--ok); opacity: .75; text-decoration: line-through; }
+
+/* ---------- accueil ---------- */
+.hello { text-align: center; margin: 7vh auto 0; max-width: 640px; }
+.hello .reactor { --s: 120px; margin: 0 auto 28px; animation: pulse 3.5s ease-in-out infinite; }
+.hello h2 { font: 600 clamp(22px, 4vw, 30px)/1.25 var(--display); letter-spacing: .02em; margin: 0 0 8px; }
+.hello p { color: var(--muted); margin: 0 0 26px; }
+.chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; text-align: left; }
+.chip { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; cursor: pointer;
+  background: var(--glass); border: 1px solid var(--line); color: var(--text); font-size: 13.5px; line-height: 1.4; text-align: left;
+  transition: border-color .2s, transform .2s, box-shadow .2s; }
+.chip svg { color: var(--cyan); margin-top: 1px; }
+.chip:hover { border-color: var(--cyan); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(26,140,255,.18); }
+
+/* ---------- saisie ---------- */
+footer { padding: 8px 16px 16px; }
+#status { max-width: 880px; margin: 0 auto 8px; display: none; align-items: center; gap: 10px; font-size: 13px; color: var(--cyan); }
+.busy #status { display: flex; }
+#status .reactor { --s: 18px; }
+#thumbs { max-width: 880px; margin: 0 auto 8px; display: flex; gap: 8px; }
+#thumbs img { height: 58px; border-radius: 10px; border: 1px solid var(--line-2); }
+.bar { max-width: 880px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; padding: 8px;
+  background: var(--glass-2); border: 1px solid var(--line-2); border-radius: 20px;
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); transition: border-color .2s, box-shadow .2s; }
+.bar:focus-within { border-color: rgba(61,220,255,.6); box-shadow: 0 0 0 4px rgba(61,220,255,.08), 0 0 30px rgba(26,140,255,.18); }
+textarea { flex: 1; resize: none; border: 0; background: transparent; outline: none; max-height: 200px; padding: 8px 6px; min-height: 40px; line-height: 1.5; }
+textarea::placeholder { color: var(--faint); }
+.icon { width: 40px; height: 40px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--muted);
+  cursor: pointer; display: grid; place-items: center; flex: none; transition: color .2s, background .2s; }
+.icon:hover { color: var(--cyan); background: rgba(61,220,255,.08); }
+.icon.send { border-radius: 50%; color: #031423; background: linear-gradient(135deg, var(--blue), var(--cyan)); box-shadow: 0 0 18px rgba(61,220,255,.4); }
+.icon.send:hover { color: #031423; filter: brightness(1.1); }
+.busy .icon.send { background: rgba(255,107,122,.18); color: var(--err); box-shadow: none; border-color: rgba(255,107,122,.5); }
+.icon.rec { color: #fff; background: var(--err); box-shadow: 0 0 16px rgba(255,107,122,.6); animation: blink 1.2s infinite; }
+
+/* ---------- fenêtres ---------- */
+dialog { background: rgba(10, 18, 32, .94); color: var(--text); border: 1px solid var(--line-2); border-radius: 20px;
+  max-width: min(580px, 94vw); padding: 22px; box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 40px rgba(26,140,255,.12); }
+dialog::backdrop { background: rgba(2, 5, 12, .7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+dialog strong.title { font: 600 16px var(--display); letter-spacing: .08em; }
+dialog pre { white-space: pre-wrap; background: rgba(2, 6, 14, .75); border: 1px solid var(--line); padding: 12px; border-radius: 12px;
+  font: 13px/1.5 var(--mono); max-height: 300px; overflow: auto; }
+.row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 14px; }
+dialog input:not([type=checkbox]), #settingsDlg select { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line-2); background: rgba(2,6,14,.6); }
+dialog input:focus { outline: none; border-color: var(--cyan); }
+#settingsDlg { width: min(580px, 94vw); }
+#settingsDlg h3 { font: 600 12px var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--cyan); margin: 22px 0 6px; }
+.hint { color: var(--muted); font-size: 12.5px; font-weight: 400; margin: 2px 0 8px; letter-spacing: 0; text-transform: none; }
+.line { display: flex; gap: 8px; margin-top: 8px; } .line input { flex: 1; }
+.check { display: block; font-size: 14px; cursor: pointer; }
+.check input { width: auto; margin: 0 8px 0 0; vertical-align: middle; accent-color: var(--cyan); }
+.addr { font: 14px var(--mono); user-select: all; background: rgba(61,220,255,.1); color: var(--cyan); padding: 5px 9px; border-radius: 8px; display: inline-block; margin: 3px 0; }
+
+@media (max-width: 640px) {
   header { padding: 8px 10px; gap: 6px; padding-top: max(8px, env(safe-area-inset-top)); }
-  header h1 span { display: none; }
-  header h1 { flex: 0 0 auto; }
-  header .lbl { display: none; }
-  select, .btn { padding: 5px 8px; font-size: 13.5px; }
-  #provider { flex: 1 0 50%; min-width: 0; order: 1; }
-  #settings { order: 2; }
-  header .btn:not(#settings) { order: 3; flex: 1; }
-  main { padding: 12px 10px 6px; }
-  .user { max-width: 92%; }
-  footer { padding: 8px 8px max(10px, env(safe-area-inset-bottom)); }
+  .brand { flex: 1 0 100%; } .brand .sub { display: none; }
+  .pill .lbl { display: none; } .pill { padding: 8px 10px; }
+  #provider { flex: 1; min-width: 0; }
+  main { padding: 14px 10px 6px; }
+  .user { max-width: 90%; }
+  .bot, details.tool { margin-left: 0; } .bot::before { display: none; }
+  .hello { margin-top: 3vh; } .hello .reactor { --s: 90px; }
+  footer { padding: 6px 8px max(10px, env(safe-area-inset-bottom)); }
   textarea { font-size: 16px; } /* évite le zoom automatique sur iPhone */
 }
-.addr { font: 15px var(--mono); user-select: all; background: var(--panel-2); padding: 6px 8px; border-radius: 8px;
-        display: inline-block; margin: 2px 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<svg style="display:none">
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-clip" viewBox="0 0 24 24"><path d="m21 12-9 9a6 6 0 0 1-8.5-8.5l9-9a4 4 0 0 1 5.7 5.7l-9 9a2 2 0 0 1-2.9-2.9l8.3-8.3"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10a7 7 0 0 1-14 0M12 17v5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><path d="M4 4h13a1 1 0 0 1 1 1v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V4zM18 8h2v11a2 2 0 0 1-2 2M8 8h6M8 12h6M8 16h4"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+</svg>
+
 <header>
-  <h1>Jarvis<span id="where"></span></h1>
-  <select id="provider" title="Cerveau utilisé"></select>
-  <button class="btn" id="model" title="Changer le modèle du cerveau actuel">Modèle</button>
-  <button class="btn" id="auto" title="Exécuter sans demander confirmation">Auto</button>
-  <button class="btn" id="voice" title="Lire les réponses à voix haute">Voix</button>
-  <button class="btn" id="new">Nouveau</button>
-  <button class="btn" id="settings" title="Clés, e-mail, démarrage, mise à jour">⚙<span class="lbl"> Réglages</span></button>
+  <div class="brand">
+    <div class="reactor"><i></i><i></i><i></i></div>
+    <div style="min-width:0">
+      <h1>JARVIS</h1>
+      <div class="sub"><span class="dot"></span><span id="where">connexion…</span></div>
+    </div>
+  </div>
+  <select id="provider" title="Cerveau utilisé" aria-label="Cerveau utilisé"></select>
+  <button class="pill" id="model" title="Changer le modèle du cerveau actuel"><svg><use href="#i-cpu"/></svg><span class="lbl">Modèle</span></button>
+  <button class="pill" id="auto" title="Exécuter sans demander confirmation"><svg><use href="#i-bolt"/></svg><span class="lbl">Auto</span></button>
+  <button class="pill" id="voice" title="Lire les réponses à voix haute"><svg><use href="#i-vol"/></svg><span class="lbl">Voix</span></button>
+  <button class="pill" id="new" title="Nouvelle conversation"><svg><use href="#i-plus"/></svg><span class="lbl">Nouveau</span></button>
+  <button class="pill" id="settings" title="Clés, e-mail, démarrage, téléphone, mise à jour"><svg><use href="#i-gear"/></svg><span class="lbl">Réglages</span></button>
 </header>
+
 <main id="main"><div class="wrap" id="log">
   <div id="plan"></div>
-  <div class="hello" id="hello"><h2>Bonjour, que veux-tu que je fasse ?</h2>
-    <p>Crée un site, analyse un PDF, range tes fichiers, regarde ton écran, cherche sur le web…</p></div>
+  <div class="hello" id="hello">
+    <div class="reactor"><i></i><i></i><i></i></div>
+    <h2>Bonjour. Que puis-je faire pour toi ?</h2>
+    <p>Je peux agir sur ton PC, chercher sur le web, lire tes documents, voir ton écran…</p>
+    <div class="chips">
+      <button class="chip" data-q="Fais un bilan de santé du PC"><svg><use href="#i-pulse"/></svg>Bilan de santé du PC</button>
+      <button class="chip" data-q="Fais-moi le résumé de l'actu du jour"><svg><use href="#i-news"/></svg>Résumé de l'actualité</button>
+      <button class="chip" data-q="Range mes téléchargements"><svg><use href="#i-folder"/></svg>Ranger mes téléchargements</button>
+      <button class="chip" data-q="Regarde mon écran et dis-moi ce que tu vois"><svg><use href="#i-eye"/></svg>Regarder mon écran</button>
+      <button class="chip" data-q="Rappelle-moi dans 20 minutes de faire une pause"><svg><use href="#i-clock"/></svg>Me faire un rappel</button>
+      <button class="chip" data-q="Crée une image d'un paysage futuriste au coucher du soleil"><svg><use href="#i-image"/></svg>Créer une image</button>
+    </div>
+  </div>
 </div></main>
+
 <footer>
+  <div id="status"><div class="reactor"><i></i><i></i><i></i></div><span>Jarvis travaille…</span></div>
   <div id="thumbs"></div>
   <div class="bar">
-    <button class="icon" id="attach" title="Joindre une image">📎</button>
+    <button class="icon" id="attach" title="Joindre une image" aria-label="Joindre une image"><svg><use href="#i-clip"/></svg></button>
     <input type="file" id="file" accept="image/*" multiple hidden>
-    <textarea id="input" rows="1" placeholder="Écris ta demande… (Entrée pour envoyer, Maj+Entrée pour aller à la ligne)"></textarea>
-    <button class="icon" id="mic" title="Parler">🎤</button>
-    <button class="icon primary" id="send" title="Envoyer">➤</button>
+    <textarea id="input" rows="1" placeholder="Demande-moi quelque chose… (Entrée pour envoyer, Maj+Entrée pour aller à la ligne)"></textarea>
+    <button class="icon" id="mic" title="Parler" aria-label="Parler"><svg><use href="#i-mic"/></svg></button>
+    <button class="icon send" id="send" title="Envoyer" aria-label="Envoyer"><svg><use href="#i-send"/></svg></button>
   </div>
 </footer>
 
 <dialog id="confirm">
-  <strong>Jarvis demande l'autorisation</strong>
+  <strong class="title">Autorisation requise</strong>
   <pre id="confirmText"></pre>
   <div class="row">
-    <button class="btn" data-a="no">Refuser</button>
-    <button class="btn" data-a="always">Toujours autoriser</button>
-    <button class="btn on" data-a="yes">Autoriser</button>
+    <button class="pill" data-a="no">Refuser</button>
+    <button class="pill" data-a="always">Toujours autoriser</button>
+    <button class="pill primary" data-a="yes">Autoriser</button>
   </div>
 </dialog>
 
 <dialog id="settingsDlg">
-  <div class="row" style="justify-content:space-between;margin:0"><strong>Réglages</strong>
-    <button class="btn" data-s="close">Fermer</button></div>
+  <div class="row" style="justify-content:space-between;margin:0"><strong class="title">Réglages</strong>
+    <button class="pill" data-s="close">Fermer</button></div>
 
   <h3>Cerveaux cloud gratuits</h3>
   <p class="hint">Bien plus rapides et intelligents que le modèle local. Si le quota est épuisé, Jarvis repasse en local.</p>
@@ -154,15 +282,15 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
     <option value="groq">Groq — console.groq.com/keys</option>
     <option value="openrouter">OpenRouter — openrouter.ai/settings/keys</option>
   </select>
-  <div class="line"><input id="keyValue" placeholder="Colle ta clé ici" autocomplete="off"><button class="btn on" data-s="key">Enregistrer</button></div>
+  <div class="line"><input id="keyValue" placeholder="Colle ta clé ici" autocomplete="off"><button class="pill primary" data-s="key">Enregistrer</button></div>
 
   <h3>E-mail <span id="emailState" class="hint"></span></h3>
   <p class="hint">Pour que Jarvis lise et envoie tes e-mails. Il faut un <b>mot de passe d'application</b>
     (Gmail : myaccount.google.com/apppasswords, avec la validation en 2 étapes activée). Jarvis te demande toujours avant d'envoyer.</p>
   <input id="emailAddr" placeholder="adresse@exemple.fr" autocomplete="off">
   <div class="line"><input id="emailPass" type="password" placeholder="Mot de passe d'application" autocomplete="new-password">
-    <button class="btn on" data-s="email">Enregistrer</button></div>
-  <div class="line"><button class="btn" data-s="emailTest">Tester la connexion</button><button class="btn" data-s="emailOff">Déconnecter</button></div>
+    <button class="pill primary" data-s="email">Enregistrer</button></div>
+  <div class="line"><button class="pill" data-s="emailTest">Tester la connexion</button><button class="pill" data-s="emailOff">Déconnecter</button></div>
 
   <h3>Démarrage</h3>
   <label class="check"><input type="checkbox" id="startup"> Lancer Jarvis en arrière-plan à l'ouverture de Windows
@@ -171,12 +299,12 @@ dialog input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid 
   <h3>Téléphone</h3>
   <p class="hint">Pilote Jarvis depuis ton téléphone. Protégé par un code PIN : sans lui, personne ne peut s'en servir.</p>
   <div class="line"><input id="pin" type="password" inputmode="numeric" placeholder="Code PIN (6 chiffres minimum)" autocomplete="new-password">
-    <button class="btn on" data-s="pin">Enregistrer</button></div>
+    <button class="pill primary" data-s="pin">Enregistrer</button></div>
   <label class="check" style="margin-top:8px"><input type="checkbox" id="remote"> Autoriser l'accès depuis mon téléphone</label>
   <div id="remoteInfo" class="hint"></div>
 
   <h3>Mise à jour</h3>
-  <div class="line"><button class="btn" data-s="update">Installer la dernière version</button></div>
+  <div class="line"><button class="pill" data-s="update">Installer la dernière version</button></div>
   <pre id="settingsMsg" hidden></pre>
 </dialog>
 
@@ -223,18 +351,22 @@ function handle(e) {
     case "tool": {
       closeBubble();
       const det = document.createElement("details"); det.className = "tool"; det.dataset.pending = "1";
-      det.innerHTML = `<summary>→ ${esc(e.name)} ${esc(JSON.stringify(e.args).slice(0, 160))}</summary><pre>…</pre>`;
+      const arg = Object.values(e.args || {}).map(v => typeof v === "string" ? v : JSON.stringify(v)).join(" · ");
+      det.innerHTML = `<summary><span class="st"></span><span class="t-name">${esc(TOOL_LABELS[e.name] || e.name)}</span>` +
+                      `<span class="t-arg">${esc(arg.replace(/\s+/g, " ").slice(0, 140))}</span></summary><pre>…</pre>`;
       $("log").appendChild(det); scroll(); break; }
     case "result": {
       const det = [...document.querySelectorAll("details.tool[data-pending]")].pop();
       if (det) { det.querySelector("pre").textContent = e.text; delete det.dataset.pending;
-                 if (/^ERREUR|REFUSÉ/.test(e.text)) det.querySelector("summary").style.color = "var(--err)"; }
+                 det.classList.add(/^ERREUR|REFUSÉ/.test(e.text) ? "err" : "ok"); }
       break; }
     case "info": add(`info ${e.level || ""}`, esc(e.text)); break;
     case "plan":
       $("plan").style.display = "block";
-      $("plan").innerHTML = "<strong>Plan</strong>" + e.steps.map(s =>
-        `<div class="${s.statut || ""}">${s.statut === "fait" ? "✔" : s.statut === "en_cours" ? "▶" : "○"} ${esc(s.etape || "")}</div>`).join("");
+      const done = e.steps.filter(s => s.statut === "fait").length;
+      $("plan").innerHTML = `<div class="head"><span>PLAN</span><span>${done}/${e.steps.length}</span></div>` +
+        `<div class="bar"><span style="width:${e.steps.length ? 100 * done / e.steps.length : 0}%"></span></div>` +
+        e.steps.map(s => `<div class="s ${s.statut || ""}">${s.statut === "fait" ? "✓" : s.statut === "en_cours" ? "▸" : "○"} ${esc(s.etape || "")}</div>`).join("");
       break;
     case "confirm":
       confirmId = e.id; $("confirmText").textContent = e.action;
@@ -261,9 +393,21 @@ async function poll() {
 }
 function setBusy(b) {
   busy = b;
-  $("send").textContent = b ? "■" : "➤";
+  document.body.classList.toggle("busy", b);
+  $("send").innerHTML = `<svg><use href="#i-${b ? "stop" : "send"}"/></svg>`;
   $("send").title = b ? "Arrêter" : "Envoyer";
 }
+const TOOL_LABELS = {
+  run_command: "Commande", run_python: "Python", read_file: "Lecture", write_file: "Écriture", edit_file: "Modification",
+  list_dir: "Dossier", search_files: "Recherche fichiers", read_document: "Document", web_search: "Recherche web",
+  fetch_url: "Page web", download_file: "Téléchargement", look_at_image: "Vision", screenshot: "Capture d'écran",
+  open_item: "Ouverture", clipboard: "Presse-papiers", speak: "Voix", click: "Clic", scroll: "Défilement",
+  type_text: "Saisie", press_keys: "Touches", notify: "Notification", schedule: "Programmation",
+  list_scheduled: "Planning", cancel_scheduled: "Annulation", index_documents: "Indexation",
+  search_documents: "Connaissances", generate_image: "Création d'image", use_skill: "Compétence",
+  save_skill: "Nouvelle compétence", read_emails: "E-mails", read_email: "E-mail", send_email: "Envoi d'e-mail",
+  remember: "Mémoire", update_plan: "Plan", delegate: "Sous-agent", edit_photo: "Retouche photo"
+};
 async function post(path, body) {
   const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
   if (r.status === 401) location.reload();
@@ -273,7 +417,7 @@ async function refresh(s) {
   state = s || await (await fetch("/state")).json();
   $("provider").innerHTML = Object.entries(state.providers).map(([n, ok]) =>
     `<option value="${n}" ${n === state.provider ? "selected" : ""} ${ok ? "" : "disabled"}>${n}${ok ? "" : " (clé requise)"}</option>`).join("");
-  $("where").textContent = `${state.model} · ${state.workdir}`;
+  $("where").textContent = `En ligne · ${state.model} · ${state.workdir}`;
   $("auto").classList.toggle("on", state.auto);
   $("voice").classList.toggle("on", speakOn);
   if (state.busy) setBusy(true);
@@ -304,6 +448,7 @@ function addImages(files) {
 }
 
 $("send").onclick = send;
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => { $("input").value = c.dataset.q; send(); });
 $("input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
 $("input").addEventListener("input", grow);
 $("input").addEventListener("paste", e => addImages(e.clipboardData.files));
@@ -413,7 +558,7 @@ $("mic").onclick = async () => {
   }
 };
 
-if (innerWidth < 600) $("input").placeholder = "Écris ta demande…";
+if (innerWidth < 640) $("input").placeholder = "Demande à Jarvis…";
 refresh(); poll();
 </script>
 </body>
