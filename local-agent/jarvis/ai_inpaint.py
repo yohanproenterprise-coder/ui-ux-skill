@@ -169,8 +169,40 @@ def _decode(data_url, mode):
     return Image.open(io.BytesIO(raw)).convert(mode)
 
 
+def _finish_fill(img, res, mask):
+    """Rend la zone reconstruite indiscernable : couleurs raccordées au bord et même grain que la photo."""
+    import numpy as np
+    from PIL import Image, ImageFilter
+    o = np.asarray(img, np.float32)
+    r = np.asarray(res, np.float32)
+    hole = np.asarray(mask) > 127
+    if not hole.any():
+        return res
+    # anneau juste autour de la zone effacée : ce que l'IA doit prolonger sans décalage de couleur
+    big = np.asarray(mask.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MaxFilter(9))) > 127
+    ring = big & ~hole
+    if ring.sum() > 50:
+        shift = np.clip((o[ring] - r[ring]).mean(0), -10, 10)
+        r[hole] += shift
+    # grain : on mesure le grain de la photo autour (hautes fréquences) et on complète celui de la zone
+    lum = lambda a: a @ np.array([.299, .587, .114], np.float32)
+    def hp(a):
+        im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+        return lum(a) - lum(np.asarray(im.filter(ImageFilter.GaussianBlur(1.0)), np.float32))
+    ho, hr = hp(o), hp(r)
+    around = big & ~hole if ring.sum() > 200 else ~hole
+    mad = lambda v: 1.4826 * np.median(np.abs(v - np.median(v))) if v.size else 0.0
+    want, have = mad(ho[around]), mad(hr[hole])
+    extra = np.sqrt(max(0.0, want ** 2 - have ** 2))
+    if extra > 0.3:
+        rng = np.random.default_rng(7)
+        noise = rng.normal(0, extra, hole.sum()).astype(np.float32)
+        r[hole] += noise[:, None]
+    return Image.fromarray(np.clip(r, 0, 255).astype(np.uint8))
+
+
 def inpaint(image_data_url, mask_data_url):
-    """Reçoit la zone de la photo et son masque (blanc = à effacer), renvoie la zone reconstruite."""
+    """Reçoit la zone de la photo (jusqu'à 2048 px) et son masque (blanc = à effacer), renvoie la zone reconstruite."""
     import numpy as np
     from PIL import Image
     if status()["state"] != "ready":
@@ -182,11 +214,20 @@ def inpaint(image_data_url, mask_data_url):
     a = np.pad(np.asarray(img), ((0, side - h), (0, side - w), (0, 0)), mode="edge")
     m = np.pad(np.asarray(mask), ((0, side - h), (0, side - w)))
     x = np.asarray(Image.fromarray(a).resize((SIZE, SIZE), Image.BICUBIC), dtype=np.float32).transpose(2, 0, 1)[None] / 255.0
-    mk = (np.asarray(Image.fromarray(m).resize((SIZE, SIZE), Image.NEAREST)) > 127).astype(np.float32)[None, None]
+    mk = (np.asarray(Image.fromarray(m).resize((SIZE, SIZE), Image.BILINEAR)) > 20).astype(np.float32)[None, None]
     out = _get_session().run(None, {"image": x, "mask": mk})[0][0].transpose(1, 2, 0)
     if out.max() <= 2:
         out = out * 255
-    res = Image.fromarray(out.clip(0, 255).astype(np.uint8)).resize((side, side), Image.LANCZOS).crop((0, 0, w, h))
+    small = Image.fromarray(out.clip(0, 255).astype(np.uint8))
+    if side > SIZE * 1.25:
+        # zone plus grande que ce que voit l'IA : ré-affinage par l'IA d'agrandissement (au lieu d'un simple flou d'agrandissement)
+        try:
+            res = upscale_image(small, 4, quality="fast").resize((side, side), Image.LANCZOS)
+        except Exception:
+            res = small.resize((side, side), Image.LANCZOS)
+    else:
+        res = small.resize((side, side), Image.LANCZOS)
+    res = _finish_fill(img, res.crop((0, 0, w, h)), mask)
     buf = io.BytesIO()
     res.save(buf, "PNG", compress_level=1)
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
@@ -327,6 +368,8 @@ def warmup():
             opts.log_severity_level = 3
             if _up_session is None:
                 _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
+            if pack_ready("lama"):
+                _get_session()
             if pack_ready("faces"):
                 from . import ai_face
                 ai_face._session(ai_face.DETECTOR[0])

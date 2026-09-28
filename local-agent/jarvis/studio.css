@@ -91,3 +91,7 @@
 .st-folder small { color: var(--muted); white-space: nowrap; }
 .st-folder:hover, .st-folder.on { border-color: var(--cyan); background: rgba(61,220,255,.1); }
 .st-drop .st-btn + .st-btn { margin-left: 8px; }
+#st-cursor { position: absolute; display: none; pointer-events: none; border-radius: 50%; z-index: 4;
+  border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 0 12px rgba(255,61,110,.6); background: rgba(255,61,110,.18); }
+#st-cursor.erase { background: transparent; border-style: dashed; }
+#st-stage #st-mask { cursor: none; }

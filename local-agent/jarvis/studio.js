@@ -175,7 +175,7 @@
         </div>
       </div>
     </div>
-    <input type="file" id="st-file" accept="image/*" hidden>
+    <input type="file" id="st-file" accept="image/*,.heic,.heif,.avif,.jfif" hidden>
     <div class="st-modal" id="st-batch" hidden><div class="st-modal-box">
       <div class="row" style="justify-content:space-between;margin:0"><strong class="title">Améliorer tout un dossier</strong>
         <button class="pill" id="st-batch-close">Fermer</button></div>
@@ -225,10 +225,16 @@
     // on garde la trace de la photo d'origine pour recopier ses infos (date, appareil…) à l'export
     S.srcPath = src.startsWith("/file?path=") ? decodeURIComponent(src.slice(11)) : null;
     S.srcData = src.startsWith("data:") && src.length < 40e6 ? src : null;
-    const img = new Image();
+    let img = new Image();
     img.decoding = "async";
     img.src = src;
-    try { await img.decode(); } catch (e) { return msg("Impossible d'ouvrir cette image (format non pris en charge, ex : HEIC).", true); }
+    try { await img.decode(); } catch (e) {
+      try {
+        if (!src.startsWith("data:")) throw e;
+        msg("Conversion de la photo…");
+        img = new Image(); img.src = await convertOnPC(src); await img.decode();
+      } catch (e2) { return alert("Impossible d'ouvrir cette image (format non pris en charge)."); }
+    }
     S.full = document.createElement("canvas");
     S.full.width = img.naturalWidth; S.full.height = img.naturalHeight;
     S.full.getContext("2d").drawImage(img, 0, 0);
@@ -247,8 +253,17 @@
     mask.width = S.prev.width; mask.height = S.prev.height;
   }
   function openFile(f) {
-    if (!f || !f.type.startsWith("image/")) return;
+    if (!f) return;
+    if (f.type && !f.type.startsWith("image/") && !/\.(heic|heif|avif|jfif)$/i.test(f.name))
+      return alert("Ce fichier n'est pas une photo. Pour tout un dossier, utilise « 📁 Améliorer tout un dossier ».");
     const r = new FileReader(); r.onload = () => loadFrom(r.result, f.name); r.readAsDataURL(f);
+  }
+  async function convertOnPC(src) {
+    // HEIC / AVIF… : le navigateur ne sait pas les lire, Jarvis les convertit sur le PC
+    const r = await (await fetch("/convert_image", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: src }) })).json();
+    if (!r.image) throw new Error(r.error || "conversion impossible");
+    return r.image;
   }
   async function gallery() {
     const g = q("#st-gallery");
@@ -642,6 +657,15 @@
     mctx.lineWidth = +q("#st-brush").value * mask.width / r.width;
     mctx.beginPath(); mctx.moveTo(a[0], a[1]); mctx.lineTo(b[0], b[1]); mctx.stroke();
   }
+  const cursor = el("div", { id: "st-cursor" }); q("#st-stage").appendChild(cursor);
+  const moveCursor = e => {
+    const sr = q("#st-stage").getBoundingClientRect(), d = +q("#st-brush").value;
+    Object.assign(cursor.style, { display: "block", width: d + "px", height: d + "px",
+      left: (e.clientX - sr.left - d / 2) + "px", top: (e.clientY - sr.top - d / 2) + "px" });
+    cursor.classList.toggle("erase", S.erase);
+  };
+  mask.addEventListener("pointermove", moveCursor);
+  mask.addEventListener("pointerleave", () => cursor.style.display = "none");
   mask.addEventListener("pointerdown", e => { e.preventDefault(); mask.setPointerCapture(e.pointerId); painting = brushPos(e); stroke(painting, painting); });
   mask.addEventListener("pointermove", e => { if (!painting) return; const pt = brushPos(e); stroke(painting, pt); painting = pt; });
   ["pointerup", "pointercancel"].forEach(ev => mask.addEventListener(ev, () => { painting = null; }));
@@ -651,6 +675,17 @@
   q("#st-mask-clear").onclick = () => mctx.clearRect(0, 0, mask.width, mask.height);
   const healMsg = (t, err) => { const m = q("#st-heal-msg"); m.textContent = t; m.style.color = err ? "var(--err)" : "var(--ok)"; };
 
+  function dilateMask(m, W, H, r) {
+    // dilatation carrée séparable, rapide même sur de grandes zones
+    const t = new Uint8Array(W * H), o = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) { let last = -1e9;
+      for (let x = 0; x < W; x++) { if (m[y * W + x]) last = x; if (x - last <= r) t[y * W + x] = 1; }
+      last = 1e9; for (let x = W - 1; x >= 0; x--) { if (m[y * W + x]) last = x; if (last - x <= r) t[y * W + x] = 1; } }
+    for (let x = 0; x < W; x++) { let last = -1e9;
+      for (let y = 0; y < H; y++) { if (t[y * W + x]) last = y; if (y - last <= r) o[y * W + x] = 1; }
+      last = 1e9; for (let y = H - 1; y >= 0; y--) { if (t[y * W + x]) last = y; if (last - y <= r) o[y * W + x] = 1; } }
+    return o;
+  }
   function runWorker(data) {
     return new Promise((resolve, reject) => {
       const w = new Worker("/inpaint.js");
@@ -673,7 +708,7 @@
     const margin = Math.max(40 * k0, (ai ? [1.0, 1.6, 0.7] : [1.2, 1.2, 1.2])[variant % 3] * Math.max(bw, bh));
     const rx = Math.max(0, Math.floor(x0 * k0 - margin)), ry = Math.max(0, Math.floor(y0 * k0 - margin));
     const rw = Math.min(S.full.width, Math.ceil((x1 + 1) * k0 + margin)) - rx, rh = Math.min(S.full.height, Math.ceil((y1 + 1) * k0 + margin)) - ry;
-    const k = Math.min(1, (ai ? 1024 : 900) / Math.max(rw, rh)), ww = Math.max(8, Math.round(rw * k)), wh = Math.max(8, Math.round(rh * k));
+    const k = Math.min(1, (ai ? 2048 : 900) / Math.max(rw, rh)), ww = Math.max(8, Math.round(rw * k)), wh = Math.max(8, Math.round(rh * k));
     // image et masque de travail
     const work = document.createElement("canvas"); work.width = ww; work.height = wh;
     const wc = work.getContext("2d", { willReadFrequently: true }); wc.imageSmoothingQuality = "high";
@@ -685,12 +720,10 @@
     mwc.drawImage(mask, rx / k0, ry / k0, rw / k0, rh / k0, 0, 0, ww, wh);
     const ma = mwc.getImageData(0, 0, ww, wh).data, raw = new Uint8Array(ww * wh), hole = new Uint8Array(ww * wh);
     for (let i = 0; i < ww * wh; i++) raw[i] = ma[i * 4 + 3] > 10 ? 1 : 0;
-    for (let y = 0; y < wh; y++) for (let x = 0; x < ww; x++) { // léger débord pour couvrir les contours
-      let h = 0; for (let dy = -2; dy <= 2 && !h; dy++) for (let dx = -2; dx <= 2; dx++) {
-        const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < ww && yy < wh && raw[yy * ww + xx]) { h = 1; break; } }
-      hole[y * ww + x] = h; }
+    // débord autour du tracé pour couvrir contours et ombres (plus large pour l'IA, comme les outils pro)
+    hole.set(dilateMask(raw, ww, wh, ai ? Math.max(3, Math.round(Math.max(ww, wh) * .008)) : 2));
     const holeCopy = hole.slice();
-    q("#st-busy span").textContent = ai ? "L'IA reconstruit la zone… (5 à 20 s)" : "Reconstruction du fond…";
+    q("#st-busy span").textContent = ai ? "L'IA reconstruit la zone…" : "Reconstruction du fond…";
     q("#st-busy").style.display = "flex"; q("#st-heal").disabled = true;
     const t0 = performance.now();
     try {
@@ -742,13 +775,20 @@
 
   // ------------------------------------------------------------- moteur IA --
   let aiState = null;
-  try { S.engine = localStorage.getItem("jarvis-heal-engine") || "classic"; } catch (e) { S.engine = "classic"; }
+  let engineChosen = null;
+  try { engineChosen = localStorage.getItem("jarvis-heal-engine"); } catch (e) {}
+  S.engine = engineChosen || "auto";
   function setEngine(e) {
     S.engine = e; try { localStorage.setItem("jarvis-heal-engine", e); } catch (err) {}
     q("#st-eng-classic").classList.toggle("on", e === "classic"); q("#st-eng-ai").classList.toggle("on", e === "ai");
     refreshAI();
   }
   async function refreshAI() {
+    if (S.engine === "auto") {  // premier usage : l'IA si elle est installée, sinon le moteur classique
+      try { const st0 = await (await fetch("/ai_status")).json(); S.engine = st0.state === "ready" ? "ai" : "classic"; }
+      catch (e) { S.engine = "classic"; }
+      q("#st-eng-classic").classList.toggle("on", S.engine === "classic"); q("#st-eng-ai").classList.toggle("on", S.engine === "ai");
+    }
     const box = q("#st-ai-box");
     if (S.engine !== "ai") { box.hidden = true; q("#st-heal").disabled = false; return; }
     try { aiState = await (await fetch("/ai_status")).json(); } catch (e) { aiState = { state: "error", error: "Jarvis ne répond pas" }; }

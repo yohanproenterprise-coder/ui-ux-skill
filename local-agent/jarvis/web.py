@@ -359,6 +359,9 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/batch_cancel":
                     from . import batch
                     self._json(batch.cancel())
+                elif self.path == "/convert_image":
+                    from . import batch
+                    self._json(batch.to_jpeg_data_url(data.get("image", "")))
                 elif self.path == "/open_folder":
                     system.open_item(str(data.get("path", "")))
                     self._json({"ok": True})
