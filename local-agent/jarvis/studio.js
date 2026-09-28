@@ -187,8 +187,11 @@
         <div class="st-label">Ou colle le chemin d'un dossier</div>
         <input type="text" id="st-folder" placeholder="C:\\Users\\toi\\Pictures\\Vacances">
         <label class="check" style="margin-top:8px"><input type="checkbox" id="st-batch-best"> Qualité maximale (3 à 6× plus lent)</label>
+        <label class="check"><input type="checkbox" id="st-batch-watch" checked> Automatique : améliorer aussi toute nouvelle photo ajoutée à ce dossier</label>
         <div id="st-batch-msg" class="st-note"></div>
         <button class="st-btn primary wide" id="st-batch-start">Lancer l'amélioration</button>
+        <div id="st-watch-box" hidden><div class="st-label">Dossiers en automatique</div><div class="st-folders" id="st-watch"></div>
+          <p class="st-note">Jarvis vérifie ces dossiers toutes les 30 secondes tant qu'il est allumé : dépose tes photos dedans, les versions améliorées apparaissent toutes seules dans « Améliorées ».</p></div>
       </div>
       <div id="st-batch-run" hidden>
         <p id="st-batch-text" class="st-note"></p>
@@ -199,6 +202,7 @@
           <button class="st-btn primary" id="st-batch-folder">Ouvrir le dossier</button>
         </div>
         <p class="st-note">Tu peux fermer cette fenêtre ou utiliser Jarvis pendant ce temps. Une notification s'affichera à la fin.</p>
+        <button class="st-btn wide" id="st-batch-back" hidden>← Choisir un autre dossier</button>
       </div>
     </div></div>`;
   document.body.appendChild(root);
@@ -838,6 +842,9 @@
     q("#st-batch").hidden = false;
     const st = await (await fetch("/batch_status")).json();
     if (st.running) return showBatch();
+    openBatchChoose();
+  }
+  async function openBatchChoose() {
     q("#st-batch-choose").hidden = false; q("#st-batch-run").hidden = true;
     const box = q("#st-folders");
     try {
@@ -848,6 +855,17 @@
         b.onclick = () => { q("#st-folder").value = f.path; box.querySelectorAll(".st-folder").forEach(x => x.classList.toggle("on", x === b)); };
         box.appendChild(b); });
     } catch (e) { box.innerHTML = '<span class="st-note">Liste indisponible.</span>'; }
+    showWatch();
+  }
+  async function showWatch() {
+    let list = []; try { list = await (await fetch("/photo_watch")).json(); } catch (e) {}
+    const box = q("#st-watch"); q("#st-watch-box").hidden = !list.length; box.innerHTML = "";
+    list.forEach(w => { const d = el("div", { className: "st-folder", title: w.folder });
+      d.innerHTML = `<span>🔄 ${esc2(w.folder.split(/[\\/]/).slice(-2).join(" › "))}</span>`;
+      const stop = el("button", { className: "pill", textContent: "Arrêter" });
+      stop.onclick = async () => { await fetch("/photo_watch", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: w.folder, on: false }) }); showWatch(); };
+      d.appendChild(stop); box.appendChild(d); });
   }
   function showBatch() {
     q("#st-batch-choose").hidden = true; q("#st-batch-run").hidden = false;
@@ -860,13 +878,14 @@
         ? `${st.done} / ${st.total} photos${st.current ? " · " + st.current : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : ""}`
         : `Terminé : ${st.done - st.errors.length} photo(s) améliorée(s) dans « ${st.out} ».`;
       q("#st-batch-errors").textContent = st.errors.length ? `${st.errors.length} photo(s) ignorée(s) : ${st.errors.slice(0, 3).join(" ; ")}` : "";
-      q("#st-batch-cancel").hidden = !st.running;
+      q("#st-batch-cancel").hidden = !st.running; q("#st-batch-back").hidden = st.running;
       q("#st-batch-folder").onclick = () => fetch("/open_folder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: st.out }) });
       if (!st.running) clearInterval(batchPoll);
     };
     tick(); batchPoll = setInterval(tick, 1500);
   }
   q("#st-batch-open").onclick = q("#st-batch-open2").onclick = openBatch;
+  q("#st-batch-back").onclick = () => { clearInterval(batchPoll); openBatchChoose(); };
   q("#st-batch-close").onclick = () => { q("#st-batch").hidden = true; clearInterval(batchPoll); };
   q("#st-batch-cancel").onclick = () => fetch("/batch_cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
   q("#st-batch-start").onclick = async () => {
@@ -877,6 +896,9 @@
       body: JSON.stringify({ folder, best: q("#st-batch-best").checked }) })).json();
     if (r.error === "introuvable") r.error = "Jarvis doit être redémarré pour utiliser la mise à jour : ferme-le complètement puis relance-le.";
     if (r.error) return box.innerHTML = `<span style="color:var(--err)">${esc2(r.error)}</span>`;
+    if (q("#st-batch-watch").checked)
+      await fetch("/photo_watch", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder, on: true, best: q("#st-batch-best").checked }) });
     showBatch();
   };
 

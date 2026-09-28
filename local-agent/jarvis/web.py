@@ -318,6 +318,9 @@ def serve(cfg, workdir, port=7860, open_browser=True):
             elif path == "/photo_folders":
                 from . import batch
                 self._json(batch.folders(app._roots()))
+            elif path == "/photo_watch":
+                from . import batch
+                self._json(batch.watch_list(app.cfg))
             elif path == "/batch_status":
                 from . import batch
                 self._json(batch.status())
@@ -384,6 +387,9 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/batch_start":
                     from . import batch
                     self._json(batch.start(data.get("folder", ""), bool(data.get("best"))))
+                elif self.path == "/photo_watch":
+                    from . import batch
+                    self._json(batch.set_watch(app.cfg, data.get("folder", ""), bool(data.get("on", True)), bool(data.get("best"))))
                 elif self.path == "/batch_cancel":
                     from . import batch
                     self._json(batch.cancel())
@@ -440,6 +446,8 @@ def serve(cfg, workdir, port=7860, open_browser=True):
         state["relaunch"] = True
         threading.Timer(1.0, state["server"].shutdown).start()
     app.relaunch = relaunch
+    from . import batch
+    batch.start_watcher(app.cfg)
 
     def restart():
         # appelé depuis une requête : on ferme le serveur dans un autre fil, la boucle ci-dessous le rouvre

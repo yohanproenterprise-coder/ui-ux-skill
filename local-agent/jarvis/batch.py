@@ -57,12 +57,10 @@ def clean_path(folder):
 
 
 def photos_in(folder):
+    """Photos du dossier et de ses sous-dossiers (sauf « Améliorées »)."""
     folder = Path(folder)
-    files = sorted(p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in IMG_EXT)
-    if not files:  # photos rangées dans des sous-dossiers
-        files = sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMG_EXT
-                       and OUT_NAME not in p.relative_to(folder).parts)
-    return files
+    return sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMG_EXT
+                  and OUT_NAME not in p.relative_to(folder).parts)
 
 
 def status():
@@ -78,7 +76,17 @@ def cancel():
     return status()
 
 
-def start(folder, best=False):
+def _target(folder, out, f):
+    """Fichier amélioré correspondant à la photo f (même sous-dossier, même nom)."""
+    dest = out / f.parent.relative_to(folder) if f.parent != folder else out
+    return dest / f"{f.stem}.{'png' if f.suffix.lower() == '.png' else 'jpg'}"
+
+
+_failed = set()   # photos en échec (chemin, date) : la surveillance ne les réessaie pas en boucle
+
+
+def start(folder, best=False, only_new=False):
+    """Lance l'amélioration du dossier. only_new : seulement les photos pas encore améliorées (surveillance)."""
     folder = clean_path(folder)
     if not folder.is_dir():
         raise ValueError(f"Dossier introuvable : {folder}. Astuce : dans l'explorateur, clic droit sur le dossier → "
@@ -87,11 +95,17 @@ def start(folder, best=False):
         if job["running"]:
             raise RuntimeError("Une amélioration de dossier est déjà en cours.")
         files = photos_in(folder)
+        out = folder / OUT_NAME
+        if only_new:
+            now = time.time()
+            files = [f for f in files if not _target(folder, out, f).exists() and (str(f), f.stat().st_mtime) not in _failed
+                     and now - f.stat().st_mtime > 8]   # photo encore en cours de copie : on attend
+            if not files:
+                return None
         if not files:
             others = sorted({p.suffix.lower() or p.name for p in folder.rglob("*") if p.is_file()})[:8]
             raise ValueError("Aucune photo dans ce dossier" + (f" (fichiers trouvés : {', '.join(others)})" if others else " (il est vide)")
                              + ". Formats acceptés : JPG, PNG, WEBP, AVIF, HEIC, TIFF, BMP.")
-        out = folder / OUT_NAME
         job.update(running=True, folder=str(folder), out=str(out), total=len(files), done=0, current="",
                    errors=[], started=time.time(), finished=0.0, cancel=False)
 
@@ -110,11 +124,15 @@ def start(folder, best=False):
                     better, _ = enhance_ai.enhance(img, best)
                     fmt = "png" if f.suffix.lower() == ".png" else "jpeg"
                     raw, ext = photo_export.encode_image(better, fmt, 92, source_path=str(f), keep_meta=True, keep_gps=True)
-                    dest = out / f.parent.relative_to(folder) if f.parent != folder else out
-                    dest.mkdir(parents=True, exist_ok=True)
-                    (dest / f"{f.stem}.{ext}").write_bytes(raw)  # l'original n'est jamais modifié
+                    target = _target(folder, out, f)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(raw)  # l'original n'est jamais modifié
                 except Exception as e:
                     job["errors"].append(f"{f.name} : {e}")
+                    try:
+                        _failed.add((str(f), f.stat().st_mtime))
+                    except OSError:
+                        pass
                 job["done"] += 1
         finally:
             job.update(running=False, current="", finished=time.time())
@@ -126,6 +144,42 @@ def start(folder, best=False):
                 pass
     threading.Thread(target=work, daemon=True).start()
     return status()
+
+
+# ------------------------------------------------------------ surveillance --
+def watch_list(cfg):
+    return list(cfg.get("photo_watch") or [])
+
+
+def set_watch(cfg, folder, on=True, best=False):
+    """Ajoute ou retire un dossier surveillé (les nouvelles photos y sont améliorées automatiquement)."""
+    from . import config
+    folder = clean_path(folder)
+    lst = [w for w in watch_list(cfg) if Path(w["folder"]) != folder]
+    if on:
+        if not folder.is_dir():
+            raise ValueError(f"Dossier introuvable : {folder}")
+        lst.append({"folder": str(folder), "best": bool(best)})
+    cfg["photo_watch"] = lst
+    config.save(cfg)
+    return lst
+
+
+def start_watcher(cfg, every=30):
+    """Vérifie régulièrement les dossiers surveillés et améliore les nouvelles photos, en arrière-plan."""
+    def loop():
+        time.sleep(15)
+        while True:
+            for w in watch_list(cfg):
+                if job["running"]:
+                    break
+                try:
+                    if Path(w["folder"]).is_dir() and enhance_ai.ai_inpaint._deps_ok():
+                        start(w["folder"], w.get("best", False), only_new=True)
+                except Exception:
+                    pass
+            time.sleep(every)
+    threading.Thread(target=loop, daemon=True, name="photo-watch").start()
 
 
 def folders(roots, limit=40):
