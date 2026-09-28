@@ -875,6 +875,7 @@
     if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 460 Mo)")) return;
     const r = await (await fetch("/batch_start", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder, best: q("#st-batch-best").checked }) })).json();
+    if (r.error === "introuvable") r.error = "Jarvis doit être redémarré pour utiliser la mise à jour : ferme-le complètement puis relance-le.";
     if (r.error) return box.innerHTML = `<span style="color:var(--err)">${esc2(r.error)}</span>`;
     showBatch();
   };

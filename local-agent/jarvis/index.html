@@ -532,6 +532,14 @@ $("settingsDlg").addEventListener("click", async e => {
     settingsMsg("Connexion en cours…");
     r = await post("/command", {cmd: "email_test"});
     if (!r.error) settingsMsg(r.message);
+    if (r.restarting) {  // Jarvis redémarre : on recharge la page dès qu'il répond de nouveau
+      await new Promise(ok => setTimeout(ok, 2500));
+      for (let i = 0; i < 60; i++) {
+        try { if ((await fetch("/version", {cache: "no-store"})).ok) break; } catch (e) {}
+        await new Promise(ok => setTimeout(ok, 1000));
+      }
+      return location.reload();
+    }
   } else if (s === "pin") {
     if (!$("pin").value.trim()) return;
     r = await post("/command", {cmd: "remote", arg: {enabled: state.remote, pin: $("pin").value}});
@@ -541,6 +549,14 @@ $("settingsDlg").addEventListener("click", async e => {
     settingsMsg("Téléchargement…");
     r = await post("/command", {cmd: "update"});
     if (!r.error) settingsMsg(r.message);
+    if (r.restarting) {  // Jarvis redémarre : on recharge la page dès qu'il répond de nouveau
+      await new Promise(ok => setTimeout(ok, 2500));
+      for (let i = 0; i < 60; i++) {
+        try { if ((await fetch("/version", {cache: "no-store"})).ok) break; } catch (e) {}
+        await new Promise(ok => setTimeout(ok, 1000));
+      }
+      return location.reload();
+    }
   }
   if (r && r.error) settingsMsg(r.error, true);
   if (r && !r.error) { refresh(r); setTimeout(fillSettings, 50); }

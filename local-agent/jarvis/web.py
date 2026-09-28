@@ -1,10 +1,14 @@
 """Interface web locale : http://localhost:7860 (accessible uniquement depuis ce PC)."""
 
 import base64
+import hashlib
 import mimetypes
 import os
 import json
 import re
+import secrets
+import subprocess
+import sys
 import threading
 import urllib.parse
 import time
@@ -15,6 +19,11 @@ from pathlib import Path
 
 from . import ai_inpaint, config, remote, scheduler, system, updater
 from .core import Agent, Brain
+
+# empreinte du code : permet de savoir si le Jarvis déjà lancé est une ancienne version
+CODE_VERSION = hashlib.sha1(b"".join(p.read_bytes() for p in sorted(Path(__file__).parent.glob("*.py")))).hexdigest()[:12]
+ARGV = [sys.executable, os.path.abspath(sys.argv[0])] + sys.argv[1:]
+TOKEN_FILE = config.HOME / "server.token"   # secret local : seul ce PC peut demander l'arrêt du serveur
 
 INDEX = Path(__file__).with_name("index.html")
 LOGIN = Path(__file__).with_name("login.html")
@@ -74,6 +83,7 @@ class App:
         self.cfg, self.ui, self.port = cfg, WebUI(), port
         self.bound_remote = False     # le serveur écoute-t-il le réseau local ?
         self.restart_server = None    # rappel fourni par serve() pour réouvrir le serveur
+        self.relaunch = None          # rappel fourni par serve() pour relancer tout Jarvis (après une mise à jour)
         self.brain = Brain(cfg, self.ui)
         self.workdir = workdir
         self.agent = Agent(self.brain, self.ui, cfg, workdir, auto=cfg["auto"])
@@ -233,7 +243,11 @@ class App:
                 self.restart_server()
             return {**self.state(), "remote_active": want, "addresses": remote.addresses(self.port) if want else []}
         elif cmd == "update":
-            return {**self.state(), "message": updater.update()}
+            message = updater.update()
+            if self.relaunch:
+                self.relaunch()
+                message = message.split(". ")[0] + ". Jarvis redémarre tout seul… la page va se recharger."
+            return {**self.state(), "message": message, "restarting": bool(self.relaunch)}
         elif cmd == "listen":
             text, err = system.listen()
             return {"text": text, "error": err}
@@ -283,6 +297,8 @@ def serve(cfg, workdir, port=7860, open_browser=True):
 
         def do_GET(self):
             path = self.path.split("?")[0]
+            if path == "/version":
+                return self._json({"version": CODE_VERSION})
             if path == "/manifest.json":
                 return self._json({"name": "Jarvis", "short_name": "Jarvis", "start_url": "/", "display": "standalone",
                                    "background_color": "#05080f", "theme_color": "#05080f", "lang": "fr",
@@ -324,6 +340,18 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 self._json({"error": "introuvable"}, 404)
 
         def do_POST(self):
+            if self.path == "/quit":  # demandé par un Jarvis plus récent lancé sur ce PC
+                data = self._body()
+                try:
+                    ok = secrets.compare_digest(str(data.get("token", "")), TOKEN_FILE.read_text().strip())
+                except OSError:
+                    ok = False
+                if not ok:
+                    return self._json({"error": "refusé"}, 403)
+                self._json({"ok": True})
+                state["quit"] = True
+                threading.Timer(0.2, state["server"].shutdown).start()
+                return
             if not self._same_origin():
                 return self._json({"error": "origine refusée"}, 403)
             data = self._body()
@@ -394,11 +422,24 @@ def serve(cfg, workdir, port=7860, open_browser=True):
     try:
         state["server"] = open_server()
     except OSError:
-        print(f"Jarvis tourne déjà : j'ouvre {url}")
-        webbrowser.open(url)
-        return
+        state["server"] = _replace_old(port, open_server)
+        if not state["server"]:
+            print(f"Jarvis tourne déjà : j'ouvre {url}")
+            webbrowser.open(url)
+            return
+    token = secrets.token_hex(16)
+    try:
+        TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        TOKEN_FILE.write_text(token)
+    except OSError:
+        pass
     app = App(cfg, workdir, port)
     app.bound_remote = remote.enabled(cfg)
+
+    def relaunch():
+        state["relaunch"] = True
+        threading.Timer(1.0, state["server"].shutdown).start()
+    app.relaunch = relaunch
 
     def restart():
         # appelé depuis une requête : on ferme le serveur dans un autre fil, la boucle ci-dessous le rouvre
@@ -414,6 +455,14 @@ def serve(cfg, workdir, port=7860, open_browser=True):
         while True:
             state["server"].serve_forever()
             state["server"].server_close()
+            if state.get("quit"):
+                print("Une version plus récente de Jarvis prend le relais.")
+                os._exit(0)
+            if state.get("relaunch"):
+                argv = ARGV + ([] if "--no-browser" in ARGV else ["--no-browser"])
+                flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if Path(sys.executable).stem.lower() == "pythonw" else 0
+                subprocess.Popen(argv, cwd=str(updater.APP_DIR), creationflags=flags)
+                os._exit(0)
             for _ in range(20):  # rouvre sur la nouvelle interface réseau
                 try:
                     state["server"] = open_server()
@@ -425,6 +474,41 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 return
     except KeyboardInterrupt:
         pass
+
+
+def _replace_old(port, open_server):
+    """Un Jarvis tourne déjà sur ce port : si c'est une ancienne version, on le remplace par celle-ci."""
+    import json as _json
+    import urllib.request
+    base = f"http://127.0.0.1:{port}"
+    try:
+        with urllib.request.urlopen(base + "/version", timeout=3) as r:
+            if _json.loads(r.read()).get("version") == CODE_VERSION:
+                return None  # même version : on garde celui qui tourne
+    except Exception:
+        pass  # ancienne version sans /version, ou serveur bloqué
+    stopped = False
+    try:
+        req = urllib.request.Request(base + "/quit", data=_json.dumps({"token": TOKEN_FILE.read_text().strip()}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=3) as r:
+            stopped = r.status == 200
+    except Exception:
+        pass
+    if not stopped and system.WINDOWS:
+        # ancienne version : on arrête le processus Jarvis qui occupe le port (et seulement lui)
+        system.powershell(
+            f"$ids = (Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue).OwningProcess\n"
+            "foreach ($i in $ids) { $p = Get-CimInstance Win32_Process -Filter \"ProcessId=$i\"\n"
+            "  if ($p.CommandLine -like '*agent.py*') { Stop-Process -Id $i -Force } }", timeout=30)
+    for _ in range(40):
+        try:
+            server = open_server()
+            print("Ancienne version de Jarvis arrêtée : la nouvelle démarre.")
+            return server
+        except OSError:
+            time.sleep(0.25)
+    return None
 
 
 _ICONS = {}
