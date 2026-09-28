@@ -55,6 +55,7 @@
             <h3>Glisse une photo ici</h3>
             <p>ou colle-la (Ctrl+V), ou choisis-la sur ton PC</p>
             <button class="st-btn primary" id="st-pick">Choisir une photo</button>
+            <button class="st-btn" id="st-batch-open">📁 Améliorer tout un dossier</button>
           </div>
           <div class="st-label">Photos récentes sur ce PC</div>
           <div class="st-gallery" id="st-gallery"><span class="st-note">Chargement…</span></div>
@@ -74,6 +75,8 @@
           <button class="st-btn primary wide st-big" id="st-magic">✨ Améliorer la photo</button>
           <p class="st-note" style="margin:6px 0 0">Un clic, rien à régler : l'IA nettoie la compression et le bruit, restaure la netteté
             et les visages, équilibre lumière et couleurs, et agrandit les petites photos. Maintiens « Avant / après » pour comparer.</p>
+          <label class="check" style="margin-top:8px"><input type="checkbox" id="st-best"> Qualité maximale (3 à 6× plus lent)</label>
+          <button class="st-btn wide" id="st-batch-open2">📁 Améliorer tout un dossier</button>
           <div id="st-magic-msg" class="st-note"></div>
           <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler (revenir à la photo d'avant)</button>
           <details class="st-adv" id="st-adv"><summary>Réglages manuels</summary>
@@ -172,7 +175,32 @@
         </div>
       </div>
     </div>
-    <input type="file" id="st-file" accept="image/*" hidden>`;
+    <input type="file" id="st-file" accept="image/*" hidden>
+    <div class="st-modal" id="st-batch" hidden><div class="st-modal-box">
+      <div class="row" style="justify-content:space-between;margin:0"><strong class="title">Améliorer tout un dossier</strong>
+        <button class="pill" id="st-batch-close">Fermer</button></div>
+      <div id="st-batch-choose">
+        <p class="hint">Toutes les photos du dossier sont améliorées automatiquement, en arrière-plan. Les originaux ne sont
+          jamais modifiés : les copies vont dans un sous-dossier « Améliorées ».</p>
+        <div class="st-label">Dossiers avec des photos</div>
+        <div class="st-folders" id="st-folders"><span class="st-note">Recherche…</span></div>
+        <div class="st-label">Ou colle le chemin d'un dossier</div>
+        <input type="text" id="st-folder" placeholder="C:\\Users\\toi\\Pictures\\Vacances">
+        <label class="check" style="margin-top:8px"><input type="checkbox" id="st-batch-best"> Qualité maximale (3 à 6× plus lent)</label>
+        <div id="st-batch-msg" class="st-note"></div>
+        <button class="st-btn primary wide" id="st-batch-start">Lancer l'amélioration</button>
+      </div>
+      <div id="st-batch-run" hidden>
+        <p id="st-batch-text" class="st-note"></p>
+        <div class="st-prog"><span id="st-batch-bar" style="width:0%"></span></div>
+        <p id="st-batch-errors" class="st-note" style="color:var(--warn)"></p>
+        <div class="st-grid two" style="margin-top:12px">
+          <button class="st-btn" id="st-batch-cancel">Arrêter</button>
+          <button class="st-btn primary" id="st-batch-folder">Ouvrir le dossier</button>
+        </div>
+        <p class="st-note">Tu peux fermer cette fenêtre ou utiliser Jarvis pendant ce temps. Une notification s'affichera à la fin.</p>
+      </div>
+    </div></div>`;
   document.body.appendChild(root);
   const canvas = q("#st-canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
   const mask = q("#st-mask"), mctx = mask.getContext("2d", { willReadFrequently: true });
@@ -763,11 +791,59 @@
     return false;
   }
 
+  // ------------------------------------------------------ dossier entier --
+  const fmtTime = sec => sec < 60 ? `${sec} s` : `${Math.round(sec / 60)} min`;
+  let batchPoll = null;
+  async function openBatch() {
+    q("#st-batch").hidden = false;
+    const st = await (await fetch("/batch_status")).json();
+    if (st.running) return showBatch();
+    q("#st-batch-choose").hidden = false; q("#st-batch-run").hidden = true;
+    const box = q("#st-folders");
+    try {
+      const list = await (await fetch("/photo_folders")).json();
+      box.innerHTML = list.length ? "" : '<span class="st-note">Aucun dossier trouvé : colle le chemin ci-dessous.</span>';
+      list.forEach(f => { const b = el("button", { className: "st-folder", title: f.path });
+        b.innerHTML = `<span>📁 ${esc2(f.name)}</span><small>${f.count} photo${f.count > 1 ? "s" : ""}</small>`;
+        b.onclick = () => { q("#st-folder").value = f.path; box.querySelectorAll(".st-folder").forEach(x => x.classList.toggle("on", x === b)); };
+        box.appendChild(b); });
+    } catch (e) { box.innerHTML = '<span class="st-note">Liste indisponible.</span>'; }
+  }
+  function showBatch() {
+    q("#st-batch-choose").hidden = true; q("#st-batch-run").hidden = false;
+    clearInterval(batchPoll);
+    const tick = async () => {
+      let st; try { st = await (await fetch("/batch_status")).json(); } catch (e) { return; }
+      const pct = st.total ? Math.round(100 * st.done / st.total) : 0;
+      q("#st-batch-bar").style.width = pct + "%";
+      q("#st-batch-text").textContent = st.running
+        ? `${st.done} / ${st.total} photos${st.current ? " · " + st.current : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : ""}`
+        : `Terminé : ${st.done - st.errors.length} photo(s) améliorée(s) dans « ${st.out} ».`;
+      q("#st-batch-errors").textContent = st.errors.length ? `${st.errors.length} photo(s) ignorée(s) : ${st.errors.slice(0, 3).join(" ; ")}` : "";
+      q("#st-batch-cancel").hidden = !st.running;
+      q("#st-batch-folder").onclick = () => fetch("/open_folder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: st.out }) });
+      if (!st.running) clearInterval(batchPoll);
+    };
+    tick(); batchPoll = setInterval(tick, 1500);
+  }
+  q("#st-batch-open").onclick = q("#st-batch-open2").onclick = openBatch;
+  q("#st-batch-close").onclick = () => { q("#st-batch").hidden = true; clearInterval(batchPoll); };
+  q("#st-batch-cancel").onclick = () => fetch("/batch_cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  q("#st-batch-start").onclick = async () => {
+    const box = q("#st-batch-msg"), folder = q("#st-folder").value.trim();
+    if (!folder) return box.textContent = "Choisis un dossier dans la liste ou colle son chemin.";
+    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 460 Mo)")) return;
+    const r = await (await fetch("/batch_start", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder, best: q("#st-batch-best").checked }) })).json();
+    if (r.error) return box.innerHTML = `<span style="color:var(--err)">${esc2(r.error)}</span>`;
+    showBatch();
+  };
+
   // ------------------------------------------------ amélioration en un clic --
   q("#st-magic").onclick = async () => {
     const box = q("#st-magic-msg"); if (!S.full) return;
     if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 460 Mo : nettoyage, visages, qualité max)")) return;
-    await runBaseAI("/ai_enhance", {}, "L'IA améliore la photo…", box, (r, sec) => {
+    await runBaseAI("/ai_enhance", { best: q("#st-best").checked }, "L'IA améliore la photo…", box, (r, sec) => {
       box.innerHTML = `✓ Amélioration terminée en ${sec} s : ${esc2(r.done.join(", "))}.<br>Maintiens « Avant / après » pour comparer, « Annuler » pour revenir.`;
       q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`;
     });
@@ -926,6 +1002,7 @@
 
   window.openStudio = path => {
     root.classList.add("open"); buttons();
+    fetch("/ai_warmup", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {});
     if (path) loadFrom(`/file?path=${encodeURIComponent(path)}`, path.split(/[\\/]/).pop());
     else if (!S.prev) gallery();
   };

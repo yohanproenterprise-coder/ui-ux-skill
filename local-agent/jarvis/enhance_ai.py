@@ -10,7 +10,7 @@ import numpy as np
 from . import ai_inpaint
 
 SMALL = 1200   # en dessous (plus grand côté), la photo est agrandie ×2 comme sur Claid
-LARGE = 2600   # au-dessus, le nettoyage par IA serait trop long sur un PC sans carte graphique
+LARGE = 3200   # au-dessus, la photo est déjà très détaillée : on ne la nettoie pas par IA (trop long sans carte graphique)
 
 
 def _progress(p, step):
@@ -47,7 +47,12 @@ def light_and_color(img):
     a = a ** gamma
     # HDR léger : ombres débouchées et hautes lumières retenues, selon la luminosité locale
     lum = a @ np.array([.299, .587, .114], np.float32)
-    local = _blur(lum, max(3, min(img.size) * .03))
+    # luminosité locale calculée sur une image réduite (8× plus rapide), puis ré-agrandie
+    from PIL import Image as _I
+    k = max(1, min(img.size) // 400)
+    lum_small = _I.fromarray((lum * 255).clip(0, 255).astype(np.uint8)).resize((max(1, img.width // k), max(1, img.height // k)), _I.BILINEAR)
+    local_small = _blur(np.asarray(lum_small, np.float32) / 255.0, max(2, min(lum_small.size) * .03))
+    local = np.asarray(_I.fromarray((local_small * 255).astype(np.uint8)).resize(img.size, _I.BILINEAR), np.float32) / 255.0
     gain = 1 + .22 * np.clip(.42 - local, 0, .42) / .42 - .08 * np.clip(local - .78, 0, .22) / .22
     a = a * gain[..., None]
     # contraste doux (courbe en S très légère) et vibrance modérée, peau protégée
@@ -62,24 +67,30 @@ def light_and_color(img):
     return Image.fromarray((np.clip(a, 0, 1) * 255 + .5).astype(np.uint8))
 
 
-def enhance(img):
-    """Renvoie (image améliorée, liste des étapes réalisées)."""
+def enhance(img, best=False):
+    """Renvoie (image améliorée, liste des étapes réalisées). best=True : qualité maximale (plus lent)."""
     from PIL import Image
     from . import ai_face
     img = img.convert("RGB")
     w, h = img.size
     done = []
-    quality = "max" if ai_inpaint.pack_ready("upmax") else "fast"
+    quality = "max" if best and ai_inpaint.pack_ready("upmax") else "fast"
     try:
         # 1. nettoyage et netteté par IA
-        if max(w, h) <= LARGE:
+        if max(w, h) < SMALL:
             _progress(2, "Nettoyage de la photo par l'IA…")
-            sr = ai_inpaint.upscale_image(img, 2, quality=quality)
-            if max(w, h) < SMALL:
-                out = sr
-                done.append(f"agrandie ×2 ({sr.width}×{sr.height})")
+            out = ai_inpaint.upscale_image(img, 2, quality=quality)
+            done.append(f"agrandie ×2 ({out.width}×{out.height})")
+            done.append("compression et bruit nettoyés, netteté restaurée")
+        elif max(w, h) <= LARGE:
+            _progress(2, "Nettoyage de la photo par l'IA…")
+            if best:
+                out = ai_inpaint.upscale_image(img, 2, quality=quality).resize((w, h), Image.LANCZOS)
             else:
-                out = sr.resize((w, h), Image.LANCZOS)  # super-échantillonnage : plus propre à taille égale
+                # rapide : l'IA travaille sur la photo réduite de moitié, puis on recombine avec l'original
+                half = img.resize((w // 2, h // 2), Image.LANCZOS)
+                clean = ai_inpaint.upscale_image(half, 4, quality="fast").resize((w, h), Image.LANCZOS)
+                out = Image.blend(clean, img, .3)
             done.append("compression et bruit nettoyés, netteté restaurée")
         else:
             out = img
@@ -99,12 +110,12 @@ def enhance(img):
     return out, done
 
 
-def enhance_data_url(data_url):
+def enhance_data_url(data_url, best=False):
     import base64
     import io
     if not ai_inpaint._deps_ok():
         raise RuntimeError("L'IA d'amélioration n'est pas installée.")
-    img, done = enhance(ai_inpaint._decode(data_url, "RGB"))
+    img, done = enhance(ai_inpaint._decode(data_url, "RGB"), best)
     buf = io.BytesIO()
-    img.save(buf, "PNG")
+    img.save(buf, "PNG", compress_level=1)  # encodage rapide (le fichier final est encodé à l'export)
     return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "done": done}

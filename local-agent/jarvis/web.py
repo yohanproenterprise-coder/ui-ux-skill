@@ -299,6 +299,12 @@ def serve(cfg, workdir, port=7860, open_browser=True):
             elif path in ("/studio.js", "/studio.css", "/inpaint.js"):
                 self._send((Path(__file__).parent / path[1:]).read_bytes(),
                            "text/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")
+            elif path == "/photo_folders":
+                from . import batch
+                self._json(batch.folders(app._roots()))
+            elif path == "/batch_status":
+                from . import batch
+                self._json(batch.status())
             elif path == "/ai_status":
                 self._json(ai_inpaint.status())
             elif path == "/images":
@@ -343,7 +349,19 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                                                             data.get("quality", "fast"))})
                 elif self.path == "/ai_enhance":
                     from . import enhance_ai
-                    self._json(enhance_ai.enhance_data_url(data.get("image", "")))
+                    self._json(enhance_ai.enhance_data_url(data.get("image", ""), bool(data.get("best"))))
+                elif self.path == "/ai_warmup":
+                    ai_inpaint.warmup()
+                    self._json({"ok": True})
+                elif self.path == "/batch_start":
+                    from . import batch
+                    self._json(batch.start(data.get("folder", ""), bool(data.get("best"))))
+                elif self.path == "/batch_cancel":
+                    from . import batch
+                    self._json(batch.cancel())
+                elif self.path == "/open_folder":
+                    system.open_item(str(data.get("path", "")))
+                    self._json({"ok": True})
                 elif self.path == "/ai_faces":
                     self._json(ai_inpaint.restore_faces(data.get("image", ""), data.get("strength", 0.8)))
                 elif self.path == "/ai_inpaint":

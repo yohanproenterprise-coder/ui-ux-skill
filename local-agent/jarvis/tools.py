@@ -294,6 +294,12 @@ class Tools:
         path.write_bytes(data)
         return f"Image créée : {path} (utilise open_item pour l'afficher)"
 
+    def enhance_folder(self, path, best=False):
+        from . import batch
+        st = batch.start(str(self._path(path)), bool(best))
+        return (f"Amélioration lancée en arrière-plan : {st['total']} photo(s). Résultats dans « {st['out']} » "
+                "(originaux intacts). Une notification s'affichera à la fin ; suivi dans le Studio.")
+
     def edit_photo(self, path, **settings):
         self.ui.info("retouche en cours…")
         return photo.edit(str(self._path(path)), **settings)
@@ -483,6 +489,9 @@ TOOL_SPECS = [
           "avec leur fichier source.", {"query": S, "k": I}, ["query"]),
     _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
           {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
+    _tool("enhance_folder", "Améliore automatiquement TOUTES les photos d'un dossier (comme « Améliorer la photo » "
+          "du Studio), en arrière-plan. Les copies vont dans un sous-dossier « Améliorées ».",
+          {"path": S, "best": {"type": "boolean", "description": "qualité maximale (beaucoup plus lent)"}}, ["path"]),
     _tool("edit_photo", "Retouche une photo, un dossier entier ou un motif (*.jpg). Réglages de -100 à +100. "
           "Crée une copie (suffixe -retouche), l'original reste intact. Pour EFFACER un objet ou une personne "
           "(le fond se reconstruit), dis à l'utilisateur d'utiliser la Gomme magique du Studio (bouton Studio).",

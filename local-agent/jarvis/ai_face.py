@@ -35,7 +35,6 @@ def _session(name):
         if name not in _sessions:
             import onnxruntime as ort
             opts = ort.SessionOptions()
-            opts.intra_op_num_threads = max(1, os.cpu_count() or 1)
             opts.log_severity_level = 3
             _sessions[name] = ort.InferenceSession(str(MODELS_DIR / name), sess_options=opts,
                                                    providers=["CPUExecutionProvider"])
@@ -146,7 +145,17 @@ def restore(img, strength=0.7, fidelity=0.7, max_faces=12):
         grain = a - np.asarray(crop.filter(ImageFilter.GaussianBlur(1.2)), np.float32)
         fixed = Image.fromarray((np.asarray(fixed, np.float32) + grain * 0.6).clip(0, 255).astype(np.uint8))
         back = np.linalg.inv(np.vstack([m, [0, 0, 1]]))[:2]
-        face_back = _warp(fixed, back, out.size)
-        alpha = _warp(base_mask, back, out.size).point(lambda v: int(v * strength))
-        out = Image.composite(face_back, out, alpha)
+        # zone de la photo couverte par le visage restauré (on ne retravaille qu'elle)
+        corners = np.array([[0, 0, 1], [512, 0, 1], [0, 512, 1], [512, 512, 1]], np.float64) @ back.T
+        x0, y0 = np.floor(corners.min(0)).astype(int)
+        x1, y1 = np.ceil(corners.max(0)).astype(int)
+        x0, y0, x1, y1 = max(0, x0), max(0, y0), min(out.width, x1), min(out.height, y1)
+        if x1 - x0 < 2 or y1 - y0 < 2:
+            continue
+        shift = back.copy()
+        shift[:, 2] -= [x0, y0]
+        face_back = _warp(fixed, shift, (x1 - x0, y1 - y0))
+        alpha = _warp(base_mask, shift, (x1 - x0, y1 - y0)).point(lambda v: int(v * strength))
+        region = out.crop((x0, y0, x1, y1))
+        out.paste(Image.composite(face_back, region, alpha), (x0, y0))
     return out, len(faces)

@@ -41,6 +41,12 @@ def encode(png_data_url, fmt="jpeg", quality=92, source_path=None, source_data=N
     """Reçoit l'image finale du Studio (PNG, sans perte) et renvoie (octets, extension)."""
     from PIL import Image
     img = Image.open(io.BytesIO(base64.b64decode(png_data_url.split(",", 1)[1])))
+    return encode_image(img, fmt, quality, source_path, source_data, keep_meta, keep_gps)
+
+
+def encode_image(img, fmt="jpeg", quality=92, source_path=None, source_data=None, keep_meta=True, keep_gps=False):
+    """Encode une image PIL avec soin (profil sRGB, infos de la photo d'origine) → (octets, extension)."""
+    from PIL import Image
     fmt = {"image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp", "jpg": "jpeg"}.get(fmt, fmt)
     if fmt == "jpeg" and img.mode != "RGB":
         bg = Image.new("RGB", img.size, (255, 255, 255))

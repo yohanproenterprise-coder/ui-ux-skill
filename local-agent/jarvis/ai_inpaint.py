@@ -145,7 +145,6 @@ def _get_session():
         if _session is None:
             import onnxruntime as ort
             opts = ort.SessionOptions()
-            opts.intra_op_num_threads = max(1, os.cpu_count() or 1)
             opts.log_severity_level = 3
             _session = ort.InferenceSession(str(MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
             threading.Thread(target=_unload_when_idle, daemon=True).start()
@@ -189,7 +188,7 @@ def inpaint(image_data_url, mask_data_url):
         out = out * 255
     res = Image.fromarray(out.clip(0, 255).astype(np.uint8)).resize((side, side), Image.LANCZOS).crop((0, 0, w, h))
     buf = io.BytesIO()
-    res.save(buf, "PNG")
+    res.save(buf, "PNG", compress_level=1)
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
@@ -234,7 +233,7 @@ def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
 _max_session = None
 
 
-def _max_x2(img, tile=192, pad=24, progress=(0, 100)):
+def _max_x2(img, tile=320, pad=20, progress=(0, 100)):
     """Agrandissement ×2 « Qualité max » (Real-ESRGAN complet), par tuiles de taille paire."""
     global _max_session
     import numpy as np
@@ -242,7 +241,6 @@ def _max_x2(img, tile=192, pad=24, progress=(0, 100)):
     if _max_session is None:
         import onnxruntime as ort
         opts = ort.SessionOptions()
-        opts.intra_op_num_threads = max(1, os.cpu_count() or 1)
         opts.log_severity_level = 3
         _max_session = ort.InferenceSession(str(MODELS / "real_esrgan_x2.onnx"), sess_options=opts,
                                             providers=["CPUExecutionProvider"])
@@ -252,7 +250,7 @@ def _max_x2(img, tile=192, pad=24, progress=(0, 100)):
     return Image.fromarray((out.clip(0, 1) * 255).round().astype(np.uint8))
 
 
-def upscale_image(img, factor=2, tile=256, pad=16, quality="fast"):
+def upscale_image(img, factor=2, tile=384, pad=16, quality="fast"):
     """Agrandit une image PIL ×2 ou ×4 avec Real-ESRGAN (rendu naturel), par tuiles pour limiter la mémoire."""
     global _up_session
     import numpy as np
@@ -276,7 +274,6 @@ def upscale_image(img, factor=2, tile=256, pad=16, quality="fast"):
     if _up_session is None:
         import onnxruntime as ort
         opts = ort.SessionOptions()
-        opts.intra_op_num_threads = max(1, os.cpu_count() or 1)
         opts.log_severity_level = 3
         _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
@@ -299,7 +296,7 @@ def upscale(image_data_url, factor=2, quality="fast"):
     img = _decode(image_data_url, "RGB")
     res = upscale_image(img, factor, quality=quality)
     buf = io.BytesIO()
-    res.save(buf, "PNG")
+    res.save(buf, "PNG", compress_level=1)
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
 
 
@@ -314,5 +311,26 @@ def restore_faces(image_data_url, strength=0.8):
     finally:
         upscale_state.update(busy=False, progress=100)
     buf = io.BytesIO()
-    img.save(buf, "PNG")
+    img.save(buf, "PNG", compress_level=1)
     return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "faces": n}
+
+
+def warmup():
+    """Charge les IA en mémoire en arrière-plan (évite 20 à 40 s d'attente au premier clic)."""
+    def work():
+        global _up_session, _max_session
+        try:
+            if not _deps_ok():
+                return
+            import onnxruntime as ort
+            opts = ort.SessionOptions()
+            opts.log_severity_level = 3
+            if _up_session is None:
+                _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
+            if pack_ready("faces"):
+                from . import ai_face
+                ai_face._session(ai_face.DETECTOR[0])
+                ai_face._session(ai_face.RESTORER[0])
+        except Exception:
+            pass
+    threading.Thread(target=work, daemon=True).start()
