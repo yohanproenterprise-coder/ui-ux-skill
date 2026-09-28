@@ -341,6 +341,9 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/ai_upscale":
                     self._json({"image": ai_inpaint.upscale(data.get("image", ""), data.get("factor", 2),
                                                             data.get("quality", "fast"))})
+                elif self.path == "/ai_enhance":
+                    from . import enhance_ai
+                    self._json(enhance_ai.enhance_data_url(data.get("image", "")))
                 elif self.path == "/ai_faces":
                     self._json(ai_inpaint.restore_faces(data.get("image", ""), data.get("strength", 0.8)))
                 elif self.path == "/ai_inpaint":

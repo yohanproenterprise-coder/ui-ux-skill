@@ -494,6 +494,7 @@ TOOL_SPECS = [
            "upscale": {"type": "number", "description": "agrandissement, ex: 2 pour ×2"},
            "denoise": {"type": "boolean", "description": "réduction du bruit"},
            "faces": {"type": "boolean", "description": "restaurer les visages flous (IA, si installée)"},
+           "enhance": {"type": "boolean", "description": "amélioration en un clic façon Claid : nettoyage, netteté, visages, lumière (à privilégier quand on demande d'améliorer une photo)"},
            "text_position": {"type": "string", "enum": ["bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "centre"]},
            "output_format": {"type": "string", "enum": ["jpeg", "png", "webp"]}, "quality": I, "out_dir": S},
           ["path"]),

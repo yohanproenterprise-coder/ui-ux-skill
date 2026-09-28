@@ -32,7 +32,8 @@ PACKS = {
               ([FF + "codeformer.onnx"], MODELS / "codeformer.onnx", 300_000_000)],
     "upmax": [([FF + "real_esrgan_x2.onnx"], MODELS / "real_esrgan_x2.onnx", 60_000_000)],
 }
-PACK_LABELS = {"lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 390 Mo)",
+PACKS["enhance"] = PACKS["faces"] + PACKS["upmax"]  # tout ce qu'utilise l'amélioration en un clic
+PACK_LABELS = {"enhance": "IA d'amélioration (≈ 460 Mo)","lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 390 Mo)",
                "upmax": "agrandissement Qualité max (≈ 70 Mo)"}
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
@@ -193,10 +194,47 @@ def inpaint(image_data_url, mask_data_url):
 
 
 # ------------------------------------------------------------ agrandissement --
+
+def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
+    """Exécute run() tuile par tuile avec des bords qui se chevauchent et un fondu progressif
+    (aucune couture visible entre les tuiles). src : tableau HxWx3 dans [0,1]."""
+    import numpy as np
+    h, w = src.shape[:2]
+    acc = np.zeros((h * scale, w * scale, 3), np.float32)
+    wsum = np.zeros((h * scale, w * scale, 1), np.float32)
+    step = tile
+    tiles = [(x, y) for y in range(0, h, step) for x in range(0, w, step)]
+    for n, (x, y) in enumerate(tiles):
+        x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + step + pad), min(h, y + step + pad)
+        part = src[y0:y1, x0:x1]
+        ph, pw = part.shape[:2]
+        if even:
+            part = np.pad(part, ((0, ph % 2), (0, pw % 2), (0, 0)), mode="edge")
+        res = run(part)[:ph * scale, :pw * scale]
+        # poids : 1 au centre, descend doucement vers les bords qui chevauchent une autre tuile
+        ramp = pad * scale
+        wy = np.ones(ph * scale, np.float32)
+        wx = np.ones(pw * scale, np.float32)
+        if ramp > 0:
+            r = np.linspace(0.05, 1, ramp, dtype=np.float32)
+            if y0 > 0:
+                wy[:ramp] = r[:len(wy[:ramp])]
+            if y1 < h:
+                wy[-ramp:] = np.minimum(wy[-ramp:], r[::-1][-len(wy[-ramp:]):])
+            if x0 > 0:
+                wx[:ramp] = r[:len(wx[:ramp])]
+            if x1 < w:
+                wx[-ramp:] = np.minimum(wx[-ramp:], r[::-1][-len(wx[-ramp:]):])
+        wgt = (wy[:, None] * wx[None, :])[..., None]
+        acc[y0 * scale:y1 * scale, x0 * scale:x1 * scale] += res * wgt
+        wsum[y0 * scale:y1 * scale, x0 * scale:x1 * scale] += wgt
+        upscale_state["progress"] = int(progress[0] + (progress[1] - progress[0]) * (n + 1) / len(tiles))
+    return acc / np.maximum(wsum, 1e-6)
+
 _max_session = None
 
 
-def _max_x2(img, tile=192, pad=10, progress=(0, 100)):
+def _max_x2(img, tile=192, pad=24, progress=(0, 100)):
     """Agrandissement ×2 « Qualité max » (Real-ESRGAN complet), par tuiles de taille paire."""
     global _max_session
     import numpy as np
@@ -209,24 +247,12 @@ def _max_x2(img, tile=192, pad=10, progress=(0, 100)):
         _max_session = ort.InferenceSession(str(MODELS / "real_esrgan_x2.onnx"), sess_options=opts,
                                             providers=["CPUExecutionProvider"])
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
-    h, w = src.shape[:2]
-    out = np.zeros((h * 2, w * 2, 3), dtype=np.uint8)
-    tiles = [(x, y) for y in range(0, h, tile) for x in range(0, w, tile)]
-    for n, (x, y) in enumerate(tiles):
-        x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + tile + pad), min(h, y + tile + pad)
-        part = src[y0:y1, x0:x1]
-        ph, pw = part.shape[:2]
-        part = np.pad(part, ((0, ph % 2), (0, pw % 2), (0, 0)), mode="edge")  # le modèle exige des tailles paires
-        res = _max_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
-        res = (res[:ph * 2, :pw * 2].clip(0, 1) * 255).round().astype(np.uint8)
-        cx0, cy0 = (x - x0) * 2, (y - y0) * 2
-        cw, ch = (min(w, x + tile) - x) * 2, (min(h, y + tile) - y) * 2
-        out[y * 2:y * 2 + ch, x * 2:x * 2 + cw] = res[cy0:cy0 + ch, cx0:cx0 + cw]
-        upscale_state["progress"] = int(progress[0] + (progress[1] - progress[0]) * (n + 1) / len(tiles))
-    return Image.fromarray(out)
+    run = lambda part: _max_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
+    out = _tiled(src, run, 2, tile, pad, progress, even=True)
+    return Image.fromarray((out.clip(0, 1) * 255).round().astype(np.uint8))
 
 
-def upscale_image(img, factor=2, tile=256, pad=12, quality="fast"):
+def upscale_image(img, factor=2, tile=256, pad=16, quality="fast"):
     """Agrandit une image PIL ×2 ou ×4 avec Real-ESRGAN (rendu naturel), par tuiles pour limiter la mémoire."""
     global _up_session
     import numpy as np
@@ -254,22 +280,14 @@ def upscale_image(img, factor=2, tile=256, pad=12, quality="fast"):
         opts.log_severity_level = 3
         _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
-    out = np.zeros((h * factor, w * factor, 3), dtype=np.uint8)
-    tiles = [(x, y) for y in range(0, h, tile) for x in range(0, w, tile)]
     upscale_state.update(busy=True, progress=0)
     try:
-        for n, (x, y) in enumerate(tiles):
-            x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + tile + pad), min(h, y + tile + pad)
-            inp = src[y0:y1, x0:x1].transpose(2, 0, 1)[None]
-            res = _up_session.run(None, {"input": inp})[0][0].transpose(1, 2, 0)
-            res = Image.fromarray((res.clip(0, 1) * 255).round().astype(np.uint8))
-            if factor != 4:  # ×4 puis réduction soignée : plus net qu'un ×2 direct
-                res = res.resize(((x1 - x0) * factor, (y1 - y0) * factor), Image.LANCZOS)
-            res = np.asarray(res)
-            cx0, cy0 = (x - x0) * factor, (y - y0) * factor
-            cw, ch = (min(w, x + tile) - x) * factor, (min(h, y + tile) - y) * factor
-            out[y * factor:y * factor + ch, x * factor:x * factor + cw] = res[cy0:cy0 + ch, cx0:cx0 + cw]
-            upscale_state["progress"] = int(100 * (n + 1) / len(tiles))
+        run = lambda part: _up_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
+        out4 = _tiled(src, run, 4, tile, pad)
+        res = Image.fromarray((out4.clip(0, 1) * 255).round().astype(np.uint8))
+        if factor != 4:  # ×4 puis réduction soignée : plus net qu'un ×2 direct
+            res = res.resize((w * factor, h * factor), Image.LANCZOS)
+        out = np.asarray(res)
     finally:
         upscale_state["busy"] = False
     # 35 % d'agrandissement classique : garde le grain réel (peau, matières) pour un rendu naturel

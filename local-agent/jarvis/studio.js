@@ -71,11 +71,15 @@
           <button data-tab="heal">Gomme magique</button><button data-tab="crop">Recadrer</button><button data-tab="text">Texte</button><button data-tab="export">Exporter</button>
         </div>
         <div class="st-pane on" data-pane="adjust">
-          <button class="st-btn primary wide" id="st-enhance" style="margin:0 0 10px">✨ Améliorer automatiquement</button>
-          <div class="st-row"><label>Intensité de l'amélioration <span id="v-enhance">0</span></label>
+          <button class="st-btn primary wide st-big" id="st-magic">✨ Améliorer la photo</button>
+          <p class="st-note" style="margin:6px 0 0">Un clic, rien à régler : l'IA nettoie la compression et le bruit, restaure la netteté
+            et les visages, équilibre lumière et couleurs, et agrandit les petites photos. Maintiens « Avant / après » pour comparer.</p>
+          <div id="st-magic-msg" class="st-note"></div>
+          <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler (revenir à la photo d'avant)</button>
+          <details class="st-adv" id="st-adv"><summary>Réglages manuels</summary>
+          <button class="st-btn wide" id="st-enhance" style="margin:10px 0">Retouche légère sans IA</button>
+          <div class="st-row"><label>Intensité de la retouche légère <span id="v-enhance">0</span></label>
             <input type="range" min="0" max="100" value="0" data-k="enhance"></div>
-          <p class="st-note" style="margin:-4px 0 4px">Rendu naturel : lumière, balance des blancs, bruit et netteté sont dosés selon ta photo.
-            Les couleurs et la peau sont préservées.</p>
           <div class="st-label">Visages</div>
           <button class="st-btn wide" id="st-faces" title="Rend les visages flous nets, en gardant les vrais traits">✦ Restaurer les visages</button>
           <div class="st-row" style="margin-top:8px"><label>Intensité sur les visages <span id="v-fstr">70</span></label>
@@ -87,9 +91,9 @@
             <button class="st-btn" id="st-up2" title="Double la taille en recréant les détails">✦ Agrandir ×2</button>
             <button class="st-btn" id="st-up4" title="Quadruple la taille (petites photos)">✦ Agrandir ×4</button>
           </div>
-          <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler la dernière opération IA</button>
           <div id="st-up-msg" class="st-note"></div>
           <div id="st-sliders"></div>
+          </details>
         </div>
         <div class="st-pane" data-pane="filters">
           <div class="st-filters" id="st-filters"></div>
@@ -759,13 +763,23 @@
     return false;
   }
 
+  // ------------------------------------------------ amélioration en un clic --
+  q("#st-magic").onclick = async () => {
+    const box = q("#st-magic-msg"); if (!S.full) return;
+    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 460 Mo : nettoyage, visages, qualité max)")) return;
+    await runBaseAI("/ai_enhance", {}, "L'IA améliore la photo…", box, (r, sec) => {
+      box.innerHTML = `✓ Amélioration terminée en ${sec} s : ${esc2(r.done.join(", "))}.<br>Maintiens « Avant / après » pour comparer, « Annuler » pour revenir.`;
+      q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`;
+    });
+  };
+
   // -------------------------------------------------------- visages (IA) --
   q("#st-fstr").oninput = e => q("#v-fstr").textContent = e.target.value;
   async function runBaseAI(url, body, label, box, done) {
     // opération IA qui remplace la photo de base (annulable)
     const busy = q("#st-busy"), lab = q("#st-busy span"); busy.style.display = "flex"; lab.textContent = label;
     const poll = setInterval(async () => { try { const s3 = await (await fetch("/ai_status")).json();
-      if (s3.upscale.busy) lab.textContent = `${label} ${s3.upscale.progress || 0} %`; } catch (e) {} }, 900);
+      if (s3.upscale.busy) lab.textContent = `${s3.upscale.step || label} ${s3.upscale.progress || 0} %`; } catch (e) {} }, 900);
     const t0 = performance.now();
     try {
       const big = S.full.width * S.full.height > 4e6;
@@ -835,7 +849,7 @@
   q("#st-up2").onclick = () => aiUpscale(2);
   q("#st-up4").onclick = () => aiUpscale(4);
   q("#st-up-undo").onclick = () => { q("#st-heal-undo").click(); q("#st-up-undo").hidden = true;
-    q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`; q("#st-up-msg").textContent = "Opération annulée."; q("#st-face-msg").textContent = ""; };
+    q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`; q("#st-up-msg").textContent = ""; q("#st-face-msg").textContent = ""; q("#st-magic-msg").textContent = "Retour à la photo d'avant."; };
 
   // --------------------------------------------------------------- qualité --
   q("#st-enhance").onclick = () => { if (!S.prev) return;

@@ -109,7 +109,7 @@ def _text(img, text, position="bas-droite", size=None, color="#ffffff"):
 
 def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, filter=None, crop_ratio=None,
          rotate=0, flip=None, max_size=None, blur=0, vignette=0, text=None, text_position="bas-droite",
-         width=None, height=None, upscale=None, denoise=False, faces=False,
+         width=None, height=None, upscale=None, denoise=False, faces=False, enhance=False,
          output_format=None, quality=90, out_dir=None, suffix="-retouche"):
     """Les réglages vont de -100 à +100 (0 = inchangé). Renvoie un compte rendu."""
     err = ensure_pillow()
@@ -126,6 +126,12 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
         img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
         if denoise:
             img = Image.blend(img, img.filter(ImageFilter.MedianFilter(3)), 0.6)
+        if enhance:
+            try:  # amélioration en un clic (nettoyage IA, visages, lumière) comme dans le Studio
+                from . import enhance_ai
+                img, _ = enhance_ai.enhance(img)
+            except Exception:
+                img = ImageOps.autocontrast(img, cutoff=.5)
         if faces:
             try:  # IA des visages si installée (Studio > Réglages > Restaurer les visages)
                 from . import ai_face, ai_inpaint

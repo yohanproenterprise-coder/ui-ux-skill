@@ -76,3 +76,7 @@
 .st-prog { height: 6px; border-radius: 6px; background: rgba(61,220,255,.12); margin-top: 8px; overflow: hidden; }
 .st-prog span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--cyan)); box-shadow: 0 0 10px var(--cyan); transition: width .4s; }
 #st-ai-box { margin: 8px 0 0; }
+.st-big { font-size: 15px; padding: 13px; margin: 0 !important; box-shadow: 0 0 22px rgba(61,220,255,.3); }
+.st-adv { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 10px; }
+.st-adv summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.st-adv[open] summary { color: var(--text); }
