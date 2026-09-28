@@ -15,6 +15,8 @@ MODELS_DIR = HOME / "models"
 BASE = "https://github.com/facefusion/facefusion-assets/releases/download/models-3.0.0/"
 DETECTOR = ("yoloface_8n.onnx", 10_000_000)
 RESTORER = ("codeformer.onnx", 300_000_000)
+FAST_RESTORER = ("gpen_bfr_256.onnx", 70_000_000)   # 10× plus rapide, utilisé pour les visages petits et moyens
+FAST_MAX = 180   # largeur de visage (px) jusqu'à laquelle le modèle rapide (256 px) suffit
 # modèle de référence des 5 points du visage (yeux, nez, coins de la bouche) pour un visage 512×512
 TEMPLATE = np.array([[0.37691676, 0.46864664], [0.62285697, 0.46912813], [0.50123859, 0.61331904],
                      [0.39308822, 0.72541100], [0.61150205, 0.72490465]], dtype=np.float32) * 512
@@ -25,9 +27,13 @@ def installed():
     return all((MODELS_DIR / n).exists() and (MODELS_DIR / n).stat().st_size > mn for n, mn in (DETECTOR, RESTORER))
 
 
-def files_to_download():
-    return [(BASE + n, MODELS_DIR / n, mn) for n, mn in (DETECTOR, RESTORER)
-            if not ((MODELS_DIR / n).exists() and (MODELS_DIR / n).stat().st_size > mn)]
+def _have(n, mn):
+    return (MODELS_DIR / n).exists() and (MODELS_DIR / n).stat().st_size > mn
+
+
+def files_to_download(optional=True):
+    return [(BASE + n, MODELS_DIR / n, mn) for n, mn in (DETECTOR, RESTORER) + ((FAST_RESTORER,) if optional else ())
+            if not _have(n, mn)]
 
 
 def _session(name):
@@ -107,10 +113,10 @@ def _warp(img, m, size):
 
 
 # ---------------------------------------------------------------- restauration --
-def _restore_crop(crop, fidelity):
+def _restore_crop(crop, fidelity, model=RESTORER[0]):
     x = (np.asarray(crop, np.float32) / 255.0 - 0.5) / 0.5
     x = x.transpose(2, 0, 1)[None]
-    sess = _session(RESTORER[0])
+    sess = _session(model)
     feeds = {sess.get_inputs()[0].name: x}
     for inp in sess.get_inputs()[1:]:  # CodeFormer : poids de fidélité (1 = fidèle à l'original)
         feeds[inp.name] = np.array([fidelity], dtype=np.float64)
@@ -127,26 +133,35 @@ def _mask(size=512):
     return m.filter(ImageFilter.GaussianBlur(size * 0.06))
 
 
-def restore(img, strength=0.7, fidelity=0.7, max_faces=12):
-    """Restaure les visages d'une image PIL RGB. Renvoie (image, nombre de visages)."""
+MIN_FACE, MAX_FACE = 32, 380   # en pixels (largeur du visage détecté)
+
+
+def restore(img, strength=0.7, fidelity=0.7, max_faces=8):
+    """Restaure les visages d'une image PIL RGB. Renvoie (image, nombre de visages restaurés).
+    Ignorés (gain de temps, ~4 s par visage) : les visages minuscules, où l'IA inventerait des traits, et les
+    très grands, déjà plus détaillés que ce que l'IA produit (512 px)."""
     from PIL import Image, ImageFilter
     rgb = np.asarray(img.convert("RGB"))
-    faces = detect(rgb)[:max_faces]
+    faces = [f for f in detect(rgb) if MIN_FACE <= f[1][2] - f[1][0] <= MAX_FACE]
+    faces = sorted(faces, key=lambda f: -(f[1][2] - f[1][0]))[:max_faces]
     out = img.convert("RGB")
-    base_mask = _mask()
+    fast_ok = _have(*FAST_RESTORER)
+    masks = {}
     for _, box, pts in faces:
-        if (box[2] - box[0]) < 24:  # visage trop petit : rien à gagner
-            continue
-        m = _similarity(pts.astype(np.float64), TEMPLATE.astype(np.float64))
-        crop = _warp(out, m, (512, 512))
-        fixed = Image.fromarray(_restore_crop(crop, fidelity))
+        # visage petit ou moyen : modèle rapide en 256 px (assez de détail) ; grand visage : CodeFormer en 512 px
+        fast = fast_ok and (box[2] - box[0]) <= FAST_MAX
+        size = 256 if fast else 512
+        base_mask = masks.setdefault(size, _mask(size))
+        m = _similarity(pts.astype(np.float64), TEMPLATE.astype(np.float64) * (size / 512))
+        crop = _warp(out, m, (size, size))
+        fixed = Image.fromarray(_restore_crop(crop, fidelity, FAST_RESTORER[0] if fast else RESTORER[0]))
         # grain naturel : on réinjecte la fine texture de la photo d'origine dans le visage restauré
         a = np.asarray(crop, np.float32)
         grain = a - np.asarray(crop.filter(ImageFilter.GaussianBlur(1.2)), np.float32)
         fixed = Image.fromarray((np.asarray(fixed, np.float32) + grain * 0.6).clip(0, 255).astype(np.uint8))
         back = np.linalg.inv(np.vstack([m, [0, 0, 1]]))[:2]
         # zone de la photo couverte par le visage restauré (on ne retravaille qu'elle)
-        corners = np.array([[0, 0, 1], [512, 0, 1], [0, 512, 1], [512, 512, 1]], np.float64) @ back.T
+        corners = np.array([[0, 0, 1], [size, 0, 1], [0, size, 1], [size, size, 1]], np.float64) @ back.T
         x0, y0 = np.floor(corners.min(0)).astype(int)
         x1, y1 = np.ceil(corners.max(0)).astype(int)
         x0, y0, x1, y1 = max(0, x0), max(0, y0), min(out.width, x1), min(out.height, y1)

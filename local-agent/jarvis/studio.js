@@ -891,7 +891,7 @@
   q("#st-batch-start").onclick = async () => {
     const box = q("#st-batch-msg"), folder = q("#st-folder").value.trim();
     if (!folder) return box.textContent = "Choisis un dossier dans la liste ou colle son chemin.";
-    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 460 Mo)")) return;
+    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo)")) return;
     const r = await (await fetch("/batch_start", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder, best: q("#st-batch-best").checked }) })).json();
     if (r.error === "introuvable") r.error = "Jarvis doit être redémarré pour utiliser la mise à jour : ferme-le complètement puis relance-le.";
@@ -905,7 +905,7 @@
   // ------------------------------------------------ amélioration en un clic --
   q("#st-magic").onclick = async () => {
     const box = q("#st-magic-msg"); if (!S.full) return;
-    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 460 Mo : nettoyage, visages, qualité max)")) return;
+    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo : nettoyage, visages, qualité max)")) return;
     await runBaseAI("/ai_enhance", { best: q("#st-best").checked }, "L'IA améliore la photo…", box, (r, sec) => {
       box.innerHTML = `✓ Amélioration terminée en ${sec} s : ${esc2(r.done.join(", "))}.<br>Maintiens « Avant / après » pour comparer, « Annuler » pour revenir.`;
       q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`;
@@ -936,7 +936,7 @@
   }
   q("#st-faces").onclick = async () => {
     const box = q("#st-face-msg"); if (!S.full) return;
-    if (!await ensurePack("faces", box, "L'IA des visages (≈ 390 Mo)")) return;
+    if (!await ensurePack("faces", box, "L'IA des visages (≈ 460 Mo)")) return;
     await runBaseAI("/ai_faces", { strength: +q("#st-fstr").value / 100 }, "L'IA restaure les visages…", box, (r, sec) =>
       box.textContent = r.faces ? `${r.faces} visage${r.faces > 1 ? "s" : ""} restauré${r.faces > 1 ? "s" : ""} en ${sec} s. « Annuler » pour revenir.`
                                 : "Aucun visage détecté sur cette photo.");

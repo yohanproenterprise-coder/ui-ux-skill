@@ -8,6 +8,7 @@ import base64
 import importlib
 import io
 import os
+import shutil
 import site
 import subprocess
 import sys
@@ -32,8 +33,11 @@ PACKS = {
               ([FF + "codeformer.onnx"], MODELS / "codeformer.onnx", 300_000_000)],
     "upmax": [([FF + "real_esrgan_x2.onnx"], MODELS / "real_esrgan_x2.onnx", 60_000_000)],
 }
+# fichiers facultatifs (accélèrent, mais le paquet fonctionne sans) : téléchargés avec le paquet, ou en arrière-plan
+OPTIONAL = {"faces": [([FF + "gpen_bfr_256.onnx"], MODELS / "gpen_bfr_256.onnx", 70_000_000)]}
 PACKS["enhance"] = PACKS["faces"] + PACKS["upmax"]  # tout ce qu'utilise l'amélioration en un clic
-PACK_LABELS = {"enhance": "IA d'amélioration (≈ 460 Mo)","lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 390 Mo)",
+OPTIONAL["enhance"] = OPTIONAL["faces"]
+PACK_LABELS = {"enhance": "IA d'amélioration (≈ 530 Mo)","lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 460 Mo)",
                "upmax": "agrandissement Qualité max (≈ 70 Mo)"}
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
@@ -77,8 +81,26 @@ def _pip(packages):
     importlib.invalidate_caches()
 
 
+def _download_optional(name):
+    """Télécharge sans bruit les fichiers facultatifs d'un paquet déjà installé (ex. visages rapides)."""
+    for urls, dest, minsize in OPTIONAL.get(name, []):
+        if dest.exists() and dest.stat().st_size > minsize:
+            continue
+        tmp = dest.with_suffix(".part")
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "Jarvis"})
+                with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as f:
+                    shutil.copyfileobj(r, f, 1 << 20)
+                if tmp.stat().st_size >= minsize:
+                    os.replace(tmp, dest)
+                    break
+            except Exception:
+                pass
+
+
 def _download_pack(name):
-    files = [(urls, f, mn) for urls, f, mn in PACKS[name] if not (f.exists() and f.stat().st_size > mn)]
+    files = [(urls, f, mn) for urls, f, mn in PACKS[name] + OPTIONAL.get(name, []) if not (f.exists() and f.stat().st_size > mn)]
     for n, (urls, dest, minsize) in enumerate(files, 1):
         dest.parent.mkdir(parents=True, exist_ok=True)
         tmp, last_err = dest.with_suffix(".part"), None
@@ -237,15 +259,22 @@ def inpaint(image_data_url, mask_data_url):
 
 def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
     """Exécute run() tuile par tuile avec des bords qui se chevauchent et un fondu progressif
-    (aucune couture visible entre les tuiles). src : tableau HxWx3 dans [0,1]."""
+    (aucune couture visible entre les tuiles). src : tableau HxWx3 dans [0,1].
+    Les tuiles sont réparties à parts égales (le moins de tuiles possible, de taille ≤ tile)."""
+    import math
     import numpy as np
     h, w = src.shape[:2]
+    if h <= tile and w <= tile:  # tout tient en une fois : pas de découpe
+        part = np.pad(src, ((0, h % 2), (0, w % 2), (0, 0)), mode="edge") if even else src
+        upscale_state["progress"] = int(progress[1])
+        return run(part)[:h * scale, :w * scale]
+    nx, ny = math.ceil(w / tile), math.ceil(h / tile)
+    sx, sy = math.ceil(w / nx), math.ceil(h / ny)
     acc = np.zeros((h * scale, w * scale, 3), np.float32)
     wsum = np.zeros((h * scale, w * scale, 1), np.float32)
-    step = tile
-    tiles = [(x, y) for y in range(0, h, step) for x in range(0, w, step)]
+    tiles = [(x, y) for y in range(0, h, sy) for x in range(0, w, sx)]
     for n, (x, y) in enumerate(tiles):
-        x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + step + pad), min(h, y + step + pad)
+        x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + sx + pad), min(h, y + sy + pad)
         part = src[y0:y1, x0:x1]
         ph, pw = part.shape[:2]
         if even:
@@ -269,7 +298,8 @@ def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
         acc[y0 * scale:y1 * scale, x0 * scale:x1 * scale] += res * wgt
         wsum[y0 * scale:y1 * scale, x0 * scale:x1 * scale] += wgt
         upscale_state["progress"] = int(progress[0] + (progress[1] - progress[0]) * (n + 1) / len(tiles))
-    return acc / np.maximum(wsum, 1e-6)
+    acc /= np.maximum(wsum, 1e-6)
+    return acc
 
 _max_session = None
 
@@ -291,7 +321,7 @@ def _max_x2(img, tile=320, pad=20, progress=(0, 100)):
     return Image.fromarray((out.clip(0, 1) * 255).round().astype(np.uint8))
 
 
-def upscale_image(img, factor=2, tile=384, pad=16, quality="fast"):
+def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
     """Agrandit une image PIL ×2 ou ×4 avec Real-ESRGAN (rendu naturel), par tuiles pour limiter la mémoire."""
     global _up_session
     import numpy as np
@@ -374,6 +404,9 @@ def warmup():
                 from . import ai_face
                 ai_face._session(ai_face.DETECTOR[0])
                 ai_face._session(ai_face.RESTORER[0])
+                _download_optional("faces")   # visages rapides, pour ceux qui ont installé le paquet avant
+                if ai_face._have(*ai_face.FAST_RESTORER):
+                    ai_face._session(ai_face.FAST_RESTORER[0])
         except Exception:
             pass
     threading.Thread(target=work, daemon=True).start()
