@@ -84,8 +84,12 @@ def enhance(img, best=False):
             done.append("compression et bruit nettoyés, netteté restaurée")
         elif max(w, h) <= LARGE:
             _progress(2, "Nettoyage de la photo par l'IA…")
-            if best:
-                out = ai_inpaint.upscale_image(img, 2, quality=quality).resize((w, h), Image.LANCZOS)
+            if quality == "max":
+                # qualité max : le grand modèle travaille sur la photo réduite de moitié et la ramène à sa taille
+                # (4× moins de calcul qu'un ×2 suivi d'une réduction, pour un rendu équivalent)
+                half = img.resize((w // 2, h // 2), Image.LANCZOS)
+                clean = ai_inpaint.upscale_image(half, 2, quality="max").resize((w, h), Image.LANCZOS)
+                out = Image.blend(clean, img, .3)
             else:
                 # rapide : l'IA travaille sur la photo réduite de moitié, puis on recombine avec l'original
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)

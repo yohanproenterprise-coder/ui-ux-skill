@@ -65,6 +65,12 @@ def photos_in(folder):
 
 def status():
     s = dict(job)
+    if job["running"]:  # avancement de la photo en cours (l'IA peut prendre du temps sur une grande photo)
+        up = enhance_ai.ai_inpaint.upscale_state
+        p = int(up.get("progress") or 0) if up.get("busy") or up.get("step") else 0
+        # le nettoyage par IA (0 à 100 %) représente environ les 3/4 du travail sur une photo
+        s["photo_progress"] = int(p * .72) if (up.get("step") or "").startswith("Nettoyage") else p
+        s["photo_step"] = up.get("step") or ""
     if job["running"] and job["done"]:
         per = (time.time() - job["started"]) / job["done"]
         s["eta"] = int(per * (job["total"] - job["done"]))
