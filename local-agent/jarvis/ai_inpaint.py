@@ -23,6 +23,17 @@ MODEL_URLS = [  # LaMa (Carve / OpenCV Zoo, licence Apache 2.0)
     "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/inpainting_lama/inpainting_lama_2025jan.onnx",
     "https://huggingface.co/Carve/LaMa-ONNX/resolve/main/lama_fp32.onnx",
 ]
+FF = "https://github.com/facefusion/facefusion-assets/releases/download/models-3.0.0/"
+MODELS = HOME / "models"
+# paquets d'IA téléchargeables : (adresses possibles, fichier, taille minimale)
+PACKS = {
+    "lama": [(MODEL_URLS, MODEL, 50_000_000)],
+    "faces": [([FF + "yoloface_8n.onnx"], MODELS / "yoloface_8n.onnx", 10_000_000),
+              ([FF + "codeformer.onnx"], MODELS / "codeformer.onnx", 300_000_000)],
+    "upmax": [([FF + "real_esrgan_x2.onnx"], MODELS / "real_esrgan_x2.onnx", 60_000_000)],
+}
+PACK_LABELS = {"lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 390 Mo)",
+               "upmax": "agrandissement Qualité max (≈ 70 Mo)"}
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
 upscale_state = {"busy": False, "progress": 0}
@@ -40,8 +51,13 @@ def _deps_ok():
         return False
 
 
+def pack_ready(name):
+    return all(f.exists() and f.stat().st_size > mn for _, f, mn in PACKS[name])
+
+
 def status():
-    extra = {"deps": _deps_ok(), "upscale": dict(upscale_state)}
+    extra = {"deps": _deps_ok(), "upscale": dict(upscale_state),
+             "packs": {k: pack_ready(k) for k in PACKS}}
     if state["state"] in ("installing", "error"):
         return {**state, **extra}
     ready = MODEL.exists() and MODEL.stat().st_size > 50_000_000 and extra["deps"]
@@ -60,33 +76,37 @@ def _pip(packages):
     importlib.invalidate_caches()
 
 
-def _download():
-    MODEL.parent.mkdir(parents=True, exist_ok=True)
-    tmp = MODEL.with_suffix(".part")
-    last_err = None
-    for url in MODEL_URLS:
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Jarvis"})
-            with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as f:
-                total, done = int(r.headers.get("Content-Length") or 0), 0
-                while True:
-                    chunk = r.read(1 << 20)
-                    if not chunk:
-                        break
-                    f.write(chunk)
-                    done += len(chunk)
-                    state["progress"] = int(100 * done / total) if total else min(99, done // 1_000_000)
-            if tmp.stat().st_size < 50_000_000:
-                raise RuntimeError("fichier incomplet")
-            os.replace(tmp, MODEL)
-            return
-        except Exception as e:
-            last_err = e
-    raise RuntimeError(f"téléchargement du modèle impossible ({last_err})")
+def _download_pack(name):
+    files = [(urls, f, mn) for urls, f, mn in PACKS[name] if not (f.exists() and f.stat().st_size > mn)]
+    for n, (urls, dest, minsize) in enumerate(files, 1):
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp, last_err = dest.with_suffix(".part"), None
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "Jarvis"})
+                with urllib.request.urlopen(req, timeout=60) as r, open(tmp, "wb") as f:
+                    total, done = int(r.headers.get("Content-Length") or 0), 0
+                    while True:
+                        chunk = r.read(1 << 20)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        done += len(chunk)
+                        state["progress"] = int(100 * done / total) if total else min(99, done // 1_000_000)
+                        state["step"] = f"Téléchargement {PACK_LABELS[name]} — fichier {n}/{len(files)}…"
+                if tmp.stat().st_size < minsize:
+                    raise RuntimeError("fichier incomplet")
+                os.replace(tmp, dest)
+                break
+            except Exception as e:
+                last_err = e
+        else:
+            raise RuntimeError(f"téléchargement impossible ({last_err}). Vérifie ta connexion et réessaie.")
 
 
-def install(deps_only=False):
+def install(deps_only=False, pack="lama"):
     """Lance l'installation en arrière-plan ; suivre l'avancement avec status()."""
+    pack = pack if pack in PACKS else "lama"
     if state["state"] == "installing":
         return status()
 
@@ -104,12 +124,13 @@ def install(deps_only=False):
             if deps_only:
                 state.update(state="absent", step="", progress=100)
                 return
-            if not (MODEL.exists() and MODEL.stat().st_size > 50_000_000):
-                state.update(step="Téléchargement du modèle d'IA (≈ 92 Mo)…", progress=0)
-                _download()
+            state.update(progress=0)
+            _download_pack(pack)
             state.update(step="Vérification…", progress=100)
-            _get_session()
-            state.update(state="ready", step="Prêt")
+            if pack == "lama":
+                _get_session()
+            state.update(state="absent", step="Prêt")
+            status()
         except Exception as e:
             state.update(state="error", error=str(e), step="")
     threading.Thread(target=work, daemon=True).start()
@@ -172,7 +193,40 @@ def inpaint(image_data_url, mask_data_url):
 
 
 # ------------------------------------------------------------ agrandissement --
-def upscale_image(img, factor=2, tile=256, pad=12):
+_max_session = None
+
+
+def _max_x2(img, tile=192, pad=10, progress=(0, 100)):
+    """Agrandissement ×2 « Qualité max » (Real-ESRGAN complet), par tuiles de taille paire."""
+    global _max_session
+    import numpy as np
+    from PIL import Image
+    if _max_session is None:
+        import onnxruntime as ort
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = max(1, os.cpu_count() or 1)
+        opts.log_severity_level = 3
+        _max_session = ort.InferenceSession(str(MODELS / "real_esrgan_x2.onnx"), sess_options=opts,
+                                            providers=["CPUExecutionProvider"])
+    src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
+    h, w = src.shape[:2]
+    out = np.zeros((h * 2, w * 2, 3), dtype=np.uint8)
+    tiles = [(x, y) for y in range(0, h, tile) for x in range(0, w, tile)]
+    for n, (x, y) in enumerate(tiles):
+        x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + tile + pad), min(h, y + tile + pad)
+        part = src[y0:y1, x0:x1]
+        ph, pw = part.shape[:2]
+        part = np.pad(part, ((0, ph % 2), (0, pw % 2), (0, 0)), mode="edge")  # le modèle exige des tailles paires
+        res = _max_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
+        res = (res[:ph * 2, :pw * 2].clip(0, 1) * 255).round().astype(np.uint8)
+        cx0, cy0 = (x - x0) * 2, (y - y0) * 2
+        cw, ch = (min(w, x + tile) - x) * 2, (min(h, y + tile) - y) * 2
+        out[y * 2:y * 2 + ch, x * 2:x * 2 + cw] = res[cy0:cy0 + ch, cx0:cx0 + cw]
+        upscale_state["progress"] = int(progress[0] + (progress[1] - progress[0]) * (n + 1) / len(tiles))
+    return Image.fromarray(out)
+
+
+def upscale_image(img, factor=2, tile=256, pad=12, quality="fast"):
     """Agrandit une image PIL ×2 ou ×4 avec Real-ESRGAN (rendu naturel), par tuiles pour limiter la mémoire."""
     global _up_session
     import numpy as np
@@ -183,6 +237,16 @@ def upscale_image(img, factor=2, tile=256, pad=12):
     w, h = img.size
     if max(w, h) * factor > 8000:
         raise RuntimeError(f"Image trop grande pour ×{factor} (résultat limité à 8000 px). Réduis-la d'abord ou choisis ×2.")
+    if quality == "max" and pack_ready("upmax"):
+        upscale_state.update(busy=True, progress=0)
+        try:
+            res = _max_x2(img, progress=(0, 100 if factor == 2 else 50))
+            if factor == 4:
+                res = _max_x2(res, progress=(50, 100))
+        finally:
+            upscale_state["busy"] = False
+        # 25 % d'agrandissement classique : grain réel conservé
+        return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.25)
     if _up_session is None:
         import onnxruntime as ort
         opts = ort.SessionOptions()
@@ -213,9 +277,24 @@ def upscale_image(img, factor=2, tile=256, pad=12):
     return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.35)
 
 
-def upscale(image_data_url, factor=2):
+def upscale(image_data_url, factor=2, quality="fast"):
     img = _decode(image_data_url, "RGB")
-    res = upscale_image(img, factor)
+    res = upscale_image(img, factor, quality=quality)
     buf = io.BytesIO()
     res.save(buf, "PNG")
     return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+# ------------------------------------------------------------------- visages --
+def restore_faces(image_data_url, strength=0.8):
+    from . import ai_face
+    if not (_deps_ok() and pack_ready("faces")):
+        raise RuntimeError("L'IA des visages n'est pas installée.")
+    upscale_state.update(busy=True, progress=10)
+    try:
+        img, n = ai_face.restore(_decode(image_data_url, "RGB"), strength=float(strength), fidelity=1.0)
+    finally:
+        upscale_state.update(busy=False, progress=100)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "faces": n}

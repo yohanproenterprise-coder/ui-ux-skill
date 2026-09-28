@@ -76,12 +76,18 @@
             <input type="range" min="0" max="100" value="0" data-k="enhance"></div>
           <p class="st-note" style="margin:-4px 0 4px">Rendu naturel : lumière, balance des blancs, bruit et netteté sont dosés selon ta photo.
             Les couleurs et la peau sont préservées.</p>
+          <div class="st-label">Visages</div>
+          <button class="st-btn wide" id="st-faces" title="Rend les visages flous nets, en gardant les vrais traits">✦ Restaurer les visages</button>
+          <div class="st-row" style="margin-top:8px"><label>Intensité sur les visages <span id="v-fstr">70</span></label>
+            <input type="range" min="10" max="100" value="70" id="st-fstr"></div>
+          <div id="st-face-msg" class="st-note"></div>
           <div class="st-label">Agrandir avec l'IA</div>
+          <label class="check"><input type="checkbox" id="st-upmax" checked> Qualité max (plus naturel, plus lent)</label>
           <div class="st-grid two">
             <button class="st-btn" id="st-up2" title="Double la taille en recréant les détails">✦ Agrandir ×2</button>
             <button class="st-btn" id="st-up4" title="Quadruple la taille (petites photos)">✦ Agrandir ×4</button>
           </div>
-          <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler l'agrandissement</button>
+          <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler la dernière opération IA</button>
           <div id="st-up-msg" class="st-note"></div>
           <div id="st-sliders"></div>
         </div>
@@ -140,7 +146,7 @@
         <div class="st-pane" data-pane="export">
           <div class="st-row"><label>Format</label><select id="st-fmt">
             <option value="image/jpeg">JPEG (photos, léger)</option><option value="image/png">PNG (qualité maximale)</option><option value="image/webp">WebP (web, très léger)</option></select></div>
-          <div class="st-row"><label>Qualité <span id="v-quality">90</span></label><input type="range" min="40" max="100" value="90" id="st-quality"></div>
+          <div class="st-row"><label>Qualité <span id="v-quality">92</span></label><input type="range" min="40" max="100" value="92" id="st-quality"></div>
           <div class="st-label" style="margin-top:4px">Redimensionner</div>
           <div class="st-row"><select id="st-size">
             <option value="1">Taille originale</option><option value="x2">Agrandir ×2</option><option value="x4">Agrandir ×4</option>
@@ -152,6 +158,8 @@
             <div class="st-row"><label>Hauteur (px)</label><input type="number" id="st-h" min="1" max="16000"></div>
           </div>
           <label class="check"><input type="checkbox" id="st-lock" checked> Garder les proportions</label>
+          <label class="check"><input type="checkbox" id="st-meta" checked> Garder les infos de la photo (date, appareil)</label>
+          <label class="check"><input type="checkbox" id="st-gps"> Garder la localisation (lieu de prise de vue)</label>
           <button class="st-btn primary wide" id="st-save">Enregistrer dans Jarvis</button>
           <button class="st-btn wide" id="st-download">Télécharger</button>
           <button class="st-btn wide" id="st-ask">Envoyer à Jarvis (conseils, légende…)</button>
@@ -182,6 +190,9 @@
 
   // ------------------------------------------------------------- chargement --
   async function loadFrom(src, name) {
+    // on garde la trace de la photo d'origine pour recopier ses infos (date, appareil…) à l'export
+    S.srcPath = src.startsWith("/file?path=") ? decodeURIComponent(src.slice(11)) : null;
+    S.srcData = src.startsWith("data:") && src.length < 40e6 ? src : null;
     const img = new Image();
     img.decoding = "async";
     img.src = src;
@@ -550,26 +561,35 @@
     if (tw * th > 60e6) { const f = Math.sqrt(60e6 / (tw * th)); tw = Math.floor(tw * f); th = Math.floor(th * f); }
     if (tw !== out.width || th !== out.height) out = resample(out, tw, th);
     const fmt = q("#st-fmt").value, ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[fmt];
-    if (fmt === "image/jpeg") { const t = document.createElement("canvas"); t.width = out.width; t.height = out.height;
-      const tc = t.getContext("2d"); tc.fillStyle = "#fff"; tc.fillRect(0, 0, t.width, t.height); tc.drawImage(out, 0, 0); out = t; }
-    return { data: out.toDataURL(fmt, +q("#st-quality").value / 100), name: `${S.name}-retouche.${ext}`, w: out.width, h: out.height };
+    // l'image part sans perte (PNG) : c'est le PC qui encode le fichier final, avec plus de soin que le navigateur
+    return { png: out.toDataURL("image/png"), fmt, name: `${S.name}-retouche.${ext}`, w: out.width, h: out.height, canvas: out };
   }
+  async function serverExport(x, download) {
+    const r = await (await fetch("/save_image", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: x.name, data: x.png, fmt: x.fmt, quality: +q("#st-quality").value, download,
+        source_path: S.srcPath, source_data: S.srcPath ? null : S.srcData,
+        keep_meta: q("#st-meta").checked, keep_gps: q("#st-gps").checked }) })).json();
+    if (r.error) throw new Error(r.error);
+    return r;
+  }
+  const kb = n => n > 1e6 ? `${(n / 1e6).toFixed(1)} Mo` : `${Math.round(n / 1e3)} Ko`;
   function msg(text, err) { const m = q("#st-msg"); m.textContent = text; m.style.color = err ? "var(--err)" : "var(--ok)"; }
   async function busyDo(btn, fn) { const t = btn.textContent; btn.disabled = true; btn.textContent = "Traitement…";
     await new Promise(r => setTimeout(r, 30)); try { await fn(); } finally { btn.disabled = false; btn.textContent = t; } }
   q("#st-save").onclick = e => busyDo(e.target, async () => {
-    const x = exportData();
-    const r = await (await fetch("/save_image", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: x.name, data: x.data }) })).json();
-    r.error ? msg(r.error, true) : msg(`Enregistrée (${x.w}×${x.h}) : ${r.path}`);
+    try { const x = exportData(), r = await serverExport(x, false); msg(`Enregistrée (${x.w}×${x.h}, ${kb(r.size)}) : ${r.path}`); }
+    catch (err) { msg(err.message, true); }
   });
   q("#st-download").onclick = e => busyDo(e.target, async () => {
-    const x = exportData(), a = el("a", { href: x.data, download: x.name }); document.body.appendChild(a); a.click(); a.remove();
-    msg(`Téléchargée (${x.w}×${x.h}).`);
+    try { const x = exportData(), r = await serverExport(x, true);
+      const a = el("a", { href: r.data, download: r.name }); document.body.appendChild(a); a.click(); a.remove();
+      msg(`Téléchargée (${x.w}×${x.h}, ${kb(r.size)}).`); }
+    catch (err) { msg(err.message, true); }
   });
   q("#st-ask").onclick = e => busyDo(e.target, async () => {
     const keep = [q("#st-size").value, q("#st-w").value, q("#st-h").value];
     q("#st-size").value = "1080"; sizeFromPreset();
-    const x = exportData();
+    const x = exportData(); x.data = x.canvas.toDataURL("image/jpeg", .9);
     [q("#st-size").value, q("#st-w").value, q("#st-h").value] = keep;
     if (window.jarvisAttach) window.jarvisAttach(x.data, x.name, "Que penses-tu de cette photo retouchée ? Propose aussi une légende.");
     close();
@@ -718,10 +738,62 @@
   q("#st-eng-ai").onclick = () => setEngine("ai");
   setEngine(S.engine);
 
+  // ------------------------------------------------------- installation d'IA --
+  async function ensurePack(pack, box, label) {
+    // vrai si le composant est prêt ; sinon propose l'installation dans « box »
+    let st; try { st = await (await fetch("/ai_status")).json(); } catch (e) { box.textContent = "Jarvis ne répond pas."; return false; }
+    if (st.deps && (!pack || st.packs[pack])) return true;
+    box.innerHTML = `${label} s'installe une seule fois, puis fonctionne sans internet.` +
+      '<button class="st-btn primary wide">Installer</button>';
+    box.querySelector("button").onclick = async () => {
+      await fetch("/ai_install", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pack ? { pack } : { deps_only: true }) });
+      for (let i = 0; i < 2400; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        const s2 = await (await fetch("/ai_status")).json();
+        if (s2.state === "error") { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(s2.error)}</span>`; return; }
+        if (s2.state !== "installing" && s2.deps && (!pack || s2.packs[pack])) { box.textContent = "Installé ✓ Tu peux relancer."; return; }
+        box.innerHTML = `${esc2(s2.step || "Installation…")}<div class="st-prog"><span style="width:${s2.progress || 0}%"></span></div>`;
+      }
+    };
+    return false;
+  }
+
+  // -------------------------------------------------------- visages (IA) --
+  q("#st-fstr").oninput = e => q("#v-fstr").textContent = e.target.value;
+  async function runBaseAI(url, body, label, box, done) {
+    // opération IA qui remplace la photo de base (annulable)
+    const busy = q("#st-busy"), lab = q("#st-busy span"); busy.style.display = "flex"; lab.textContent = label;
+    const poll = setInterval(async () => { try { const s3 = await (await fetch("/ai_status")).json();
+      if (s3.upscale.busy) lab.textContent = `${label} ${s3.upscale.progress || 0} %`; } catch (e) {} }, 900);
+    const t0 = performance.now();
+    try {
+      const big = S.full.width * S.full.height > 4e6;
+      const r = await (await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: S.full.toDataURL(big ? "image/jpeg" : "image/png", .97), ...body }) })).json();
+      if (r.error) throw new Error(r.error);
+      const im = new Image(); im.src = r.image; await im.decode();
+      S.baseHist.push(S.full); if (S.baseHist.length > 6) S.baseHist.shift();
+      const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext("2d").drawImage(im, 0, 0);
+      S.full = c; makePrev(); buildFilterThumbs(); render();
+      q("#st-name").textContent = `${S.name} · ${c.width}×${c.height}`; q("#st-heal-undo").disabled = false; q("#st-up-undo").hidden = false;
+      done(r, Math.round((performance.now() - t0) / 1000));
+    } catch (err) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(err.message)}</span>`; }
+    finally { clearInterval(poll); busy.style.display = "none"; }
+  }
+  q("#st-faces").onclick = async () => {
+    const box = q("#st-face-msg"); if (!S.full) return;
+    if (!await ensurePack("faces", box, "L'IA des visages (≈ 390 Mo)")) return;
+    await runBaseAI("/ai_faces", { strength: +q("#st-fstr").value / 100 }, "L'IA restaure les visages…", box, (r, sec) =>
+      box.textContent = r.faces ? `${r.faces} visage${r.faces > 1 ? "s" : ""} restauré${r.faces > 1 ? "s" : ""} en ${sec} s. « Annuler » pour revenir.`
+                                : "Aucun visage détecté sur cette photo.");
+  };
+
   // ------------------------------------------------------- agrandissement IA --
   async function aiUpscale(factor) {
     if (!S.full) return;
     const box = q("#st-up-msg");
+    if (q("#st-upmax").checked && !await ensurePack("upmax", box, "L'agrandissement Qualité max (≈ 70 Mo)")) return;
     let st; try { st = await (await fetch("/ai_status")).json(); } catch (e) { return box.textContent = "Jarvis ne répond pas."; }
     if (!st.deps) {
       box.innerHTML = "L'IA d'agrandissement a besoin d'un petit composant (≈ 20 Mo, une seule fois)." +
@@ -747,7 +819,8 @@
     try {
       const big = S.full.width * S.full.height > 4e6;
       const r = await (await fetch("/ai_upscale", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: S.full.toDataURL(big ? "image/jpeg" : "image/png", .96), factor }) })).json();
+        body: JSON.stringify({ image: S.full.toDataURL(big ? "image/jpeg" : "image/png", .96), factor,
+          quality: q("#st-upmax").checked ? "max" : "fast" }) })).json();
       if (r.error) throw new Error(r.error);
       const im = new Image(); im.src = r.image; await im.decode();
       const snap = S.full; S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
@@ -762,7 +835,7 @@
   q("#st-up2").onclick = () => aiUpscale(2);
   q("#st-up4").onclick = () => aiUpscale(4);
   q("#st-up-undo").onclick = () => { q("#st-heal-undo").click(); q("#st-up-undo").hidden = true;
-    q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`; q("#st-up-msg").textContent = "Agrandissement annulé."; };
+    q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`; q("#st-up-msg").textContent = "Opération annulée."; q("#st-face-msg").textContent = ""; };
 
   // --------------------------------------------------------------- qualité --
   q("#st-enhance").onclick = () => { if (!S.prev) return;

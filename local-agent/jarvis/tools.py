@@ -493,6 +493,7 @@ TOOL_SPECS = [
            "blur": I, "vignette": I, "text": S, "width": I, "height": I,
            "upscale": {"type": "number", "description": "agrandissement, ex: 2 pour ×2"},
            "denoise": {"type": "boolean", "description": "réduction du bruit"},
+           "faces": {"type": "boolean", "description": "restaurer les visages flous (IA, si installée)"},
            "text_position": {"type": "string", "enum": ["bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "centre"]},
            "output_format": {"type": "string", "enum": ["jpeg", "png", "webp"]}, "quality": I, "out_dir": S},
           ["path"]),

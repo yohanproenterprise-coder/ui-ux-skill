@@ -123,19 +123,28 @@ class App:
         found.sort(reverse=True)
         return [{"path": p, "name": Path(p).name} for _, p in dict((p, (t, p)) for t, p in found).values()][:limit]
 
-    def save_image(self, name, data):
-        m = re.match(r"data:image/(png|jpeg|webp);base64,(.*)", data or "", re.S)
-        if not m:
-            raise ValueError("image invalide")
-        stem = re.sub(r"[^\w\-. ]+", "_", Path(name or "photo").stem)[:80] or "photo"
-        ext = {"jpeg": "jpg"}.get(m.group(1), m.group(1))
+    def save_image(self, name, data, fmt=None, quality=92, source_path=None, source_data=None,
+                   keep_meta=True, keep_gps=False, download=False):
+        """Encode l'image finale (profil de couleurs, infos de la photo) puis l'enregistre ou la renvoie."""
+        from . import photo, photo_export
+        if photo.ensure_pillow():  # Pillow absent et impossible à installer : on garde l'image telle quelle
+            m = re.match(r"data:image/(png|jpeg|webp);base64,(.*)", data or "", re.S)
+            raw, ext = base64.b64decode(m.group(2)), {"jpeg": "jpg"}.get(m.group(1), m.group(1))
+        else:
+            src = str(self.allowed_image(source_path)) if source_path and self.allowed_image(source_path) else None
+            raw, ext = photo_export.encode(data, fmt or "jpeg", quality, src, source_data, keep_meta, keep_gps)
+        stem = photo_export.safe_stem(name)
+        if download:
+            mime = {"jpg": "jpeg"}.get(ext, ext)
+            return {"data": f"data:image/{mime};base64," + base64.b64encode(raw).decode(), "name": f"{stem}.{ext}",
+                    "size": len(raw)}
         folder = Path(self.agent.tools.workdir) / "photos"
         folder.mkdir(parents=True, exist_ok=True)
         dest, n = folder / f"{stem}.{ext}", 2
         while dest.exists():
             dest, n = folder / f"{stem} ({n}).{ext}", n + 1
-        dest.write_bytes(base64.b64decode(m.group(2)))
-        return {"path": str(dest)}
+        dest.write_bytes(raw)
+        return {"path": str(dest), "size": len(raw)}
 
     def state(self):
         return {"provider": self.brain.name, "model": self.brain.llm.model, "auto": self.agent.tools.auto,
@@ -328,13 +337,18 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                     app.ui.answer(data["id"], "always" if data.get("always") else bool(data.get("ok")))
                     self._json({"ok": True})
                 elif self.path == "/ai_install":
-                    self._json(ai_inpaint.install(deps_only=bool(data.get("deps_only"))))
+                    self._json(ai_inpaint.install(deps_only=bool(data.get("deps_only")), pack=data.get("pack", "lama")))
                 elif self.path == "/ai_upscale":
-                    self._json({"image": ai_inpaint.upscale(data.get("image", ""), data.get("factor", 2))})
+                    self._json({"image": ai_inpaint.upscale(data.get("image", ""), data.get("factor", 2),
+                                                            data.get("quality", "fast"))})
+                elif self.path == "/ai_faces":
+                    self._json(ai_inpaint.restore_faces(data.get("image", ""), data.get("strength", 0.8)))
                 elif self.path == "/ai_inpaint":
                     self._json({"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))})
                 elif self.path == "/save_image":
-                    self._json(app.save_image(data.get("name"), data.get("data")))
+                    self._json(app.save_image(data.get("name"), data.get("data"), data.get("fmt"), data.get("quality", 92),
+                                              data.get("source_path"), data.get("source_data"),
+                                              data.get("keep_meta", True), data.get("keep_gps", False), data.get("download", False)))
                 elif self.path == "/command":
                     self._json(app.command(data.get("cmd"), data.get("arg")))
                 else:

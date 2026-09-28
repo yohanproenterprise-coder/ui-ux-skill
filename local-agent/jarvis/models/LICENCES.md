@@ -7,3 +7,8 @@ Source : https://github.com/xinntao/Real-ESRGAN — © 2021 Xintao Wang, licence
 
 ## lama.onnx — IA de retouche (téléchargé à la demande, non inclus)
 LaMa (Carve / OpenCV Zoo), licence Apache 2.0 — https://github.com/advimman/lama
+
+## Téléchargés à la demande (dossier .jarvis/models)
+- real_esrgan_x2.onnx — Real-ESRGAN x2plus, © Xintao Wang, BSD 3-Clause (conversion ONNX : FaceFusion).
+- yoloface_8n.onnx — détection des visages (YOLOv8 face, conversion FaceFusion).
+- codeformer.onnx — CodeFormer, © S-Lab NTU, licence S-Lab 1.0 : usage personnel / non commercial uniquement.
