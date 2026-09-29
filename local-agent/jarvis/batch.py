@@ -44,6 +44,18 @@ def to_jpeg_data_url(data_url):
     return {"image": "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()}
 
 
+def _stay_awake(on):
+    """Windows : empêche la mise en veille automatique pendant le traitement (l'écran peut s'éteindre)."""
+    if not system.WINDOWS:
+        return
+    try:
+        import ctypes
+        ES_CONTINUOUS, ES_SYSTEM_REQUIRED = 0x80000000, 0x00000001
+        ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | (ES_SYSTEM_REQUIRED if on else 0))
+    except Exception:
+        pass
+
+
 def clean_path(folder):
     """Chemin collé tel quel : guillemets de « Copier en tant que chemin », espaces, fichier au lieu du dossier."""
     s = str(folder or "").strip().strip('"\'').strip()
@@ -118,6 +130,7 @@ def start(folder, best=False, only_new=False):
     def work():
         from PIL import Image, ImageOps
         out.mkdir(exist_ok=True)
+        _stay_awake(True)
         if any(f.suffix.lower() in (".avif", ".heic", ".heif") for f in files):
             _register_formats()
         try:
@@ -141,6 +154,7 @@ def start(folder, best=False, only_new=False):
                         pass
                 job["done"] += 1
         finally:
+            _stay_awake(False)
             job.update(running=False, current="", finished=time.time())
             n = job["done"] - len(job["errors"])
             msg = (f"Arrêté : {n} photo(s) améliorée(s)" if job["cancel"] else f"{n} photo(s) améliorée(s)") + f" dans {out}"
