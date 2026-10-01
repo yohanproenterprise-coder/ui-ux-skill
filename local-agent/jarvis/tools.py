@@ -294,6 +294,24 @@ class Tools:
         path.write_bytes(data)
         return f"Image créée : {path} (utilise open_item pour l'afficher)"
 
+    def photo_folder_status(self):
+        from . import batch
+        st = batch.status()
+        from . import config
+        auto = [w["folder"] for w in batch.watch_list(config.load())]
+        if st["running"]:
+            eta = f", reste environ {max(1, st['eta'] // 60)} min" if st.get("eta") is not None else ""
+            msg = (f"EN COURS : {st['done']}/{st['total']} photos faites dans « {st['folder']} » "
+                   f"(photo actuelle : {st['current']}, {st.get('photo_progress', 0)} %{eta}).")
+        elif st["total"]:
+            msg = (f"TERMINÉ : {st['done'] - len(st['errors'])} photo(s) améliorée(s) dans « {st['out']} »"
+                   + (f", {len(st['errors'])} en échec : " + " ; ".join(st["errors"][:3]) if st["errors"] else "") + ".")
+        else:
+            msg = "Aucune amélioration de dossier lancée depuis le démarrage de Jarvis."
+        if auto:
+            msg += " Dossiers en automatique (nouvelles photos traitées toutes seules) : " + ", ".join(auto) + "."
+        return msg
+
     def enhance_folder(self, path, best=False):
         from . import batch
         st = batch.start(str(self._path(path)), bool(best))
@@ -489,6 +507,8 @@ TOOL_SPECS = [
           "avec leur fichier source.", {"query": S, "k": I}, ["query"]),
     _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
           {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
+    _tool("photo_folder_status", "Indique où en est l'amélioration automatique d'un dossier de photos "
+          "(en cours, terminée, photos restantes, dossiers en automatique).", {}, []),
     _tool("enhance_folder", "Améliore automatiquement TOUTES les photos d'un dossier (comme « Améliorer la photo » "
           "du Studio), en arrière-plan. Les copies vont dans un sous-dossier « Améliorées ».",
           {"path": S, "best": {"type": "boolean", "description": "qualité maximale (beaucoup plus lent)"}}, ["path"]),
