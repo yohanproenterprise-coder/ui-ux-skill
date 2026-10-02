@@ -1,0 +1,167 @@
+# Jarvis : ton agent IA personnel
+
+Jarvis est un assistant autonome installé **sur ton PC**. Tu lui dis ce que tu veux, il **agit** : il crée des fichiers et des sites, lance des programmes, cherche sur internet, lit tes documents, regarde ton écran, te parle et t'écoute.
+
+## Installation (Windows, 15 à 30 minutes)
+
+1. **Télécharge Jarvis** : https://github.com/yohanproenterprise-coder/ui-ux-skill/archive/refs/heads/claude/quirky-euler-dtsd45.zip
+2. Fais un clic droit sur le ZIP → **Extraire tout**, puis ouvre le dossier `local-agent`.
+3. Double-clique sur **`INSTALLER.bat`**. S'il s'affiche, clique sur « Informations complémentaires » → « Exécuter quand même » dans l'avertissement Windows.
+   L'installateur s'occupe de tout : Python, Ollama, les modèles d'IA (environ 6 Go), la lecture des PDF et les raccourcis sur le Bureau.
+4. Quand il te le propose, **colle une clé Gemini gratuite** (vivement conseillé, voir ci-dessous).
+5. Lance Jarvis avec l'icône **Jarvis** du Bureau. L'interface s'ouvre dans ton navigateur.
+
+## Tes deux cerveaux (important pour ton PC)
+
+Ton ordinateur (i5 de portable, 8 Go de RAM, pas de carte graphique dédiée) peut faire tourner une IA locale, mais **seulement une petite, et lentement** (quelques mots par seconde, et 1 à 2 minutes pour la toute première réponse). Jarvis a donc deux cerveaux :
+
+| | Cerveau **local** (`qwen3:4b`) | Cerveau **cloud gratuit** (Gemini Flash) |
+|---|---|---|
+| Coût | 0 € | 0 € (quota gratuit quotidien) |
+| Limite | aucune | nombre de requêtes par jour et par minute |
+| Vitesse sur ton PC | lent | très rapide |
+| Intelligence | correcte pour les tâches simples | bien meilleure (code, raisonnement, gros documents) |
+| Confidentialité | tout reste sur ton PC | les messages passent par Google |
+| Internet | pas nécessaire (sauf pour la recherche web) | nécessaire |
+
+**Réglage conseillé :** Gemini comme cerveau principal et le local en secours. Si le quota gratuit est épuisé ou si internet est coupé, Jarvis **bascule tout seul sur le local**. Tu as ainsi le meilleur des deux, sans jamais être bloqué.
+
+Clé Gemini gratuite : https://aistudio.google.com/apikey (connexion avec un compte Google, bouton « Create API key »).
+Autres cerveaux gratuits possibles : Groq (https://console.groq.com/keys, extrêmement rapide) et OpenRouter (https://openrouter.ai/settings/keys).
+Ajoute une clé dans **⚙ Réglages** de l'interface, puis choisis le cerveau dans le menu en haut.
+
+## Ce que Jarvis sait faire
+
+| Capacité | Exemple de demande |
+|---|---|
+| Commandes Windows (PowerShell) | « Quelle place reste-t-il sur mon disque ? Trouve les 20 plus gros fichiers » |
+| Programmer et exécuter du Python | « Fais-moi un script qui renomme mes photos par date » |
+| Créer et modifier des fichiers | « Crée un site vitrine pour une boulangerie dans le dossier boulangerie » |
+| Lire des documents PDF, Word, Excel, PowerPoint | « Résume le PDF facture.pdf » |
+| Chercher sur le web et lire des pages | « Quelles sont les nouveautés de Windows cette année ? » |
+| Voir des images (📎 ou copier-coller) | « Qu'est-ce qui ne va pas sur cette capture ? » |
+| Regarder ton écran | « Regarde mon écran et dis-moi ce que signifie ce message d'erreur » |
+| Ouvrir des applications, sites, dossiers | « Ouvre Excel » / « Ouvre YouTube » |
+| Presse-papiers | « Traduis en anglais ce que j'ai copié et remets-le dans le presse-papiers » |
+| Voix : parler et écouter | bouton 🎤 et bouton « Voix » |
+| **Piloter souris et clavier** | « Ouvre le Bloc-notes, écris une liste de courses et enregistre-la sur le Bureau » |
+| **Rappels et notifications** | « Rappelle-moi dans 20 minutes de sortir le linge » |
+| **Tâches automatiques** | « Chaque matin à 8h, résume-moi l'actualité et enregistre-la dans un fichier » |
+| **Base de connaissances** | « Indexe mon dossier Documents » puis « Quel est mon numéro de contrat d'assurance ? » |
+| **Création d'images** | « Crée une image d'un chat astronaute style aquarelle » |
+| **Compétences apprises** | « Apprends cette méthode pour faire mes factures : … » (il la réutilisera ensuite) |
+| Mémoire entre les sessions | « Retiens que je m'appelle … et que je travaille sur … » |
+| Plans pour les grosses tâches | il affiche et coche les étapes au fur et à mesure |
+| Sous-agents | il confie les longues recherches à un assistant secondaire |
+| Conversations sans fin | il résume automatiquement les vieux échanges |
+
+Jarvis travaille par défaut dans le dossier `C:\Users\<toi>\Jarvis`. Il peut aussi accéder à tout autre dossier si tu lui donnes le chemin.
+
+| **E-mails** | « Ai-je reçu des mails importants aujourd'hui ? » / « Réponds à Paul que je serai là à 18h » |
+| **Compétences intégrées** | voir la liste ci-dessous |
+
+### Studio photo
+
+Clique sur **Studio** en haut de Jarvis (ou « Retoucher une photo » sur l'accueil) :
+- ouvre une photo (glisser-déposer, copier-coller, bouton, ou galerie des photos récentes du PC) ;
+- **Réglages** : amélioration automatique, exposition, contraste, hautes lumières, ombres, saturation, vibrance, température, teinte, netteté, flou, vignette, grain (double-clic sur un curseur pour le remettre à zéro) ;
+- **Filtres** : 11 filtres avec aperçu et intensité réglable ;
+- **Gomme magique** : peins sur un objet, une personne, un texte ou une tache, clique sur « Effacer » : le fond se reconstruit à partir de ce qui l'entoure (fonctionne le mieux sur ciel, mer, mur, sable, herbe ; pour une grande zone, efface en plusieurs fois) ;
+- **IA de retouche (LaMa)** : dans la Gomme magique, choisis le moteur **✦ IA** puis « Installer l'IA de retouche » (une seule fois, ≈ 110 Mo). Elle reconstruit aussi les formes (bord d'une tasse cachée par une cuillère, meuble, personne en arrière-plan). Compte 5 à 20 secondes par retouche ; elle tourne sur ton PC, sans internet, et marche aussi depuis le téléphone ;
+- **✨ Améliorer la photo** (en un clic, façon Claid.ai) : rien à régler. L'IA nettoie la compression JPEG et le bruit, restaure la netteté et les visages, équilibre lumière et couleurs (HDR léger) et agrandit ×2 les petites photos. Jarvis t'indique ce qu'il a fait ; « Avant / après » pour comparer, « Annuler » pour revenir. À installer une fois (≈ 530 Mo). Les curseurs restent disponibles dans « Réglages manuels »
+- **📁 Améliorer tout un dossier** : choisis un dossier (liste automatique de tes dossiers de photos, ou colle le chemin) ; toutes les photos sont améliorées en arrière-plan avec la progression et le temps restant, dans un sous-dossier « Améliorées » (originaux intacts, infos des photos conservées). Une notification Windows prévient à la fin. Aussi par écrit : « améliore toutes les photos du dossier Vacances »
+- **Rapidité** : les IA se chargent en arrière-plan dès l'ouverture du Studio ; le mode rapide (par défaut) donne un rendu quasi identique au mode « Qualité maximale », 3 à 6 fois plus lent
+- **✦ Restaurer les visages** (onglet Réglages) : rend nets les visages flous en gardant les vrais traits (IA rapide GPEN pour les petits et moyens visages, CodeFormer réglé au maximum de fidélité pour les grands, intensité réglable, grain de peau conservé, raccord invisible). À installer une fois (≈ 460 Mo) ;
+- **✦ Agrandir ×2 / ×4 avec l'IA** (onglet Réglages) : recrée les détails pour une photo plus grande et plus nette, avec un rendu naturel (grain de peau conservé). Modèle rapide inclus (Real-ESRGAN) ; option « Qualité max », plus naturelle, à installer une fois (≈ 70 Mo). Compte quelques secondes à une minute selon la taille ;
+- **Recadrer** : formats carré, 4:5, 3:2, 16:9, 9:16 ou libre, rotation et miroir ;
+- **Texte** : signature ou légende ;
+- **Avant / après** (maintenir le bouton), Annuler / Rétablir (Ctrl+Z / Ctrl+Y) ;
+- **Export soigné** : c'est ton PC qui encode le fichier final (JPEG qualité 92 avec couleurs pleine résolution 4:4:4, profil de couleurs sRGB), et la date et l'appareil de la photo sont conservés ; le lieu (GPS) est retiré par défaut ;
+- **Exporter et redimensionner** : JPEG, PNG ou WebP ; largeur et hauteur au pixel près (proportions verrouillables), formats prêts (4K, 2048, 1080 réseaux sociaux…) ou agrandissement ×2 / ×4 ; enregistrement dans `Jarvis\photos`, téléchargement, ou envoi à Jarvis pour avoir son avis et une légende.
+
+Tu peux aussi demander par écrit : *« Retouche cette photo : plus lumineuse, filtre vintage, format carré »* ou *« Réduis toutes les photos du dossier Vacances à 1080 px avec ma signature »*. Jarvis crée des copies, les originaux restent intacts.
+
+### Les compétences intégrées
+
+| Demande | Ce que fait Jarvis |
+|---|---|
+| « Fais le ménage sur mon PC » | analyse l'espace disque, propose quoi nettoyer, met à la Corbeille (récupérable) |
+| « Range mes téléchargements » | trie par type de fichier, avec un journal pour annuler |
+| « Fais un bilan de santé du PC » | note sur 10 : mémoire, disque, batterie, démarrage, antivirus, mises à jour |
+| « Fais-moi le résumé de l'actu » | lit plusieurs journaux et résume l'essentiel (possible chaque matin) |
+| « Fais-moi un CV pour cette annonce » | CV + lettre de motivation adaptés, en PDF |
+| « Fais une lettre de résiliation / une facture » | document propre en PDF |
+| « Analyse mes dépenses » | classe tes relevés bancaires, rapport, abonnements cachés, conseils |
+| « Range mes photos » | classe par année et mois, repère les doublons |
+| « Sauvegarde mes fichiers sur ma clé USB » | copie sécurisée (ne supprime jamais rien) |
+| « Crée un site pour mon activité » | site moderne adapté au téléphone + mise en ligne gratuite |
+| « Prépare les repas de la semaine » | menu équilibré + liste de courses par rayon |
+| « Explique-moi / fais-moi réviser … » | explications, quiz, fiches et rappels de révision |
+
+Tu peux aussi lui en apprendre de nouvelles : « Apprends à faire … de cette façon : … ».
+
+Bon à savoir :
+- Les rappels et tâches programmées ne se déclenchent que **quand Jarvis est ouvert**. Pour les tâches automatiques, utilise l'interface web.
+- Le pilotage souris/clavier marche mieux avec un cerveau cloud (Gemini) : le petit modèle local ne l'utilise pas.
+- La création d'images passe par le service gratuit Pollinations (internet requis).
+- **Démarrage automatique** : dans ⚙ Réglages, coche « Lancer Jarvis à l'ouverture de Windows ». Jarvis tourne alors en arrière-plan (sans fenêtre) et l'icône Jarvis ouvre simplement l'interface.
+- **E-mails** : dans ⚙ Réglages > E-mail. Il faut un *mot de passe d'application* (Gmail : https://myaccount.google.com/apppasswords, validation en 2 étapes requise). Les adresses Hotmail/Outlook peuvent refuser ce type de connexion. Jarvis demande toujours ton accord avant d'envoyer un mail.
+
+## Jarvis sur ton téléphone
+
+Ton téléphone devient la télécommande du Jarvis de ton PC : même intelligence, mêmes fichiers, mêmes capacités.
+
+1. Sur le PC : **⚙ Réglages > Téléphone**. Choisis un **code PIN** (au moins 6 chiffres), clique sur Enregistrer, puis coche **« Autoriser l'accès depuis mon téléphone »**.
+2. Windows peut afficher une fenêtre « Pare-feu » pour Python : coche **Réseaux privés** et clique sur **Autoriser**.
+3. Jarvis affiche une adresse du type `http://192.168.1.23:7860`. Sur ton téléphone, **connecté au même Wi-Fi**, tape-la dans le navigateur, puis entre ton code PIN.
+4. Pour avoir une vraie icône d'application :
+   - **Android (Chrome)** : menu ⋮ puis **Ajouter à l'écran d'accueil**.
+   - **iPhone (Safari)** : bouton Partager puis **Sur l'écran d'accueil**.
+
+À savoir :
+- Le PC doit être allumé, avec Jarvis ouvert. L'idéal : coche aussi « Lancer Jarvis à l'ouverture de Windows ».
+- Pour dicter, utilise le **micro du clavier de ton téléphone** : le bouton 🎤 de Jarvis ne fonctionne que sur le PC.
+- Après 5 mauvais codes, l'accès est bloqué 5 minutes. Changer le code PIN déconnecte tous les téléphones.
+- **Depuis l'extérieur (4G, ailleurs)** : installe l'application gratuite **Tailscale** (https://tailscale.com/download) sur le PC ET sur le téléphone, avec le même compte. Jarvis affichera alors une deuxième adresse en `http://100.x.x.x:7860`, qui marche de partout, de façon sécurisée.
+- **La page ne s'ouvre pas sur le téléphone ?** Vérifie que le téléphone est sur le même Wi-Fi, et que le réseau Wi-Fi du PC est en « Réseau privé » (Paramètres > Réseau et Internet > Wi-Fi > ton réseau). Sinon, ouvre PowerShell **en administrateur** et tape :
+  `New-NetFirewallRule -DisplayName "Jarvis" -Direction Inbound -Protocol TCP -LocalPort 7860 -Profile Private -Action Allow`
+
+## Mettre à jour Jarvis
+
+Ouvre **⚙ Réglages > Installer la dernière version** (ou tape `/maj` dans le terminal), puis ferme et relance Jarvis. Tes réglages, tes clés, ta mémoire et tes compétences sont conservés.
+
+## Sécurité
+
+Avant chaque commande, modification de fichier ou téléchargement, Jarvis **te demande l'autorisation** : *Autoriser*, *Refuser* ou *Toujours autoriser* (pour la session en cours).
+Le bouton **Auto** supprime toutes les confirmations. Ne l'active que si tu sais ce que tu fais, car une IA peut se tromper.
+L'interface web n'est accessible que depuis ton PC, pas depuis le réseau.
+
+## Mode terminal
+
+Raccourci **« Jarvis (terminal) »**. Commandes : `/aide`, `/voix`, `/parole`, `/auto`, `/cerveau gemini`, `/cerveau local`, `/modele NOM`, `/cle gemini TA_CLE`, `/memoire`, `/reprendre`, `/nouveau`, `/quitter`.
+
+Tu peux aussi l'utiliser en ligne de commande :
+```
+python agent.py "range les fichiers de mon dossier Téléchargements par type"
+python agent.py --web                 # interface web
+python agent.py -c local -m qwen3:1.7b  # modèle local plus petit et plus rapide
+```
+
+## Réglages avancés
+
+Tous les réglages sont dans `C:\Users\<toi>\.jarvis\config.json` :
+- `provider` : cerveau principal ; `fallback` : cerveau de secours.
+- `providers.local.model` : le modèle local. Sur ton PC : `qwen3:4b` (conseillé), `qwen3:1.7b` (plus rapide, moins intelligent). Installe un modèle avec `ollama pull NOM`.
+- `providers.local.ctx` : mémoire de travail du modèle local en tokens (8192 ; ne dépasse pas 12288 avec 8 Go de RAM).
+- `providers.gemini.model` : `gemini-3.6-flash` (tu peux le changer avec le bouton « Modèle »).
+- `workdir` : dossier de travail ; `max_steps` : nombre maximal d'actions par demande.
+
+La mémoire à long terme est dans `.jarvis\memoire.md` (modifiable à la main) et les conversations dans `.jarvis\sessions\`.
+
+## Si ça ne marche pas
+
+- **« Ollama ne répond pas »** : lance « Ollama » depuis le menu Démarrer (une icône de lama apparaît près de l'horloge).
+- **« Modèle absent »** : ouvre PowerShell et tape `ollama pull qwen3:4b`.
+- **Le local est très lent** : c'est normal sur ce PC. Ferme Chrome et les autres gros programmes (le modèle a besoin d'environ 4 Go de RAM libre), passe à `qwen3:1.7b` ou utilise Gemini.
+- **Le micro ne marche pas** : dans l'interface web, utilise Microsoft Edge ou Chrome et autorise le micro. En mode terminal, il faut la reconnaissance vocale Windows en français (Paramètres → Heure et langue → Voix).
+- **Nom de modèle cloud refusé** : les fournisseurs renomment parfois leurs modèles. Vérifie le nom sur leur site et change-le avec `/modele NOM`.
