@@ -11,6 +11,17 @@ from . import ai_inpaint
 
 SMALL = 1200   # en dessous (plus grand côté), la photo est agrandie ×2 comme sur Claid
 LARGE = 3200   # au-dessus, la photo est déjà très détaillée : on ne la nettoie pas par IA (trop long sans carte graphique)
+ORIGINAL_SHARE = {"produit": .6, "portrait": .3}   # part de la photo d'origine remélangée après le nettoyage IA (plus haut = plus naturel)
+
+
+def default_mode():
+    """« produit » (luminaires, objets : matières fidèles, rendu naturel) ou « portrait » (réglage historique, visages)."""
+    try:
+        from . import config
+        m = str(config.load().get("enhance_mode", "produit")).lower()
+    except Exception:
+        m = "produit"
+    return m if m in ORIGINAL_SHARE else "produit"
 
 
 def _progress(p, step):
@@ -23,8 +34,12 @@ def _blur(a, r):
     return np.asarray(im.filter(ImageFilter.GaussianBlur(r)), np.float32) / 255.0
 
 
-def light_and_color(img):
-    """Lumière et couleurs naturelles : niveaux prudents, ombres débouchées localement, vibrance douce."""
+def light_and_color(img, product=False):
+    """Lumière et couleurs naturelles : niveaux prudents, ombres débouchées localement, vibrance douce.
+
+    product=True (photos d'objets) : couleur de la matière intouchée (pas de balance des blancs ni de vibrance),
+    HDR local et contraste réduits pour éviter halos et rendu « plastique », grain fin remis à la fin.
+    """
     from PIL import Image
     a = np.asarray(img.convert("RGB"), np.float32) / 255.0
     small = np.asarray(img.convert("RGB").resize((max(1, img.width // 4), max(1, img.height // 4))), np.float32) / 255.0
@@ -36,15 +51,22 @@ def light_and_color(img):
     sat_s = small.max(2) - small.min(2)
     neutral = (sat_s < .18) & (lum_s > .15) & (lum_s < .9)
     gains = np.ones(3, np.float32)
-    if neutral.mean() > .03:
+    if neutral.mean() > .03 and not product:
         m = small[neutral].mean(0)
         gains = np.clip(m.mean() / m, .97, 1.03)
     a = a * gains
     # niveaux + tons moyens (même courbe sur les 3 couches)
-    a = np.clip((a - lo) / max(1e-3, hi - lo), 0, 1)
     mid_n = np.clip((mid - lo) / max(1e-3, hi - lo), .05, .95)
     gamma = 1 + (np.clip(np.log(.46) / np.log(mid_n), .82, 1.18) - 1) * .5
-    a = a ** gamma
+    if product:
+        # produit : la courbe agit sur la luminosité seule et les 3 couches sont mises à l'échelle ensemble,
+        # les proportions de couleur (teinte du laiton, du noir mat, du blanc) restent exactement celles de la photo
+        l0 = a @ np.array([.299, .587, .114], np.float32)
+        l1 = np.clip((l0 - lo) / max(1e-3, hi - lo), 0, 1) ** gamma
+        a = np.clip(a * (l1 / np.maximum(l0, 1e-3))[..., None].clip(.5, 2.0), 0, 1)
+    else:
+        a = np.clip((a - lo) / max(1e-3, hi - lo), 0, 1)
+        a = a ** gamma
     # HDR léger : ombres débouchées et hautes lumières retenues, selon la luminosité locale
     lum = a @ np.array([.299, .587, .114], np.float32)
     # luminosité locale calculée sur une image réduite (8× plus rapide), puis ré-agrandie
@@ -53,25 +75,32 @@ def light_and_color(img):
     lum_small = _I.fromarray((lum * 255).clip(0, 255).astype(np.uint8)).resize((max(1, img.width // k), max(1, img.height // k)), _I.BILINEAR)
     local_small = _blur(np.asarray(lum_small, np.float32) / 255.0, max(2, min(lum_small.size) * .03))
     local = np.asarray(_I.fromarray((local_small * 255).astype(np.uint8)).resize(img.size, _I.BILINEAR), np.float32) / 255.0
-    gain = 1 + .22 * np.clip(.42 - local, 0, .42) / .42 - .08 * np.clip(local - .78, 0, .22) / .22
+    sh, hl = (.08, .06) if product else (.22, .08)
+    gain = 1 + sh * np.clip(.42 - local, 0, .42) / .42 - hl * np.clip(local - .78, 0, .22) / .22
     a = a * gain[..., None]
     # contraste doux (courbe en S très légère) et vibrance modérée, peau protégée
     a = np.clip(a, 0, 1)
-    a = a + (a * a * (3 - 2 * a) - a) * .12
+    a = a + (a * a * (3 - 2 * a) - a) * (.05 if product else .12)
     lum = a @ np.array([.299, .587, .114], np.float32)
     sat = a.max(2) - a.min(2)
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     skin = (r > g) & (g > b) & (r - b > .06) & (r - b < .5)
-    k = 1 + .10 * (1 - sat) ** 2 * np.where(skin, .25, 1)
+    k = 1 + (0 if product else .10) * (1 - sat) ** 2 * np.where(skin, .25, 1)
     a = lum[..., None] + (a - lum[..., None]) * k[..., None]
+    if product:   # grain fin et régulier : casse l'aspect lissé laissé par le nettoyage IA
+        a = a + np.random.default_rng(7).normal(0, 1.2 / 255, a.shape[:2]).astype(np.float32)[..., None]
     return Image.fromarray((np.clip(a, 0, 1) * 255 + .5).astype(np.uint8))
 
 
-def enhance(img, best=False):
-    """Renvoie (image améliorée, liste des étapes réalisées). best=True : qualité maximale (plus lent)."""
+def enhance(img, best=False, mode=None):
+    """Renvoie (image améliorée, liste des étapes réalisées). best=True : qualité maximale (plus lent).
+    mode : « produit » (défaut, voir default_mode) ou « portrait »."""
     from PIL import Image
     from . import ai_face
     img = img.convert("RGB")
+    mode = mode or default_mode()
+    product = mode == "produit"
+    keep = ORIGINAL_SHARE[mode]
     w, h = img.size
     done = []
     quality = "max" if best and ai_inpaint.pack_ready("upmax") else "fast"
@@ -89,26 +118,26 @@ def enhance(img, best=False):
                 # (4× moins de calcul qu'un ×2 suivi d'une réduction, pour un rendu équivalent)
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)
                 clean = ai_inpaint.upscale_image(half, 2, quality="max").resize((w, h), Image.LANCZOS)
-                out = Image.blend(clean, img, .3)
+                out = Image.blend(clean, img, keep)
             else:
                 # rapide : l'IA travaille sur la photo réduite de moitié, puis on recombine avec l'original
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)
                 clean = ai_inpaint.upscale_image(half, 4, quality="fast").resize((w, h), Image.LANCZOS)
-                out = Image.blend(clean, img, .3)
+                out = Image.blend(clean, img, keep)
             done.append("compression et bruit nettoyés, netteté restaurée")
         else:
             out = img
             done.append("photo déjà en haute résolution : nettoyage IA non nécessaire")
         # 2. visages
-        if ai_inpaint.pack_ready("faces"):
+        if not product and ai_inpaint.pack_ready("faces"):
             _progress(75, "Restauration des visages…")
             out, n = ai_face.restore(out, strength=.6, fidelity=1.0)
             if n:
                 done.append(f"{n} visage{'s' if n > 1 else ''} restauré{'s' if n > 1 else ''}")
         # 3. lumière et couleurs
         _progress(90, "Lumière et couleurs…")
-        out = light_and_color(out)
-        done.append("lumière et couleurs équilibrées")
+        out = light_and_color(out, product)
+        done.append("lumière et couleurs équilibrées" + (" (mode produit : matières fidèles)" if product else ""))
     finally:
         ai_inpaint.upscale_state.update(busy=False, progress=100, step="")
     return out, done
