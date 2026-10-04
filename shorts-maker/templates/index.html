@@ -33,7 +33,7 @@ $('go').onclick=async()=>{
     $('st').textContent=j.error?('Erreur : '+j.error):j.status||'';
     if(!j.done)return;clearInterval(t);$('go').disabled=false;
     (j.moments||[]).forEach(m=>{
-      const p=m.file.split('clips/')[1];
+      const p=m.url.replace('/clips/','');
       $('out').insertAdjacentHTML('beforeend',`<div class="card"><video controls src="/clips/${p}"></video>
       <b>${m.title||''}</b><br><small>${Math.round(m.start)}s → ${Math.round(m.end)}s · ${m.reason}</small><br>
       <a href="/clips/${p}" download>Télécharger</a></div>`);});

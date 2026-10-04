@@ -14,7 +14,11 @@ jobs: dict[str, dict] = {}
 def run(job_id, url, n, length, mode, captions):
     job = jobs[job_id]
     try:
-        job["moments"] = core.process(url, n, length, mode, captions, log=lambda m: job.update(status=m))
+        moments = core.process(url, n, length, mode, captions, log=lambda m: job.update(status=m))
+        clips_root = (Path(core.WORK) / "clips").resolve()
+        for m in moments:
+            m["url"] = "/clips/" + Path(m["file"]).resolve().relative_to(clips_root).as_posix()
+        job["moments"] = moments
         job["done"] = True
     except Exception as e:
         job.update(error=re.sub(r'\x1b\[[0-9;]*m', '', str(e)), done=True)
