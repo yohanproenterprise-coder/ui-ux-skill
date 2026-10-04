@@ -287,13 +287,18 @@ def render_clip(video: Path, moment: dict, out: Path, transcript: list[dict] | N
     return out
 
 
-def process(url: str, n=5, length=35, mode="blur", captions=True, hook=True, log=print) -> list[dict]:
+def process(url: str, n=5, length=35, mode="blur", captions=True, hook=True, post_style="satisfying", log=print) -> list[dict]:
     log("Téléchargement…")
     video, info = download(url)
     log("Transcription…")
     transcript = get_transcript(url)
     log("Détection des moments clés…")
     moments = find_moments(video, info, transcript, n, length)
+    from posts import make_post
+    for i, m in enumerate(moments):  # textes de publication en anglais selon la niche
+        p = make_post(post_style, i, seed=hash((video_id(url), i)) & 0xFFFF)
+        if p:
+            m["post"] = p
     outdir = WORK / "clips" / video_id(url)
     outdir.mkdir(parents=True, exist_ok=True)
 

@@ -10,7 +10,7 @@ input,select,button{font:inherit;padding:12px;border-radius:10px;border:1px soli
 #url{width:100%;margin-bottom:12px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 button{background:var(--acc);border:0;color:#fff;font-weight:600;cursor:pointer}button:disabled{opacity:.5}
 #st{color:var(--mut);margin-top:12px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}small{color:var(--mut)}a{color:var(--acc)}
+video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}small{color:var(--mut)}.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.mini{padding:6px 10px;font-size:13px;background:#8883;color:inherit}a{color:var(--acc)}
 </style></head><body><main>
 <h1>Shorts Maker</h1><p class="s">Colle une URL YouTube → clips verticaux 9:16 prêts pour Shorts / TikTok / Reels.</p>
 <div class="card"><input id="url" placeholder="https://www.youtube.com/watch?v=…">
@@ -20,16 +20,24 @@ video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}small{colo
 <label>Format <select id="mode"><option value="blur">Fond flouté</option><option value="crop">Recadrage centré</option></select></label>
 <label><input type="checkbox" id="cap" checked style="width:auto"> Sous-titres</label>
 <label><input type="checkbox" id="hook" checked style="width:auto"> Accroche à l'écran</label>
+<label>Texte du post <select id="post"><option value="satisfying">Satisfying (EN)</option><option value="">Auto (Claude / titre)</option></select></label>
 <button id="go">Générer</button></div><div id="st"></div></div>
 <div class="grid" id="out"></div></main>
 <h2 id="ph" hidden>Mes projets précédents</h2><div id="old"></div>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const post=m=>[m.title,m.description,(m.hashtags||[]).join(' ')].filter(Boolean).join('\n\n');
-const card=m=>`<div class="card"><video controls preload="metadata" src="${m.url}"></video>
-  <b>${esc(m.title)}</b><br><small>${Math.round(m.start)}s → ${Math.round(m.end)}s${m.score?` · score ${m.score}`:''} · ${esc(m.reason)}</small><br>
-  <a href="${m.url}" download>Télécharger</a> · <a href="#" onclick="navigator.clipboard.writeText(decodeURIComponent('${encodeURIComponent(post(m))}'));this.textContent='Copié ✓';return false">Copier le texte du post</a></div>`;
+const copyTxt=(b,t)=>{navigator.clipboard.writeText(t);b.textContent='Copié ✓'};
+window.copies=[];
+const card=m=>{
+  const base=[m.title,m.description,(m.hashtags||[]).join(' ')].filter(Boolean).join('\n\n');
+  const btn=(label,txt)=>{window.copies.push(txt);const i=window.copies.length-1;
+    return `<button class="mini" onclick="copyTxt(this,window.copies[${i}])">${label}</button>`};
+  const p=m.post;
+  const buttons=p?btn('Copier TikTok',p.tiktok)+btn('Copier YouTube (titre)',p.youtube_title)+btn('Copier YouTube (desc.)',p.youtube_desc):btn('Copier le texte',base);
+  return `<div class="card"><video controls preload="metadata" src="${m.url}"></video>
+  <b>${esc(p?p.youtube_title:m.title)}</b><br><small>${Math.round(m.start)}s → ${Math.round(m.end)}s${m.score?` · score ${m.score}`:''} · ${esc(m.reason)}</small><br>
+  <a href="${m.url}" download>Télécharger</a><div class="btns">${buttons}</div></div>`};
 async function loadOld(){
   const ps=await (await fetch('/api/projects')).json();
   $('ph').hidden=!ps.length;
@@ -39,7 +47,7 @@ loadOld();
 $('go').onclick=async()=>{
   $('go').disabled=true;$('out').innerHTML='';
   const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-    url:$('url').value,n:$('n').value,length:$('len').value,mode:$('mode').value,captions:$('cap').checked,hook:$('hook').checked})});
+    url:$('url').value,n:$('n').value,length:$('len').value,mode:$('mode').value,captions:$('cap').checked,hook:$('hook').checked,post:$('post').value})});
   const {id}=await r.json();
   const t=setInterval(async()=>{
     const j=await (await fetch('/api/job/'+id)).json();
