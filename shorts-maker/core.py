@@ -45,11 +45,18 @@ def download(url: str) -> tuple[Path, dict]:
     }
     if os.environ.get("YT_COOKIES_BROWSER"):
         opts["cookiesfrombrowser"] = (os.environ["YT_COOKIES_BROWSER"],)
-    cookie_file = os.environ.get("YT_COOKIES_FILE") or ("cookies.txt" if Path("cookies.txt").exists() else "")
+    local = Path(__file__).resolve().parent / "cookies.txt"  # peu importe d'où on lance l'outil
+    cookie_file = os.environ.get("YT_COOKIES_FILE") or (str(local) if local.exists() else "")
     if cookie_file:  # un cookies.txt posé dans ce dossier est utilisé automatiquement
         opts["cookiefile"] = cookie_file
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(url, download=True)
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+    except yt_dlp.utils.DownloadError as e:
+        if "Sign in to confirm" in str(e):
+            used = f"fichier utilisé : {cookie_file}" if cookie_file else f"aucun cookies.txt trouvé (attendu : {local})"
+            raise RuntimeError(f"YouTube demande une connexion — {used}. Exporte tes cookies YouTube (voir README).") from e
+        raise
     data = {"title": info.get("title", vid), "duration": info.get("duration", 0)}
     meta.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     return mp4, data
