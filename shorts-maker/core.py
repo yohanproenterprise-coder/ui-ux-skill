@@ -19,6 +19,16 @@ HOOK_WORDS = re.compile(
 NOISE = re.compile(r"^\s*[\[(♪].*[\])♪]\s*$")  # [Musique], (applaudissements), ♪
 
 
+QUALITY = {
+    # rapide : téléchargement 720p, encodage léger
+    "fast": dict(height=720, preset="veryfast", crf=23, enhance=False, abr="160k"),
+    # haute : source 1080p, encodage plus lent et plus fin, netteté + couleurs légèrement relevées
+    "high": dict(height=1080, preset="medium", crf=18, enhance=True, abr="192k"),
+    # 4K : source 2160p (si elle existe), sortie 2160x3840 — très lourd en temps, CPU et espace disque
+    "ultra": dict(height=2160, preset="medium", crf=18, enhance=True, abr="192k", w=2160, h=3840),
+}
+
+
 def video_id(url: str) -> str:
     m = re.search(r"(?:v=|youtu\.be/|shorts/|embed/)([\w-]{11})", url)
     if not m:
@@ -26,19 +36,20 @@ def video_id(url: str) -> str:
     return m.group(1)
 
 
-def download(url: str) -> tuple[Path, dict]:
+def download(url: str, height: int = 720) -> tuple[Path, dict]:
     import yt_dlp
 
     vid = video_id(url)
     WORK.mkdir(exist_ok=True)
-    mp4, meta = WORK / f"{vid}.mp4", WORK / f"{vid}.json"
+    height = int(os.environ.get("MAX_HEIGHT", height))
+    mp4, meta = WORK / f"{vid}_{height}.mp4", WORK / f"{vid}.json"
     if mp4.exists() and meta.exists():  # déjà téléchargée
         return mp4, json.loads(meta.read_text(encoding="utf-8"))
-    h = int(os.environ.get("MAX_HEIGHT", "720"))
+    h = height
     opts = {
         "format": f"bv*[height<={h}]+ba/b[height<={h}]/b",
         "merge_output_format": "mp4",
-        "outtmpl": str(WORK / f"{vid}.%(ext)s"),
+        "outtmpl": str(WORK / f"{vid}_{h}.%(ext)s"),
         "quiet": True,
         "noplaylist": True,
         "no_color": True,
@@ -262,34 +273,39 @@ def build_ass(transcript: list[dict], start: float, end: float, hook: str | None
 
 
 def render_clip(video: Path, moment: dict, out: Path, transcript: list[dict] | None = None,
-                mode: str = "blur", captions: bool = True, hook: bool = True) -> Path:
+                mode: str = "blur", captions: bool = True, hook: bool = True, quality: str = "high") -> Path:
     """mode 'crop' = recadrage centré ; 'blur' = vidéo entière sur fond flouté."""
     start, end = moment["start"], moment["end"]
     dur = end - start
+    q = QUALITY.get(quality, QUALITY["high"])
+    lz = ":flags=lanczos" if q["enhance"] else ""  # meilleur redimensionnement
+    W, H = q.get("w", 1080), q.get("h", 1920)
     if mode == "crop":
-        vf = "crop=ih*9/16:ih,scale=1080:1920"
+        vf = f"crop=ih*9/16:ih,scale={W}:{H}{lz}"
     else:
         vf = ("split[a][b];[a]scale=270:480:force_original_aspect_ratio=increase,"
-              "crop=270:480,boxblur=6:2,scale=1080:1920[bg];[b]scale=1080:-2[fg];"
+              f"crop=270:480,boxblur=6:2,scale={W}:{H}[bg];[b]scale={W}:-2{lz}[fg];"
               "[bg][fg]overlay=(W-w)/2:(H-h)/2")
+    if q["enhance"]:  # netteté légère + contraste/saturation pour un rendu plus « pro » sur mobile
+        vf += ",unsharp=5:5:0.7:3:3:0.0,eq=contrast=1.05:saturation=1.10"
     ass = out.with_suffix(".ass")
     hook_text = (moment.get("hook") or "") if hook else None
     if (captions and transcript or hook_text) and build_ass(
-            transcript if captions else [], start, end, hook_text or None, ass):
+            (transcript or []) if captions else [], start, end, hook_text or None, ass):
         vf += f",ass={ass.name}"
     af = f"loudnorm=I=-14:TP=-1.5:LRA=11,afade=t=in:d=0.1,afade=t=out:st={max(dur - 0.25, 0):.2f}:d=0.25"
     cmd = ["ffmpeg", "-y", "-v", "error", "-ss", f"{start:.3f}", "-t", f"{dur:.3f}", "-i", str(video.resolve()),
            "-filter_complex" if mode == "blur" else "-vf", vf, "-af", af,
-           "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-r", "30",
-           "-profile:v", "high", "-c:a", "aac", "-b:a", "160k", "-ar", "44100",
+           "-c:v", "libx264", "-preset", q["preset"], "-crf", str(q["crf"]), "-pix_fmt", "yuv420p", "-r", "30",
+           "-profile:v", "high", "-c:a", "aac", "-b:a", q["abr"], "-ar", "44100",
            "-movflags", "+faststart", out.name]
     subprocess.run(cmd, check=True, cwd=out.parent)
     return out
 
 
-def process(url: str, n=5, length=35, mode="blur", captions=True, hook=True, post_style="satisfying", log=print) -> list[dict]:
+def process(url: str, n=5, length=35, mode="blur", captions=True, hook=True, post_style="satisfying", quality="high", log=print) -> list[dict]:
     log("Téléchargement…")
-    video, info = download(url)
+    video, info = download(url, QUALITY.get(quality, QUALITY["high"])["height"])
     log("Transcription…")
     transcript = get_transcript(url)
     log("Détection des moments clés…")
@@ -304,7 +320,7 @@ def process(url: str, n=5, length=35, mode="blur", captions=True, hook=True, pos
 
     def job(i_m):
         i, m = i_m
-        m["file"] = str(render_clip(video, m, outdir / f"short_{i}.mp4", transcript, mode, captions, hook))
+        m["file"] = str(render_clip(video, m, outdir / f"short_{i}.mp4", transcript, mode, captions, hook, quality))
         log(f"Clip {i}/{len(moments)} prêt")
         return m
 

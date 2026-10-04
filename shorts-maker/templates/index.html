@@ -20,6 +20,7 @@ video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}small{colo
 <label>Format <select id="mode"><option value="blur">Fond flouté</option><option value="crop">Recadrage centré</option></select></label>
 <label><input type="checkbox" id="cap" checked style="width:auto"> Sous-titres</label>
 <label><input type="checkbox" id="hook" checked style="width:auto"> Accroche à l'écran</label>
+<label>Qualité <select id="quality"><option value="high">Haute (1080p, plus lent)</option><option value="fast">Rapide (720p)</option><option value="ultra">4K (très lent, fichiers lourds)</option></select></label>
 <label>Texte du post <select id="post"><option value="satisfying">Satisfying (EN)</option><option value="">Auto (Claude / titre)</option></select></label>
 <button id="go">Générer</button></div><div id="st"></div></div>
 <div class="grid" id="out"></div></main>
@@ -47,7 +48,7 @@ loadOld();
 $('go').onclick=async()=>{
   $('go').disabled=true;$('out').innerHTML='';
   const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-    url:$('url').value,n:$('n').value,length:$('len').value,mode:$('mode').value,captions:$('cap').checked,hook:$('hook').checked,post:$('post').value})});
+    url:$('url').value,n:$('n').value,length:$('len').value,mode:$('mode').value,captions:$('cap').checked,hook:$('hook').checked,post:$('post').value,quality:$('quality').value})});
   const {id}=await r.json();
   const t=setInterval(async()=>{
     const j=await (await fetch('/api/job/'+id)).json();

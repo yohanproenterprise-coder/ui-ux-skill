@@ -19,10 +19,10 @@ def with_urls(moments):
     return moments
 
 
-def run(job_id, url, n, length, mode, captions, hook=True, post_style="satisfying"):
+def run(job_id, url, n, length, mode, captions, hook=True, post_style="satisfying", quality="high"):
     job = jobs[job_id]
     try:
-        moments = core.process(url, n, length, mode, captions, hook, post_style, log=lambda m: job.update(status=m))
+        moments = core.process(url, n, length, mode, captions, hook, post_style, quality, log=lambda m: job.update(status=m))
         job["moments"] = with_urls(moments)
         job["done"] = True
     except Exception as e:
@@ -41,7 +41,7 @@ def start():
     jobs[job_id] = {"status": "En file…", "done": False}
     threading.Thread(target=run, daemon=True, args=(
         job_id, d["url"], int(d.get("n", 5)), int(d.get("length", 35)),
-        d.get("mode", "blur"), bool(d.get("captions", True)), bool(d.get("hook", True)), d.get("post", "satisfying"))).start()
+        d.get("mode", "blur"), bool(d.get("captions", True)), bool(d.get("hook", True)), d.get("post", "satisfying"), d.get("quality", "high"))).start()
     return jsonify(id=job_id)
 
 
