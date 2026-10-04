@@ -46,7 +46,9 @@ def download(url: str) -> tuple[Path, dict]:
     if os.environ.get("YT_COOKIES_BROWSER"):
         opts["cookiesfrombrowser"] = (os.environ["YT_COOKIES_BROWSER"],)
     local = Path(__file__).resolve().parent / "cookies.txt"  # peu importe d'où on lance l'outil
-    cookie_file = os.environ.get("YT_COOKIES_FILE") or (str(local) if local.exists() else "")
+    # navigateur choisi => on l'utilise seul ; sinon fichier explicite, sinon cookies.txt local
+    cookie_file = os.environ.get("YT_COOKIES_FILE") or (
+        "" if os.environ.get("YT_COOKIES_BROWSER") else (str(local) if local.exists() else ""))
     if cookie_file:  # un cookies.txt posé dans ce dossier est utilisé automatiquement
         opts["cookiefile"] = cookie_file
     try:
