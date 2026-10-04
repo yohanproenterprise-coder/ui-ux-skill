@@ -14,3 +14,9 @@ python cli.py "https://youtube.com/watch?v=XXXX" -n 5 -l 35   # ou en ligne de c
 
 ⚠️ N'utilise que des vidéos dont tu détiens les droits ou sous licence permissive : reposter le contenu d'autrui
 sans autorisation est interdit par YouTube/TikTok et ne sera pas monétisé (contenu non original).
+
+## Erreur « This video is not available »
+1. `pip install -U yt-dlp` (YouTube change souvent, une vieille version échoue).
+2. Vérifie que la vidéo est publique, non restreinte par pays/âge/live, et se lit dans ton navigateur.
+3. Si elle exige une connexion : `export YT_COOKIES_BROWSER=chrome` (ou firefox/edge/safari) avant `python app.py`.
+4. Depuis un serveur/VPN/cloud, YouTube bloque souvent les IP : lance l'outil depuis ta machine perso.

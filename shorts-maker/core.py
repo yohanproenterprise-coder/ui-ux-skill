@@ -35,7 +35,12 @@ def download(url: str) -> tuple[Path, dict]:
         "outtmpl": str(WORK / f"{vid}.%(ext)s"),
         "quiet": True,
         "noplaylist": True,
+        "no_color": True,
     }
+    if os.environ.get("YT_COOKIES_BROWSER"):  # ex. chrome, firefox, edge, safari
+        opts["cookiesfrombrowser"] = (os.environ["YT_COOKIES_BROWSER"],)
+    if os.environ.get("YT_COOKIES_FILE"):
+        opts["cookiefile"] = os.environ["YT_COOKIES_FILE"]
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)
     return WORK / f"{vid}.mp4", {"title": info.get("title", vid), "duration": info.get("duration", 0)}

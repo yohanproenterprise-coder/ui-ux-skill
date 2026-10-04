@@ -1,3 +1,4 @@
+import re
 import threading
 import uuid
 from pathlib import Path
@@ -16,7 +17,7 @@ def run(job_id, url, n, length, mode, captions):
         job["moments"] = core.process(url, n, length, mode, captions, log=lambda m: job.update(status=m))
         job["done"] = True
     except Exception as e:
-        job.update(error=str(e), done=True)
+        job.update(error=re.sub(r'\x1b\[[0-9;]*m', '', str(e)), done=True)
 
 
 @app.get("/")
