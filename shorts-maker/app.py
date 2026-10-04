@@ -1,3 +1,4 @@
+import json
 import re
 import threading
 import uuid
@@ -11,14 +12,18 @@ app = Flask(__name__)
 jobs: dict[str, dict] = {}
 
 
+def with_urls(moments):
+    root = (Path(core.WORK) / "clips").resolve()
+    for m in moments:
+        m["url"] = "/clips/" + Path(m["file"]).resolve().relative_to(root).as_posix()
+    return moments
+
+
 def run(job_id, url, n, length, mode, captions):
     job = jobs[job_id]
     try:
         moments = core.process(url, n, length, mode, captions, log=lambda m: job.update(status=m))
-        clips_root = (Path(core.WORK) / "clips").resolve()
-        for m in moments:
-            m["url"] = "/clips/" + Path(m["file"]).resolve().relative_to(clips_root).as_posix()
-        job["moments"] = moments
+        job["moments"] = with_urls(moments)
         job["done"] = True
     except Exception as e:
         job.update(error=re.sub(r'\x1b\[[0-9;]*m', '', str(e)), done=True)
@@ -43,6 +48,21 @@ def start():
 @app.get("/api/job/<job_id>")
 def job(job_id):
     return jsonify(jobs.get(job_id, {"error": "inconnu", "done": True}))
+
+
+@app.get("/api/projects")
+def projects():
+    out = []
+    root = Path(core.WORK) / "clips"
+    for f in sorted(root.glob("*/moments.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+            if isinstance(d, list):  # ancien format
+                d = {"title": f.parent.name, "moments": d}
+            out.append({"id": f.parent.name, "title": d["title"], "moments": with_urls(d["moments"])})
+        except Exception:
+            pass
+    return jsonify(out)
 
 
 @app.get("/clips/<path:p>")

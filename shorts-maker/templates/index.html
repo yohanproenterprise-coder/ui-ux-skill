@@ -21,8 +21,18 @@ video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}small{colo
 <label><input type="checkbox" id="cap" checked style="width:auto"> Sous-titres</label>
 <button id="go">Générer</button></div><div id="st"></div></div>
 <div class="grid" id="out"></div></main>
+<h2 id="ph" hidden>Mes projets précédents</h2><div id="old"></div>
 <script>
 const $=id=>document.getElementById(id);
+const card=m=>`<div class="card"><video controls preload="metadata" src="${m.url}"></video>
+  <b>${m.title||''}</b><br><small>${Math.round(m.start)}s → ${Math.round(m.end)}s · ${m.reason}</small><br>
+  <a href="${m.url}" download>Télécharger</a></div>`;
+async function loadOld(){
+  const ps=await (await fetch('/api/projects')).json();
+  $('ph').hidden=!ps.length;
+  $('old').innerHTML=ps.map(p=>`<h3>${p.title}</h3><div class="grid">${p.moments.map(card).join('')}</div>`).join('');
+}
+loadOld();
 $('go').onclick=async()=>{
   $('go').disabled=true;$('out').innerHTML='';
   const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
@@ -32,11 +42,7 @@ $('go').onclick=async()=>{
     const j=await (await fetch('/api/job/'+id)).json();
     $('st').textContent=j.error?('Erreur : '+j.error):j.status||'';
     if(!j.done)return;clearInterval(t);$('go').disabled=false;
-    (j.moments||[]).forEach(m=>{
-      const p=m.url.replace('/clips/','');
-      $('out').insertAdjacentHTML('beforeend',`<div class="card"><video controls src="/clips/${p}"></video>
-      <b>${m.title||''}</b><br><small>${Math.round(m.start)}s → ${Math.round(m.end)}s · ${m.reason}</small><br>
-      <a href="/clips/${p}" download>Télécharger</a></div>`);});
+    $('out').innerHTML=(j.moments||[]).map(card).join('');loadOld();
   },1500);
 };
 </script></body></html>

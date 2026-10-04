@@ -29,8 +29,12 @@ def download(url: str) -> tuple[Path, dict]:
 
     vid = video_id(url)
     WORK.mkdir(exist_ok=True)
+    mp4, meta = WORK / f"{vid}.mp4", WORK / f"{vid}.json"
+    if mp4.exists() and meta.exists():  # déjà téléchargée : pas besoin de recommencer
+        return mp4, json.loads(meta.read_text(encoding="utf-8"))
+    h = int(os.environ.get("MAX_HEIGHT", "720"))
     opts = {
-        "format": "bv*[height<=1080]+ba/b[height<=1080]/b",
+        "format": f"bv*[height<={h}]+ba/b[height<={h}]/b",
         "merge_output_format": "mp4",
         "outtmpl": str(WORK / f"{vid}.%(ext)s"),
         "quiet": True,
@@ -43,7 +47,9 @@ def download(url: str) -> tuple[Path, dict]:
         opts["cookiefile"] = os.environ["YT_COOKIES_FILE"]
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)
-    return WORK / f"{vid}.mp4", {"title": info.get("title", vid), "duration": info.get("duration", 0)}
+    data = {"title": info.get("title", vid), "duration": info.get("duration", 0)}
+    meta.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    return mp4, data
 
 
 def get_transcript(url: str) -> list[dict]:
@@ -169,8 +175,8 @@ def render_clip(video: Path, moment: dict, out: Path, transcript: list[dict] | N
     if mode == "crop":
         vf = "crop=ih*9/16:ih,scale=1080:1920"
     else:
-        vf = ("split[a][b];[a]scale=1080:1920:force_original_aspect_ratio=increase,"
-              "crop=1080:1920,boxblur=30:5[bg];[b]scale=1080:-2[fg];"
+        vf = ("split[a][b];[a]scale=270:480:force_original_aspect_ratio=increase,"
+              "crop=270:480,boxblur=6:2,scale=1080:1920[bg];[b]scale=1080:-2[fg];"
               "[bg][fg]overlay=(W-w)/2:(H-h)/2")
     srt = out.with_suffix(".srt")
     if captions and transcript and write_srt(transcript, start, end, srt):
@@ -178,7 +184,7 @@ def render_clip(video: Path, moment: dict, out: Path, transcript: list[dict] | N
         vf += f",subtitles={srt.name}:force_style='{style}'"
     cmd = ["ffmpeg", "-y", "-v", "error", "-ss", str(start), "-to", str(end), "-i", str(video.resolve()),
            "-filter_complex" if mode == "blur" else "-vf", vf,
-           "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-c:a", "aac", "-b:a", "160k",
+           "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-c:a", "aac", "-b:a", "160k",
            "-movflags", "+faststart", out.name]
     subprocess.run(cmd, check=True, cwd=out.parent)
     return out
@@ -193,8 +199,18 @@ def process(url: str, n=5, length=35, mode="blur", captions=True, log=print) -> 
     moments = find_moments(video, info, transcript, n, length)
     outdir = WORK / "clips" / video_id(url)
     outdir.mkdir(parents=True, exist_ok=True)
-    for i, m in enumerate(moments, 1):
-        log(f"Rendu du clip {i}/{len(moments)}…")
+    from concurrent.futures import ThreadPoolExecutor
+
+    def job(i_m):
+        i, m = i_m
         m["file"] = str(render_clip(video, m, outdir / f"short_{i}.mp4", transcript, mode, captions))
-    (outdir / "moments.json").write_text(json.dumps(moments, ensure_ascii=False, indent=2))
+        log(f"Clip {i}/{len(moments)} prêt")
+        return m
+
+    log(f"Rendu de {len(moments)} clips…")
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        moments = list(ex.map(job, enumerate(moments, 1)))
+    (outdir / "moments.json").write_text(
+        json.dumps({"title": info["title"], "moments": moments}, ensure_ascii=False, indent=2),
+        encoding="utf-8")
     return moments
