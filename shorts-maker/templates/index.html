@@ -1,0 +1,42 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Shorts Maker</title>
+<style>
+:root{--bg:#0f1115;--card:#1a1d24;--fg:#f2f3f5;--mut:#9aa0ab;--acc:#ff3b5c}
+@media(prefers-color-scheme:light){:root{--bg:#f5f6f8;--card:#fff;--fg:#14161a;--mut:#667}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif}
+main{max-width:960px;margin:auto;padding:24px 16px}h1{margin:0 0 4px}p.s{color:var(--mut);margin:0 0 20px}
+.card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px}
+input,select,button{font:inherit;padding:12px;border-radius:10px;border:1px solid #8884;background:transparent;color:inherit}
+#url{width:100%;margin-bottom:12px}.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+button{background:var(--acc);border:0;color:#fff;font-weight:600;cursor:pointer}button:disabled{opacity:.5}
+#st{color:var(--mut);margin-top:12px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+video{width:100%;aspect-ratio:9/16;background:#000;border-radius:10px}small{color:var(--mut)}a{color:var(--acc)}
+</style></head><body><main>
+<h1>Shorts Maker</h1><p class="s">Colle une URL YouTube → clips verticaux 9:16 prêts pour Shorts / TikTok / Reels.</p>
+<div class="card"><input id="url" placeholder="https://www.youtube.com/watch?v=…">
+<div class="row">
+<label>Clips <select id="n"><option>3</option><option selected>5</option><option>8</option></select></label>
+<label>Durée <select id="len"><option>20</option><option selected>35</option><option>55</option></select> s</label>
+<label>Format <select id="mode"><option value="blur">Fond flouté</option><option value="crop">Recadrage centré</option></select></label>
+<label><input type="checkbox" id="cap" checked style="width:auto"> Sous-titres</label>
+<button id="go">Générer</button></div><div id="st"></div></div>
+<div class="grid" id="out"></div></main>
+<script>
+const $=id=>document.getElementById(id);
+$('go').onclick=async()=>{
+  $('go').disabled=true;$('out').innerHTML='';
+  const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+    url:$('url').value,n:$('n').value,length:$('len').value,mode:$('mode').value,captions:$('cap').checked})});
+  const {id}=await r.json();
+  const t=setInterval(async()=>{
+    const j=await (await fetch('/api/job/'+id)).json();
+    $('st').textContent=j.error?('Erreur : '+j.error):j.status||'';
+    if(!j.done)return;clearInterval(t);$('go').disabled=false;
+    (j.moments||[]).forEach(m=>{
+      const p=m.file.split('clips/')[1];
+      $('out').insertAdjacentHTML('beforeend',`<div class="card"><video controls src="/clips/${p}"></video>
+      <b>${m.title||''}</b><br><small>${Math.round(m.start)}s → ${Math.round(m.end)}s · ${m.reason}</small><br>
+      <a href="/clips/${p}" download>Télécharger</a></div>`);});
+  },1500);
+};
+</script></body></html>
