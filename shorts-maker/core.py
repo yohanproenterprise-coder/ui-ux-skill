@@ -45,8 +45,9 @@ def download(url: str) -> tuple[Path, dict]:
     }
     if os.environ.get("YT_COOKIES_BROWSER"):
         opts["cookiesfrombrowser"] = (os.environ["YT_COOKIES_BROWSER"],)
-    if os.environ.get("YT_COOKIES_FILE"):
-        opts["cookiefile"] = os.environ["YT_COOKIES_FILE"]
+    cookie_file = os.environ.get("YT_COOKIES_FILE") or ("cookies.txt" if Path("cookies.txt").exists() else "")
+    if cookie_file:  # un cookies.txt posé dans ce dossier est utilisé automatiquement
+        opts["cookiefile"] = cookie_file
     with yt_dlp.YoutubeDL(opts) as ydl:
         info = ydl.extract_info(url, download=True)
     data = {"title": info.get("title", vid), "duration": info.get("duration", 0)}
