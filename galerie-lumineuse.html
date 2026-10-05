@@ -3,173 +3,361 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Galerie Lumineuse — Luminaires design</title>
-<meta name="description" content="Suspensions, appliques et lampes design. Choisissez votre lumière.">
+<title>La Galerie Lumineuse — Luminaires design : suspensions, appliques, lampes</title>
+<meta name="description" content="Suspensions, appliques et lampes design. Choisissez votre taille, votre finition et votre température de lumière. Paiement sécurisé.">
+<meta property="og:title" content="La Galerie Lumineuse — Luminaires design">
+<meta property="og:description" content="Sculptez votre lumière : suspensions, appliques et lampes design.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#080605">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"La Galerie Lumineuse","url":"https://lagalerielumineuse.com","description":"Luminaires design : suspensions, appliques, lampes de table et plafonniers."}</script>
 <style>
 /* ============================================================
-   LA GALERIE LUMINEUSE — site vitrine
+   LA GALERIE LUMINEUSE — boutique v2 (orientée conversion)
    Style : dark chaleureux · lumière 3D · motion
-   Type  : Cormorant Garamond (titres) / Jost (texte)
    --glow est piloté en JS par le curseur de température
 ============================================================ */
 :root{
-  --bg:#080605; --bg2:#12100d; --card:#1a1612;
-  --text:#f4efe6; --muted:#9a8e7c; --line:rgba(255,235,200,.12);
-  --glow:#ffb55c;               /* couleur de lumière active */
-  --glow-soft:rgba(255,181,92,.18);
+  --bg:#080605; --bg2:#100d0b; --card:#17130f; --card2:#1f1a15;
+  --text:#f4efe6; --muted:#a3978a; --line:rgba(255,235,200,.12);
+  --glow:#ffb55c; --glow-soft:rgba(255,181,92,.18);
   --serif:'Cormorant Garamond',Georgia,serif;
   --sans:'Jost',system-ui,sans-serif;
   --ease:cubic-bezier(.22,1,.36,1);
+  --r:20px;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.6;overflow-x:hidden}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:300;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body.lock{overflow:hidden}
 img{display:block;max-width:100%}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+ul{list-style:none}
 ::selection{background:var(--glow);color:#000}
-:focus-visible{outline:2px solid var(--glow);outline-offset:3px}
-.wrap{width:min(1240px,100% - 48px);margin-inline:auto}
+:focus-visible{outline:2px solid var(--glow);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1280px,100% - 48px);margin-inline:auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-/* grain */
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:90;opacity:.05;
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:300;opacity:.045;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-
-/* curseur lumineux */
-.halo{position:fixed;left:0;top:0;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;pointer-events:none;z-index:1;
-  background:radial-gradient(circle,var(--glow-soft),transparent 65%);opacity:0;transition:opacity .6s;mix-blend-mode:screen}
+.halo{position:fixed;left:0;top:0;width:440px;height:440px;margin:-220px 0 0 -220px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(circle,var(--glow-soft),transparent 65%);opacity:0;transition:opacity .6s;mix-blend-mode:screen}
 .halo.on{opacity:1}
 
-/* loader */
-.loader{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;transition:opacity .9s var(--ease),visibility .9s}
+/* ---------- loader ---------- */
+.loader{position:fixed;inset:0;z-index:400;background:var(--bg);display:grid;place-items:center;transition:opacity .9s var(--ease),visibility .9s}
 .loader.done{opacity:0;visibility:hidden}
 .bulb{width:14px;height:14px;border-radius:50%;background:var(--glow);box-shadow:0 0 30px 10px var(--glow),0 0 120px 50px var(--glow-soft);animation:flick 1.6s ease-in-out infinite}
 @keyframes flick{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
 
-/* nav */
-nav{position:fixed;top:0;left:0;right:0;z-index:50;padding:22px 0;transition:background .4s,padding .4s,backdrop-filter .4s}
-nav.solid{background:rgba(8,6,5,.72);backdrop-filter:blur(14px);padding:14px 0;border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;align-items:center;justify-content:space-between}
-.logo{font-family:var(--serif);font-size:1.45rem;letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+/* ---------- boutons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 30px;border:1px solid var(--glow);border-radius:100px;font-size:.78rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;position:relative;overflow:hidden;z-index:0;transition:color .4s,box-shadow .4s,transform .3s var(--ease)}
+.btn::before{content:"";position:absolute;inset:0;background:var(--glow);transform:translateY(101%);transition:transform .5s var(--ease);z-index:-1}
+.btn:hover{color:#000;box-shadow:0 0 44px var(--glow-soft)} .btn:hover::before{transform:none}
+.btn.solid{background:var(--glow);color:#000}
+.btn.solid::before{background:#fff}
+.btn.solid:hover{color:#000}
+.btn.block{width:100%}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.link{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:2px;transition:.3s}
+.link:hover{color:var(--glow);border-color:var(--glow)}
+
+/* ---------- barre d'annonce + nav ---------- */
+.announce{background:var(--glow);color:#000;text-align:center;font-size:.74rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:9px 16px;position:relative;z-index:60}
+nav{position:sticky;top:0;z-index:60;transition:background .4s,backdrop-filter .4s,border-color .4s;border-bottom:1px solid transparent}
+nav.solid{background:rgba(8,6,5,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-color:var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px;gap:20px}
+.logo{font-family:var(--serif);font-size:1.5rem;letter-spacing:.03em;display:flex;align-items:center;gap:10px;white-space:nowrap}
 .logo i{width:9px;height:9px;border-radius:50%;background:var(--glow);box-shadow:0 0 14px 3px var(--glow)}
-.links{display:flex;gap:34px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase}
+.links{display:flex;gap:32px;font-size:.76rem;letter-spacing:.16em;text-transform:uppercase}
 .links a{position:relative;padding:4px 0;color:var(--muted);transition:color .3s}
 .links a::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--glow);transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease)}
 .links a:hover{color:var(--text)} .links a:hover::after{transform:scaleX(1)}
-.btn{display:inline-flex;align-items:center;gap:12px;padding:14px 28px;border:1px solid var(--glow);border-radius:100px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;position:relative;overflow:hidden;transition:color .4s,box-shadow .4s}
-.btn::before{content:"";position:absolute;inset:0;background:var(--glow);transform:translateY(101%);transition:transform .5s var(--ease);z-index:-1}
-.btn:hover{color:#000;box-shadow:0 0 40px var(--glow-soft)} .btn:hover::before{transform:none}
-.btn{z-index:0}
+.nav-r{display:flex;align-items:center;gap:10px}
+.cart-btn{position:relative;display:inline-flex;align-items:center;gap:10px;padding:10px 18px;border:1px solid var(--line);border-radius:100px;font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;transition:.3s}
+.cart-btn:hover{border-color:var(--glow)}
+.cart-btn svg{width:18px;height:18px}
+.cart-count{min-width:20px;height:20px;padding:0 6px;border-radius:20px;background:var(--glow);color:#000;font-size:.7rem;font-weight:600;display:grid;place-items:center;line-height:1}
+.cart-count.bump{animation:bump .5s var(--ease)}
+@keyframes bump{40%{transform:scale(1.5)}}
+.burger{display:none;width:42px;height:42px;border:1px solid var(--line);border-radius:50%;place-items:center}
+.burger span{display:block;width:16px;height:1px;background:var(--text);position:relative}
+.burger span::before,.burger span::after{content:"";position:absolute;left:0;width:16px;height:1px;background:var(--text)}
+.burger span::before{top:-5px} .burger span::after{top:5px}
+.mmenu{position:fixed;inset:0;z-index:80;background:rgba(8,6,5,.97);display:flex;flex-direction:column;justify-content:center;gap:20px;padding:40px;opacity:0;visibility:hidden;transition:.4s}
+.mmenu.open{opacity:1;visibility:visible}
+.mmenu a{font-family:var(--serif);font-size:2.6rem;font-weight:300}
 
-/* hero */
-.hero{position:relative;min-height:100svh;display:grid;align-items:center;overflow:hidden}
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:calc(100svh - 108px);display:grid;align-items:center;overflow:hidden}
 #scene{position:absolute;inset:0;width:100%;height:100%;z-index:0}
-.hero .wrap{position:relative;z-index:2;pointer-events:none}
-.hero .wrap > *{pointer-events:auto}
-.eyebrow{font-size:.75rem;letter-spacing:.34em;text-transform:uppercase;color:var(--glow);margin-bottom:26px}
-h1{font-family:var(--serif);font-weight:300;font-size:clamp(3rem,8.5vw,8rem);line-height:.95;letter-spacing:-.01em;max-width:11ch}
-h1 em{font-style:italic;color:var(--glow);text-shadow:0 0 60px var(--glow-soft)}
-.line{display:block;overflow:hidden;padding-bottom:.08em}
-.line span{display:inline-block;transform:translateY(110%)}
-.hero p.lead{max-width:34ch;margin:30px 0 40px;color:var(--muted);font-size:1.05rem}
-.hero .cta{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
-.scroll-hint{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:14px}
-.scroll-hint::before{content:"";width:46px;height:1px;background:var(--muted);transform-origin:left;animation:ln 2s var(--ease) infinite}
-@keyframes ln{0%{transform:scaleX(0)}60%{transform:scaleX(1)}100%{transform:scaleX(1);opacity:0}}
-
-/* sélecteur de température */
-.temp{position:absolute;z-index:3;right:max(24px,calc((100% - 1240px)/2));bottom:44px;width:min(320px,calc(100% - 48px));
-  padding:20px 22px;border:1px solid var(--line);border-radius:18px;background:rgba(20,16,12,.55);backdrop-filter:blur(16px)}
-.temp header{display:flex;justify-content:space-between;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.hero .wrap{position:relative;z-index:2;pointer-events:none;padding:50px 0 130px}
+.hero .wrap>*{pointer-events:auto}
+.eyebrow{font-size:.74rem;letter-spacing:.32em;text-transform:uppercase;color:var(--glow);margin-bottom:24px}
+h1{font-family:var(--serif);font-weight:300;font-size:clamp(3rem,8.4vw,8.2rem);line-height:.93;letter-spacing:-.01em}
+h1 em,h2 em{font-style:italic;color:var(--glow)}
+h1 em{text-shadow:0 0 60px var(--glow-soft)}
+.line{display:block;overflow:hidden;padding-bottom:.08em;white-space:nowrap}
+.line span{display:inline-block;transform:translateY(110%);transition:transform 1.4s var(--ease)}
+.in .line span{transform:none}
+.hero .lead{max-width:38ch;margin:28px 0 38px;color:var(--muted);font-size:1.08rem}
+.hero .cta{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.micro{margin-top:26px;display:flex;gap:22px;flex-wrap:wrap;font-size:.74rem;letter-spacing:.1em;color:var(--muted)}
+.micro span::before{content:"✓";color:var(--glow);margin-right:8px}
+.hint3d{position:absolute;z-index:2;left:50%;bottom:44px;transform:translateX(-50%);font-size:.68rem;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);pointer-events:none;white-space:nowrap}
+.temp{position:absolute;z-index:3;right:max(24px,calc((100% - 1280px)/2));bottom:36px;width:min(320px,calc(100% - 48px));padding:18px 22px;border:1px solid var(--line);border-radius:18px;background:rgba(20,16,12,.55);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.temp header{display:flex;justify-content:space-between;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
 .temp output{color:var(--glow);font-variant-numeric:tabular-nums}
-.temp input{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;outline-offset:8px;
-  background:linear-gradient(90deg,#ff9a3c,#ffd9a0 45%,#fff3e0 70%,#cfe3ff)}
-.temp input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px var(--glow-soft),0 0 22px var(--glow);cursor:grab}
-.temp input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px var(--glow-soft),0 0 22px var(--glow);cursor:grab}
-.temp .names{display:flex;justify-content:space-between;margin-top:12px;font-size:.68rem;color:var(--muted);letter-spacing:.08em}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;outline-offset:8px;background:linear-gradient(90deg,#ff9a3c,#ffd9a0 45%,#fff3e0 70%,#cfe3ff)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px var(--glow-soft),0 0 22px var(--glow);cursor:grab}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px var(--glow-soft),0 0 22px var(--glow);cursor:grab}
+.temp .names{display:flex;justify-content:space-between;margin-top:12px;font-size:.66rem;color:var(--muted);letter-spacing:.08em}
 
-/* marquee */
-.marquee{border-block:1px solid var(--line);overflow:hidden;padding:22px 0;background:var(--bg2)}
-.marquee .track{display:flex;gap:56px;width:max-content;animation:mq 38s linear infinite;font-family:var(--serif);font-size:clamp(1.6rem,3vw,2.6rem);font-style:italic;font-weight:300;color:var(--muted)}
-.marquee .track span:nth-child(even){color:var(--glow)}
-@keyframes mq{to{transform:translateX(-50%)}}
+/* ---------- bande de réassurance ---------- */
+.trust{border-block:1px solid var(--line);background:var(--bg2)}
+.trust ul{display:grid;grid-template-columns:repeat(4,1fr)}
+.trust li{display:flex;gap:14px;align-items:center;padding:22px 20px;border-right:1px solid var(--line);font-size:.82rem}
+.trust li:last-child{border:0}
+.trust svg{flex:none;width:26px;height:26px;stroke:var(--glow);fill:none;stroke-width:1.3}
+.trust b{display:block;font-weight:500;letter-spacing:.04em}
+.trust small{color:var(--muted);font-size:.75rem}
 
-/* sections */
-section{padding:clamp(80px,12vw,170px) 0}
-.kicker{font-size:.72rem;letter-spacing:.3em;text-transform:uppercase;color:var(--glow);margin-bottom:20px}
-h2{font-family:var(--serif);font-weight:300;font-size:clamp(2.2rem,5vw,4.4rem);line-height:1.05}
-h2 em{color:var(--glow);font-style:italic}
+/* ---------- sections ---------- */
+section{padding:clamp(70px,10vw,140px) 0}
+.kicker{font-size:.72rem;letter-spacing:.3em;text-transform:uppercase;color:var(--glow);margin-bottom:18px}
+h2{font-family:var(--serif);font-weight:300;font-size:clamp(2.2rem,5vw,4.4rem);line-height:1.03}
+.sub{color:var(--muted);max-width:52ch;margin-top:18px}
+.rv{opacity:0;transform:translateY(40px);transition:opacity 1s var(--ease),transform 1s var(--ease);transition-delay:var(--d,0ms)}
+.rv.in{opacity:1;transform:none}
+.sh{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin-bottom:48px;flex-wrap:wrap}
 
-/* manifeste : mots révélés au scroll */
-.manifesto p{font-family:var(--serif);font-weight:300;font-size:clamp(1.8rem,4.2vw,3.6rem);line-height:1.2;max-width:24ch}
-.manifesto .w{display:inline-block;opacity:.14;transition:opacity .3s}
-.manifesto .w.lit{opacity:1}
+/* pièces */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.tile{position:relative;aspect-ratio:3/4;border-radius:var(--r);overflow:hidden;display:flex;align-items:flex-end;padding:24px;border:1px solid var(--line);text-align:left;width:100%;isolation:isolate}
+.tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55);transition:transform 1.2s var(--ease),filter .6s;z-index:-2}
+.tile::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,6,5,.92),transparent 62%);z-index:-1}
+.tile:hover img{transform:scale(1.07);filter:brightness(.85)}
+.tile h3{font-family:var(--serif);font-weight:300;font-size:2.1rem;line-height:1}
+.tile p{font-size:.78rem;color:var(--muted);margin-top:6px;letter-spacing:.06em}
+.tile .go{position:absolute;top:18px;right:18px;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;transition:.4s;background:rgba(8,6,5,.4)}
+.tile:hover .go{background:var(--glow);border-color:var(--glow);color:#000;transform:rotate(-45deg)}
 
-/* produits */
-.shead{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:56px;flex-wrap:wrap}
-.filters{display:flex;gap:8px;flex-wrap:wrap}
-.chip{padding:10px 20px;border:1px solid var(--line);border-radius:100px;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);transition:.3s}
+/* collection */
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:34px;justify-content:space-between}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:10px 20px;border:1px solid var(--line);border-radius:100px;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);transition:.3s}
 .chip:hover{color:var(--text);border-color:var(--glow)}
 .chip.on{background:var(--glow);border-color:var(--glow);color:#000}
+.sel{appearance:none;-webkit-appearance:none;background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23a3978a' fill='none'/%3E%3C/svg%3E") no-repeat right 16px center;color:var(--text);border:1px solid var(--line);border-radius:100px;padding:10px 40px 10px 20px;font:inherit;font-size:.78rem;letter-spacing:.06em;cursor:pointer}
+.count{font-size:.78rem;color:var(--muted);margin-bottom:18px;letter-spacing:.06em}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:22px}
-.card{position:relative;display:block;border-radius:20px;overflow:hidden;background:var(--card);border:1px solid var(--line);
-  transform-style:preserve-3d;transition:border-color .4s,box-shadow .5s;will-change:transform}
+.card{position:relative;display:flex;flex-direction:column;border-radius:var(--r);overflow:hidden;background:var(--card);border:1px solid var(--line);text-align:left;transition:border-color .4s,box-shadow .5s,transform .35s ease-out;will-change:transform}
 .card:hover{border-color:var(--glow);box-shadow:0 30px 80px -30px var(--glow-soft)}
-.card .img{aspect-ratio:1/1.1;overflow:hidden;background:#0d0b09}
-.card img{width:100%;height:100%;object-fit:cover;transition:transform 1.1s var(--ease),filter .6s;filter:brightness(.9)}
-.card:hover img{transform:scale(1.07);filter:brightness(1.05)}
-.card .shine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;
-  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),var(--glow-soft),transparent 55%)}
+.card .im{position:relative;aspect-ratio:1/1.08;overflow:hidden;background:#0d0b09}
+.card .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.1s var(--ease),opacity .6s}
+.card .im img+img{opacity:0}
+.card:hover .im img{transform:scale(1.06)}
+.card:hover .im img+img{opacity:1}
+.shine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),var(--glow-soft),transparent 55%)}
 .card:hover .shine{opacity:1}
-.card .info{padding:20px 22px 24px;display:flex;justify-content:space-between;align-items:end;gap:12px;transform:translateZ(30px)}
-.card h3{font-family:var(--serif);font-weight:400;font-size:1.7rem;line-height:1}
-.card small{display:block;margin-top:6px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.card .price{text-align:right;font-size:.95rem;white-space:nowrap}
-.card .price span{display:block;font-size:.66rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.tag{position:absolute;top:14px;left:14px;z-index:2;padding:5px 12px;border-radius:100px;background:rgba(8,6,5,.78);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text);backdrop-filter:blur(6px)}
+.card .info{padding:18px 22px 22px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex:1}
+.card h3{font-family:var(--serif);font-weight:400;font-size:1.8rem;line-height:1}
+.card small{display:block;margin-top:6px;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.price{text-align:right;font-size:1.02rem;font-weight:400;white-space:nowrap}
+.price span{display:block;font-size:.64rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.card .add{margin:0 22px 22px;padding:13px;border:1px solid var(--line);border-radius:100px;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;text-align:center;transition:.4s;font-weight:500}
+.card:hover .add{background:var(--glow);border-color:var(--glow);color:#000}
 .card.hide{display:none}
-.more{text-align:center;margin-top:60px}
+.more{text-align:center;margin-top:56px}
 
-/* chiffres */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:40px;border-top:1px solid var(--line);padding-top:60px}
-.stat b{display:block;font-family:var(--serif);font-weight:300;font-size:clamp(3rem,6vw,5rem);line-height:1;color:var(--glow)}
-.stat span{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+/* pièce du moment */
+.spot{background:var(--bg2);position:relative;overflow:hidden}
+.spot::before{content:"";position:absolute;right:-10%;top:10%;width:700px;height:700px;background:radial-gradient(circle,var(--glow-soft),transparent 65%);pointer-events:none}
+.spot-g{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(30px,5vw,80px);align-items:start;position:relative}
+.spot-g>*{min-width:0}
+.gal .main{position:relative;aspect-ratio:1/1;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#0d0b09;cursor:zoom-in}
+.gal .main img{width:100%;height:100%;object-fit:cover;transition:transform .9s var(--ease),opacity .4s}
+.gal .main:hover img{transform:scale(1.06)}
+.thumbs{display:flex;gap:10px;margin-top:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.thumbs::-webkit-scrollbar{display:none}
+.thumbs button{flex:none;width:76px;height:76px;border-radius:12px;overflow:hidden;border:1px solid var(--line);opacity:.55;transition:.3s}
+.thumbs button.on,.thumbs button:hover{opacity:1;border-color:var(--glow)}
+.thumbs img{width:100%;height:100%;object-fit:cover}
+.pinfo{position:sticky;top:100px}
+.pinfo .typ{font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--glow)}
+.pinfo h3{font-family:var(--serif);font-weight:300;font-size:clamp(2.6rem,5vw,4.4rem);line-height:1;margin:10px 0 6px}
+.pinfo .pr{font-size:1.6rem;font-weight:300;margin:6px 0 16px}
+.pinfo .pr small{font-size:.7rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-right:8px}
+.pinfo .ld{color:var(--muted);margin-bottom:18px}
+.feats{display:grid;gap:8px;margin-bottom:22px;font-size:.92rem}
+.feats li::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--glow);margin-right:12px;box-shadow:0 0 10px var(--glow);vertical-align:middle}
+.opt{border:0;margin-bottom:18px}
+.opt legend{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.opt legend b{color:var(--text);font-weight:400;letter-spacing:.06em;margin-left:10px;text-transform:none;font-size:.82rem}
+.ochips{display:flex;gap:8px;flex-wrap:wrap}
+.oc{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1px solid var(--line);border-radius:100px;font-size:.82rem;transition:.25s;background:var(--card)}
+.oc:hover{border-color:var(--glow)}
+.oc.on{border-color:var(--glow);background:var(--glow-soft);box-shadow:0 0 0 1px var(--glow) inset}
+.oc.dim{opacity:.4}
+.oc i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.3)}
+.buy{display:flex;gap:12px;align-items:stretch;margin-top:8px}
+.qty{display:flex;align-items:center;border:1px solid var(--line);border-radius:100px;overflow:hidden;flex:none}
+.qty button{width:42px;height:100%;font-size:1.1rem;transition:.2s}
+.qty button:hover{background:var(--glow-soft)}
+.qty output{min-width:30px;text-align:center;font-variant-numeric:tabular-nums}
+.buy .btn{flex:1}
+.under{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:16px;font-size:.78rem;color:var(--muted)}
+.specs{margin-top:22px;border-top:1px solid var(--line)}
+.specs div{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.86rem}
+.specs span{color:var(--muted)}
+.assure{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;font-size:.74rem;letter-spacing:.06em;color:var(--muted)}
+.assure span::before{content:"✓";color:var(--glow);margin-right:7px}
 
-/* univers */
-.rooms{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:56px}
-.room{position:relative;aspect-ratio:3/4;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;padding:28px;border:1px solid var(--line)}
-.room img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.55);transition:transform 1.2s var(--ease),filter .6s}
-.room::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,6,5,.92),transparent 60%)}
-.room:hover img{transform:scale(1.06);filter:brightness(.8)}
-.room div{position:relative;z-index:1}
-.room h3{font-family:var(--serif);font-weight:300;font-size:2.4rem;line-height:1}
-.room p{color:var(--muted);font-size:.85rem;margin-top:8px}
+/* lumière */
+.temps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:50px}
+.tcard{position:relative;text-align:left;padding:34px 30px;border-radius:var(--r);border:1px solid var(--line);background:var(--card);overflow:hidden;transition:.5s var(--ease)}
+.tcard::before{content:"";position:absolute;left:-30%;top:-50%;width:90%;height:120%;background:radial-gradient(circle,var(--c),transparent 65%);opacity:.22;transition:opacity .5s}
+.tcard:hover::before,.tcard.on::before{opacity:.5}
+.tcard.on{border-color:var(--c)}
+.tcard>*{position:relative}
+.tcard .k{font-family:var(--serif);font-size:3.2rem;font-weight:300;line-height:1;color:var(--c)}
+.tcard h3{font-size:.8rem;letter-spacing:.22em;text-transform:uppercase;margin:12px 0 8px;font-weight:500}
+.tcard p{color:var(--muted);font-size:.9rem}
+.tcard .ap{display:inline-block;margin-top:16px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--c)}
 
-/* final */
+/* quiz */
+.quiz{background:var(--bg2)}
+.qbox{max-width:900px;margin:50px auto 0;border:1px solid var(--line);border-radius:28px;padding:clamp(26px,5vw,56px);background:var(--card);position:relative;overflow:hidden}
+.qbox::before{content:"";position:absolute;right:-20%;top:-40%;width:70%;height:100%;background:radial-gradient(circle,var(--glow-soft),transparent 65%);pointer-events:none}
+.qprog{display:flex;gap:6px;margin-bottom:34px;position:relative}
+.qprog i{flex:1;height:3px;border-radius:3px;background:var(--line);transition:background .5s}
+.qprog i.on{background:var(--glow);box-shadow:0 0 12px var(--glow)}
+.qq{font-family:var(--serif);font-size:clamp(1.8rem,3.6vw,2.8rem);font-weight:300;line-height:1.1;margin-bottom:28px;position:relative}
+.qopts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;position:relative}
+.qo{padding:20px 24px;border:1px solid var(--line);border-radius:16px;text-align:left;transition:.3s;background:var(--card2)}
+.qo:hover{border-color:var(--glow);transform:translateY(-2px);box-shadow:0 14px 40px -20px var(--glow)}
+.qo b{display:block;font-weight:500;font-size:1rem}
+.qo small{color:var(--muted);font-size:.8rem}
+.qstep{animation:qin .6s var(--ease)}
+@keyframes qin{from{opacity:0;transform:translateX(30px)}}
+.qres{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;position:relative}
+.rcard{text-align:left;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--card2);transition:.4s;display:flex;flex-direction:column}
+.rcard:hover{border-color:var(--glow)}
+.rcard img{aspect-ratio:1;object-fit:cover;width:100%}
+.rcard div{padding:14px 16px 18px}
+.rcard h4{font-family:var(--serif);font-weight:400;font-size:1.6rem;line-height:1}
+.rcard p{font-size:.78rem;color:var(--muted);margin:6px 0 10px}
+.rcard .top{display:inline-block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:#000;background:var(--glow);padding:3px 10px;border-radius:20px;margin-bottom:8px}
+.qrestart{margin-top:24px;position:relative}
+
+/* faq */
+.faq{max-width:860px;margin:50px auto 0}
+.faq details{border-bottom:1px solid var(--line)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:24px 0;font-family:var(--serif);font-size:1.6rem;font-weight:400}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-family:var(--sans);font-weight:200;font-size:1.8rem;color:var(--glow);transition:transform .4s var(--ease)}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{color:var(--muted);padding:0 40px 26px 0}
+
+/* cta final + footer */
 .final{text-align:center;position:relative;overflow:hidden}
-.final::before{content:"";position:absolute;left:50%;top:50%;width:900px;height:900px;transform:translate(-50%,-50%);background:radial-gradient(circle,var(--glow-soft),transparent 62%);pointer-events:none}
+.final::before{content:"";position:absolute;left:50%;top:50%;width:900px;height:900px;max-width:140vw;transform:translate(-50%,-50%);background:radial-gradient(circle,var(--glow-soft),transparent 62%);pointer-events:none}
 .final .wrap{position:relative}
-.final h2{max-width:14ch;margin:0 auto 40px}
-footer{border-top:1px solid var(--line);padding:36px 0;font-size:.78rem;color:var(--muted)}
+.final h2{max-width:14ch;margin:0 auto 18px}
+.final p{color:var(--muted);margin:0 auto 38px;max-width:44ch}
+footer{border-top:1px solid var(--line);padding:36px 0 110px;font-size:.78rem;color:var(--muted)}
 footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 
-/* reveal */
-.rv{opacity:0;transform:translateY(40px)}
+/* ---------- overlay / modal / drawer ---------- */
+.ov{position:fixed;inset:0;z-index:100;background:rgba(4,3,2,.7);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:.4s}
+.ov.open{opacity:1;visibility:visible}
+.modal{position:fixed;z-index:110;left:50%;top:50%;width:min(1080px,calc(100% - 32px));max-height:calc(100svh - 32px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:28px;padding:clamp(18px,3vw,36px);transform:translate(-50%,-46%) scale(.97);opacity:0;visibility:hidden;transition:.5s var(--ease);box-shadow:0 60px 160px -40px var(--glow-soft)}
+.modal.open{transform:translate(-50%,-50%);opacity:1;visibility:visible}
+.modal .spot-g{grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,48px)}
+.modal .pinfo{position:static}
+.modal .pinfo h3{font-size:clamp(2.2rem,4vw,3.4rem)}
+.x{position:absolute;top:16px;right:16px;width:42px;height:42px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:1.3rem;z-index:3;background:var(--card);transition:.3s}
+.x:hover{border-color:var(--glow);transform:rotate(90deg)}
+.drawer{position:fixed;z-index:120;top:0;right:0;height:100%;width:min(460px,100%);background:var(--bg2);border-left:1px solid var(--line);display:flex;flex-direction:column;transform:translateX(102%);transition:transform .6s var(--ease)}
+.drawer.open{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:24px 28px;border-bottom:1px solid var(--line)}
+.dh h3{font-family:var(--serif);font-weight:300;font-size:2rem}
+.dh .x{position:static}
+.db{flex:1;overflow:auto;padding:12px 28px}
+.free{padding:18px 28px 0;font-size:.8rem;color:var(--muted)}
+.free .bar{height:4px;border-radius:4px;background:var(--line);margin-top:10px;overflow:hidden}
+.free .bar i{display:block;height:100%;background:var(--glow);box-shadow:0 0 12px var(--glow);transition:width .7s var(--ease)}
+.free b{color:var(--glow);font-weight:500}
+.li{display:grid;grid-template-columns:84px 1fr auto;gap:14px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+.li img{width:84px;height:84px;border-radius:12px;object-fit:cover}
+.li h4{font-family:var(--serif);font-size:1.4rem;font-weight:400;line-height:1.1}
+.li small{display:block;color:var(--muted);font-size:.76rem;margin:3px 0 10px;line-height:1.4}
+.li .qty{height:34px}
+.li .qty button{width:32px}
+.li .rm{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-left:12px;border-bottom:1px solid var(--line)}
+.li .rm:hover{color:var(--glow)}
+.empty{text-align:center;padding:60px 10px;color:var(--muted)}
+.empty .btn{margin-top:20px}
+.ups{padding:22px 0}
+.ups h5{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:400;margin-bottom:14px}
+.up{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;padding:8px 0;font-size:.85rem;width:100%;text-align:left}
+.up img{width:56px;height:56px;border-radius:10px;object-fit:cover}
+.up b{font-family:var(--serif);font-size:1.25rem;font-weight:400;display:block;line-height:1}
+.up span{color:var(--muted);font-size:.74rem}
+.up em{font-style:normal;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--line);border-radius:20px;padding:6px 12px;transition:.3s}
+.up:hover em{background:var(--glow);color:#000;border-color:var(--glow)}
+.df{padding:22px 28px 28px;border-top:1px solid var(--line);background:var(--card)}
+.sub-t{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.sub-t span{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.sub-t b{font-family:var(--serif);font-size:2rem;font-weight:400}
+.df p{font-size:.74rem;color:var(--muted);margin-bottom:16px}
+
+/* barre mobile */
+.sticky{position:fixed;z-index:70;left:12px;right:12px;bottom:12px;display:none;gap:10px;padding:10px;border:1px solid var(--line);border-radius:100px;background:rgba(16,13,11,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transform:translateY(160%);transition:transform .6s var(--ease)}
+.sticky.show{transform:none}
+.sticky .btn{flex:1;padding:13px 18px}
 
 @media(max-width:860px){
-  .links{display:none}
-  .rooms{grid-template-columns:1fr}
-  .room{aspect-ratio:4/3}
-  .temp{bottom:24px}
-  .hero{align-items:start;padding-top:130px}
+  .hero{display:flex;flex-direction:column;min-height:0;align-items:stretch}
+  .hero .wrap{order:1;padding:34px 0 10px}
+  #scene{order:2;position:relative;inset:auto;height:430px;flex:none}
+  .temp{order:3;position:relative;right:auto;bottom:auto;margin:-86px auto 34px;width:calc(100% - 32px)}
+  .hint3d{display:none}
+}
+@media(max-width:980px){
+  .links{display:none} .burger{display:grid}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .trust ul{grid-template-columns:repeat(2,1fr)} .trust li:nth-child(2){border-right:0} .trust li:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .spot-g,.modal .spot-g{grid-template-columns:1fr}
+  .pinfo{position:static}
+  .temps{grid-template-columns:1fr}
+  .qres{grid-template-columns:1fr}
+  .rcard{flex-direction:row} .rcard img{width:110px;aspect-ratio:1}
+  .sticky{display:flex}
   .halo{display:none}
 }
+@media(max-width:600px){
+  .wrap{width:calc(100% - 32px)}
+  .micro{display:none} .hero .lead{margin:18px 0 26px;font-size:1rem} #scene{height:380px!important}
+  .logo{font-size:1.15rem;gap:8px} nav .wrap{gap:8px} .cart-btn{padding:9px 12px}
+  .temp{padding:14px 18px}
+  .qopts{grid-template-columns:1fr}
+  .cart-btn .t{display:none}
+  .tiles{gap:10px} .tile{padding:16px} .tile h3{font-size:1.6rem}
+  .grid{grid-template-columns:1fr 1fr;gap:12px}
+  .card h3{font-size:1.35rem} .card .info{padding:14px 14px 14px;flex-direction:column;align-items:flex-start}
+  .card .price{text-align:left} .card .add{margin:0 14px 14px;padding:11px}
+  .announce{font-size:.66rem}
+  .buy{flex-wrap:wrap} .buy .qty{height:48px}
+}
 @media(prefers-reduced-motion:reduce){
-  *{animation:none!important;transition:none!important}
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
   .rv,.line span{opacity:1!important;transform:none!important}
-  .manifesto .w{opacity:1}
 }
 </style>
 </head>
@@ -178,360 +366,672 @@ footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
 <div class="loader" id="loader" aria-hidden="true"><div class="bulb"></div></div>
 <div class="halo" id="halo" aria-hidden="true"></div>
 
+<div class="announce" id="announce"></div>
+
 <nav id="nav">
   <div class="wrap">
     <a href="#top" class="logo"><i></i>La Galerie Lumineuse</a>
     <div class="links">
       <a href="#collection">Collection</a>
-      <a href="#univers">Univers</a>
-      <a href="#manifeste">Manifeste</a>
-      <a href="https://lagalerielumineuse.com" target="_blank" rel="noopener">Boutique</a>
+      <a href="#pieces">Par pièce</a>
+      <a href="#trouver">Trouver mon luminaire</a>
+      <a href="#lumiere">Lumière</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-r">
+      <button class="cart-btn" id="cartBtn" aria-label="Ouvrir le panier">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 8h14l-1.2 11H6.2L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="t">Panier</span><span class="cart-count" id="cartCount" aria-live="polite">0</span>
+      </button>
+      <button class="burger" id="burger" aria-label="Menu"><span></span></button>
     </div>
   </div>
 </nav>
+<div class="mmenu" id="mmenu">
+  <a href="#collection">Collection</a><a href="#pieces">Par pièce</a><a href="#trouver">Trouver mon luminaire</a><a href="#lumiere">Lumière</a><a href="#faq">FAQ</a>
+</div>
 
+<!-- ================= HERO ================= -->
 <header class="hero" id="top">
   <canvas id="scene" aria-hidden="true"></canvas>
   <div class="wrap">
-    <p class="eyebrow">Luminaires design · Suspensions · Appliques</p>
+    <p class="eyebrow rv">Luminaires design · Suspensions · Appliques · Lampes</p>
     <h1>
       <span class="line"><span>Sculptez</span></span>
-      <span class="line"><span>votre <em>lumière</em></span></span>
+      <span class="line" style="--i:1"><span style="transition-delay:.14s">votre <em>lumière</em></span></span>
     </h1>
-    <p class="lead rv">Des pièces graphiques, minérales ou aériennes qui transforment un simple intérieur en galerie.</p>
-    <div class="cta rv">
-      <a href="#collection" class="btn">Découvrir la collection</a>
-      <span class="scroll-hint">Défiler</span>
+    <p class="lead rv" style="--d:500ms">Des pièces graphiques, minérales ou aériennes qui transforment un intérieur en galerie. Choisissez votre taille, votre finition et votre température de lumière.</p>
+    <div class="cta rv" style="--d:650ms">
+      <a href="#trouver" class="btn solid">Trouver mon luminaire</a>
+      <a href="#collection" class="btn">Voir la collection</a>
     </div>
+    <div class="micro rv" style="--d:800ms"><span>Paiement sécurisé</span><span>Plusieurs tailles &amp; finitions</span><span>LED incluses (selon modèle)</span></div>
   </div>
-
-  <div class="temp rv" role="group" aria-label="Température de lumière">
-    <header><span>Température</span><output id="kOut">3000 K</output></header>
+  <p class="hint3d">Touchez un luminaire pour l'éteindre</p>
+  <div class="temp rv" style="--d:900ms" role="group" aria-label="Température de lumière">
+    <header><span>Votre lumière</span><output id="kOut">3000 K</output></header>
     <input type="range" id="kRange" min="2200" max="6500" step="50" value="3000" aria-label="Température de couleur en kelvins">
     <div class="names"><span>Bougie</span><span>Chaud</span><span>Naturel</span><span>Froid</span></div>
   </div>
 </header>
 
-<div class="marquee" aria-hidden="true">
-  <div class="track">
-    <span>Suspensions</span><span>Appliques</span><span>Lustres</span><span>Lampes de table</span><span>Plafonniers</span><span>Dimmable</span>
-    <span>Suspensions</span><span>Appliques</span><span>Lustres</span><span>Lampes de table</span><span>Plafonniers</span><span>Dimmable</span>
-  </div>
+<div class="trust">
+  <div class="wrap"><ul id="trustList"></ul></div>
 </div>
 
-<section class="manifesto" id="manifeste">
+<!-- ================= PAR PIÈCE ================= -->
+<section id="pieces">
   <div class="wrap">
-    <p class="kicker">Manifeste</p>
-    <p id="manifestText">La lumière ne se contente pas d'éclairer une pièce, elle en dessine l'atmosphère. Chaque luminaire est choisi pour sa silhouette, sa matière et la chaleur qu'il apporte au quotidien.</p>
+    <div class="sh">
+      <div><p class="kicker rv">Par pièce</p><h2 class="rv">Une lumière pour <em>chaque pièce</em></h2></div>
+      <a href="#collection" class="link rv">Toute la collection</a>
+    </div>
+    <div class="tiles" id="tiles"></div>
   </div>
 </section>
 
+<!-- ================= COLLECTION ================= -->
 <section id="collection" style="padding-top:0">
   <div class="wrap">
-    <div class="shead">
-      <div>
-        <p class="kicker rv">La collection</p>
-        <h2 class="rv">Pièces <em>signature</em></h2>
+    <div class="sh">
+      <div><p class="kicker rv">La collection</p><h2 class="rv">Pièces <em>signature</em></h2></div>
+    </div>
+    <div class="toolbar rv">
+      <div class="chips" id="catChips" role="tablist" aria-label="Catégorie"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <select class="sel" id="roomSel" aria-label="Filtrer par pièce"></select>
+        <select class="sel" id="sortSel" aria-label="Trier">
+          <option value="feat">Sélection</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option>
+        </select>
       </div>
-      <div class="filters rv" id="filters" role="tablist" aria-label="Filtrer par catégorie"></div>
     </div>
+    <p class="count" id="count" aria-live="polite"></p>
     <div class="grid" id="grid"></div>
-    <div class="more rv"><a class="btn" href="https://lagalerielumineuse.com/collections/all" target="_blank" rel="noopener">Voir les 190+ références</a></div>
+    <div class="more rv"><a class="btn" id="allLink" target="_blank" rel="noopener">Voir les 190+ références</a></div>
   </div>
 </section>
 
-<section id="univers" style="background:var(--bg2)">
+<!-- ================= PIÈCE DU MOMENT ================= -->
+<section class="spot" id="spot">
   <div class="wrap">
-    <p class="kicker rv">Univers</p>
-    <h2 class="rv">Une lumière pour <em>chaque pièce</em></h2>
-    <div class="rooms">
-      <a class="room rv" href="https://lagalerielumineuse.com" target="_blank" rel="noopener">
-        <img loading="lazy" alt="" src="https://cdn.shopify.com/s/files/1/1042/6423/7381/files/8B621698-A5CD-4640-B385-86591B1A177E.webp?v=1776443303">
-        <div><h3>Salon</h3><p>Suspensions minimalistes, ambiance wabi-sabi</p></div>
-      </a>
-      <a class="room rv" href="https://lagalerielumineuse.com" target="_blank" rel="noopener">
-        <img loading="lazy" alt="" src="https://cdn.shopify.com/s/files/1/1042/6423/7381/files/ED4C1FE7-DFA0-4444-88A5-D6640F12043B.jpg?v=1776443479">
-        <div><h3>Salle à manger</h3><p>Lustres sculpturaux pour les grandes tables</p></div>
-      </a>
-      <a class="room rv" href="https://lagalerielumineuse.com" target="_blank" rel="noopener">
-        <img loading="lazy" alt="" src="https://cdn.shopify.com/s/files/1/1042/6423/7381/files/neba-01.jpg?v=1789084027">
-        <div><h3>Chambre</h3><p>Appliques et lampes à la lumière douce</p></div>
-      </a>
+    <div class="sh"><div><p class="kicker rv">Pièce du moment</p><h2 class="rv">Un mur de <em>lumière</em></h2></div></div>
+    <div class="spot-g">
+      <div class="gal rv" id="spotGal"></div>
+      <div class="pinfo rv" id="spotInfo" style="--d:150ms"></div>
     </div>
   </div>
 </section>
 
-<section>
+<!-- ================= LUMIÈRE ================= -->
+<section id="lumiere">
   <div class="wrap">
-    <div class="stats">
-      <div class="stat rv"><b data-n="190" data-s="+">0</b><span>Luminaires</span></div>
-      <div class="stat rv"><b data-n="3">0</b><span>Températures de lumière</span></div>
-      <div class="stat rv"><b data-n="100" data-s="%">0</b><span>Pensé pour la déco</span></div>
+    <p class="kicker rv">Température de couleur</p>
+    <h2 class="rv">Quelle lumière <em>choisir</em> ?</h2>
+    <p class="sub rv">La même pièce n'a pas le même visage selon la température de couleur. Touchez une carte : toute la page s'éclaire différemment.</p>
+    <div class="temps" id="temps"></div>
+  </div>
+</section>
+
+<!-- ================= QUIZ ================= -->
+<section class="quiz" id="trouver">
+  <div class="wrap">
+    <div style="text-align:center">
+      <p class="kicker rv">Conseil personnalisé</p>
+      <h2 class="rv">Trouvez votre luminaire en <em>30 secondes</em></h2>
+      <p class="sub rv" style="margin-inline:auto">Trois questions, trois recommandations adaptées à votre pièce, votre style et votre budget.</p>
     </div>
+    <div class="qbox rv" id="qbox"></div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq">
+  <div class="wrap">
+    <div style="text-align:center"><p class="kicker rv">Questions fréquentes</p><h2 class="rv">Bien choisir son <em>luminaire</em></h2></div>
+    <div class="faq rv" id="faqList"></div>
   </div>
 </section>
 
 <section class="final">
   <div class="wrap">
     <h2 class="rv">Allumez votre <em>intérieur</em></h2>
-    <a class="btn rv" href="https://lagalerielumineuse.com" target="_blank" rel="noopener">Entrer dans la galerie</a>
+    <p class="rv">Plus de 190 luminaires design, des tailles et finitions pour chaque projet.</p>
+    <a href="#collection" class="btn solid rv">Choisir mon luminaire</a>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
     <span>© <span id="yr"></span> La Galerie Lumineuse</span>
-    <a href="https://lagalerielumineuse.com" target="_blank" rel="noopener">lagalerielumineuse.com</a>
+    <a href="#" id="shopLink" target="_blank" rel="noopener"></a>
   </div>
 </footer>
 
+<div class="sticky" id="sticky">
+  <a href="#trouver" class="btn solid">Trouver mon luminaire</a>
+  <button class="btn" id="cartBtn2">Panier <span class="cart-count" id="cartCount2">0</span></button>
+</div>
+
+<!-- modal + drawer -->
+<div class="ov" id="ov"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Détail du produit"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Panier">
+  <div class="dh"><h3>Votre panier</h3><button class="x" id="drawerX" aria-label="Fermer">×</button></div>
+  <div class="free" id="free" hidden></div>
+  <div class="db" id="dbody"></div>
+  <div class="df" id="dfoot"></div>
+</aside>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script>
 (function(){
 'use strict';
-var SHOP='https://lagalerielumineuse.com/products/';
+
+/* ============================================================
+   CONFIGURATION — à adapter
+============================================================ */
+var CONFIG={
+  shop:'https://lagalerielumineuse.com',
+  announcement:'Paiement 100 % sécurisé via Shopify · LED incluses sur la plupart des modèles',
+  freeShippingFrom:null,   // ex: 150  → affiche une barre « livraison offerte dès 150 € ». null = désactivé
+  reassurance:[            // 4 items de la bande sous le hero (modifiez selon vos vraies conditions)
+    {t:'Paiement sécurisé',s:'Checkout Shopify',i:'lock'},
+    {t:'Tailles & finitions',s:'Choisissez la vôtre',i:'size'},
+    {t:'LED incluses',s:'Selon les modèles',i:'bulb'},
+    {t:'3 températures',s:'Chaud, naturel, froid',i:'sun'}
+  ]
+};
+
+/* ============================================================
+   DONNÉES — produits réels de la boutique (variantes, prix, photos)
+   v: [variant_id, prix, [valeurs des options]]
+============================================================ */
 var CDN='https://cdn.shopify.com/s/files/1/1042/6423/7381/files/';
-var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-/* ---------- Données (produits réels de la boutique) ---------- */
-var PRODUCTS=[
-  {n:'BEAMY', t:'Suspension', p:4250, h:'modern-luxury-villa-chandelier-crystal-lamp-for-kitchen-island-designer-art-decorative-lighting-fixture', i:'ED4C1FE7-DFA0-4444-88A5-D6640F12043B.jpg?v=1776443479'},
-  {n:'LÉYA',  t:'Suspension', p:378,  h:'nordic-designer-creative-fishbone-pendant-lights-villa-hall-led-ceiling-chandelier-lustre-home-decor-living-room-hanging-lamps', i:'leya-p1.jpg?v=1789088173'},
-  {n:'VEYA',  t:'Suspension', p:340,  h:'veya', i:'8B621698-A5CD-4640-B385-86591B1A177E.webp?v=1776443303'},
-  {n:'SOLIS', t:'Suspension', p:237,  h:'nordic-minimalist-living-room-restaurant-lamp-creative-personality-study-cafe-clothing-store-art-chandelier', i:'8B015FA6-52C4-4DD8-B98A-DF3552000A22.webp?v=1776631346'},
-  {n:'NOVA',  t:'Suspension', p:255,  h:'nova', i:'84806558-1FA3-4C30-A1FB-15BC927ECFC3_26757b41-55e1-4176-8ba9-095e3dcaab55.jpg?v=1776631284'},
-  {n:'LUXOR', t:'Suspension', p:425,  h:'modern-home-decoration-crystal-chandelier-stair-pendant-lamp-living-room-pendant-lights-interior-lighting', i:'S23ec0dd595044a39b2136e30e429c0fcl.webp?v=1777759054'},
-  {n:'GEMMA', t:'Plafonnier', p:244,  h:'european-style-design-silver-glass-magic-bean-suspension-chandelier-lustre-bedroom-dining-room-home-decoration-lighting', i:'Se730ffeef7c7470780ae61dbd4f41873d.webp?v=1777759050'},
-  {n:'NEBA',  t:'Applique murale', p:132, h:'solid-wood-wall-lamp-minimalist-long-strip-lamp-living-room-background-wall-corridor-balcony-bedroom-bedside-lighting-decoration', i:'neba-01.jpg?v=1789084027'},
-  {n:'DUNA',  t:'Applique murale', p:74,  h:'american-bedroom-bedside-wall-led-lights-simple-modern-kitchen-living-hotel-aisle-staircase-sconce-lamps-for-room-home-appliance', i:'Sea297d41e0734c78b03fd51b38723081R.webp?v=1777759056'},
-  {n:'BULLE', t:'Applique murale', p:83,  h:'modern-glass-ball-wall-sconce-light-fixture-bedroom-bedside-home-decoration-living-room-gold-lighting-lamp-indoor-free-shipping', i:'S5d1999631a5e4d6fa5ecc9adbb174648l.webp?v=1777759055'},
-  {n:'ROKA',  t:'Lampe de table', p:71,  h:'wabi-sabi-style-travertine-led-pendant-light-modern-natural-stone-wood-chandelier-for-bedside-restaurant', i:'S67adb00782fb441eb1f578d997a33d72W.webp?v=1777759051'},
-  {n:'LINA',  t:'Lampe de table', p:105, h:'modern-minimalist-led-longer-pendant-lights-for-bedroom-bedside-reading-chandelier-lamps-living-room-bar-coffee-decor-fixtures', i:'Sa4aad6b2dbf6406fba7664b34cd076c8m.webp?v=1777759049'}
+var P=[
+ {id:'leya',n:'LÉYA',cat:'Suspensions',h:'nordic-designer-creative-fishbone-pendant-lights-villa-hall-led-ceiling-chandelier-lustre-home-decor-living-room-hanging-lamps',
+  rooms:['salon','salle'],style:['statement'],tag:'Best of design',
+  lead:"Structurez votre intérieur avec un luminaire graphique à l'effet arête moderne, pensé pour les grands espaces.",
+  feats:['Design unique, effet arête sculptural','Intensité lumineuse réglable','Plusieurs tailles disponibles','Idéal pour les grands espaces'],
+  spec:[['Matière','Fer & acrylique'],['Éclairage','LED, télécommande incluse']],
+  img:['leya-p1.jpg?v=1789088173','leya-p2.jpg?v=1789088173','leya-p3.jpg?v=1789088173','leya-p4.jpg?v=1789088173','leya-p5.jpg?v=1789088173','leya-p6.jpg?v=1789088173'],
+  opts:['Taille','Coloris'],
+  v:[['57603605365061',378,['10 têtes · 48 cm','Noir']],['57603605397829',378,['10 têtes · 48 cm','Blanc']],['57603605299525',604,['20 têtes · 97 cm','Noir']],['57603605332293',604,['20 têtes · 97 cm','Blanc']],['57603605233989',819,['30 têtes · 145 cm','Noir']],['57603605266757',819,['30 têtes · 145 cm','Blanc']],['57603605168453',1033,['40 têtes · 190 cm','Noir']],['57603605201221',1033,['40 têtes · 190 cm','Blanc']]]},
+ {id:'beamy',n:'BEAMY',cat:'Suspensions',h:'modern-luxury-villa-chandelier-crystal-lamp-for-kitchen-island-designer-art-decorative-lighting-fixture',
+  rooms:['salon','salle'],style:['statement','glam'],tag:'Pièce maîtresse',
+  lead:"Un lustre sculptural inspiré des branches d'arbre, à la lumière indirecte enveloppante.",
+  feats:['Design unique et haut de gamme','Lumière indirecte et apaisante','Effet décoratif spectaculaire'],
+  spec:[['Matière','Cuivre'],['Éclairage','LED incluses, diffusion vers le haut']],
+  img:['ED4C1FE7-DFA0-4444-88A5-D6640F12043B.jpg?v=1776443479','66912835-7B4B-407F-8255-F70318F43F61.jpg?v=1776443479','FAA10053-0288-4FA1-826A-B478A501AF29.jpg?v=1776443478','10BC8728-B4BC-495D-8021-94BD395343E8.jpg?v=1776443479','5192A723-439C-4A78-8BCA-1366EAEB6B52.jpg?v=1776443479'],
+  opts:['Dimensions'],
+  v:[['57603608871237',4250,['120 × 35 × 30 cm']],['57603608936773',5964,['150 × 40 × 30 cm']],['57603608838469',7499,['180 × 50 × 45 cm']],['57603608969541',8295,['200 × 50 × 45 cm']]]},
+ {id:'solis',n:'SOLIS',cat:'Suspensions',h:'nordic-minimalist-living-room-restaurant-lamp-creative-personality-study-cafe-clothing-store-art-chandelier',
+  rooms:['salon','salle'],style:['minimal'],tag:'3 finitions',
+  lead:"Un lustre au design nordique épuré, pour une lumière douce qui structure l'espace sans l'alourdir.",
+  feats:['Design minimaliste et intemporel','Lumière douce et homogène','Installation simple'],
+  spec:[['Matière','Métal & verre'],['Éclairage','LED incluses, 90–260 V']],
+  img:['8B015FA6-52C4-4DD8-B98A-DF3552000A22.webp?v=1776631346','051EC547-39F3-4948-9221-D74B127269DA.webp?v=1776631346','A99B0C2F-1920-4754-9276-452A7C36DE9C.webp?v=1776631346','2F85DF26-87F5-4C1F-A13A-A29ED4997658.webp?v=1776631346','IMG-7222.jpg?v=1776814411'],
+  opts:['Finition','Diamètre'],
+  v:[['57603609166149',237,['Noir','70 cm']],['57603609198917',265,['Noir','100 cm']],['57603609297221',319,['Noir','130 cm']],['57603609395525',265,['Or','70 cm']],['57603609362757',292,['Or','100 cm']],['57603609231685',347,['Or','130 cm']],['57603609329989',237,['Rouge','70 cm']],['57603609264453',265,['Rouge','100 cm']],['57603609428293',319,['Rouge','130 cm']]]},
+ {id:'veya',n:'VEYA',cat:'Suspensions',h:'veya',
+  rooms:['salon','chambre'],style:['minimal','naturel'],tag:'Wabi-sabi',
+  lead:"Une suspension minimaliste inspirée de l'esprit Wabi-Sabi, entre calme et équilibre naturel.",
+  feats:['Design minimaliste et épuré','Lumière douce et enveloppante','Une pièce maîtresse discrète'],spec:[],
+  img:['8B621698-A5CD-4640-B385-86591B1A177E.webp?v=1776443303','B6E75D12-652F-45A3-91B0-6F7DFC9FFFE1.webp?v=1776631334','3F01CE9F-3F1A-4649-8F00-3CA714CC02FC.webp?v=1776631334','41D8F2BB-7AB1-47B0-A6D0-E95965CC96E5.webp?v=1776631334','FC37107F-84EC-4ACF-BA45-46EB8B066896.webp?v=1776631334'],
+  opts:['Diamètre'],
+  v:[['57603611427141',340,['60 cm']],['57603611296069',419,['80 cm']],['57603611164997',499,['100 cm']],['57603611033925',456,['120 cm']]]},
+ {id:'nova',n:'NOVA',cat:'Suspensions',h:'nova',
+  rooms:['salon','chambre'],style:['minimal'],tag:'',
+  lead:"Une suspension minimaliste en tissu, pour une lumière douce et intemporelle.",
+  feats:['Lumière douce et diffuse','Design épuré et élégant','Installation facile'],spec:[['Matière','Tissu']],
+  img:['84806558-1FA3-4C30-A1FB-15BC927ECFC3_26757b41-55e1-4176-8ba9-095e3dcaab55.jpg?v=1776631284','NEW1.jpg?v=1776631284','8487682E-433C-4877-8F71-65691F1D1B02_fae1e579-e579-4f7b-bf76-740129b3d5b9.jpg?v=1776631284','NEW.jpg?v=1776441983','bd1c4406-a2dd-4b63-9bd5-82555d6f6095.jpg?v=1776441988'],
+  opts:['Format'],
+  v:[['57603614540101',255,['Petit · D55 × H45 cm']],['57603614605637',315,['Grand · D65 × H45 cm']]]},
+ {id:'solea',n:'SOLÉA',cat:'Suspensions',h:'solea',
+  rooms:['chambre','salon'],style:['minimal'],tag:'Petits budgets',
+  lead:"Une suspension aérienne à la lumière douce et maîtrisée, pour une ambiance sur-mesure.",
+  feats:['Design contemporain et aérien','Lumière homogène et enveloppante','Ambiance personnalisable'],spec:[],
+  img:['IMG-7017_3a750f7c-6065-4e19-8d8a-645eb5d076e8.jpg?v=1776441794','IMG-7018_69156416-f57d-4b8a-a593-1dee2a841465.jpg?v=1776441810','IMG-7019_f8f1e7e3-7f97-46ef-a44e-0ad5437b67aa.jpg?v=1776441813','IMG-7021_9417b3fe-9ef2-4651-9776-43e562329556.jpg?v=1776441816','IMG-7020_e38a384d-55dc-4c86-825b-4b0175aea86f.jpg?v=1776441815'],
+  opts:['Nombre de lumières'],
+  v:[['57603614769477',122,['6 lumières · petits espaces']],['57603614736709',144,['8 lumières · équilibre parfait']],['57603614802245',162,['10 lumières · effet spectaculaire']]]},
+ {id:'orion',n:'ORION',cat:'Suspensions',h:'orion',
+  rooms:['salon','salle'],style:['statement'],tag:'3 coloris',
+  lead:"Un lustre contemporain à la structure affirmée, conçu pour un éclairage homogène et durable.",
+  feats:['Éclairage homogène','Design minimaliste et structuré','Matériaux robustes et durables'],spec:[['Lumière','Chaude (E14)']],
+  img:['S18518fc33f1544ea820957252b07f93dl_ae108003-c13a-40bc-b0c9-48590e6e7bc0.webp?v=1776631304','Sfecb1a4cd317494daea0ae7c8c06442ag_6a06ca38-d78e-4ecf-b940-c9bcc6c51f7d.webp?v=1776631304','S9a7e380385ed45d2ab3f5ead57b6e7acN_7c0caa66-d305-4b78-8497-e47c77290c99.webp?v=1776631304','S206b2e33aea24fa3b46067ffe920c7bar_c660be86-185b-4621-9c97-ae0a2c040ff1.webp?v=1776631304'],
+  opts:['Coloris','Diamètre'],
+  v:[['57603613720901',324,['Noir','40 cm']],['57603613655365',480,['Noir','60 cm']],['57603613589829',959,['Noir','80 cm']],['57603613917509',324,['Bleu','40 cm']],['57603613851973',480,['Bleu','60 cm']],['57603613786437',959,['Bleu','80 cm']],['57603614114117',324,['Orange','40 cm']],['57603614048581',480,['Orange','60 cm']],['57603613983045',959,['Orange','80 cm']]]},
+ {id:'gemma',n:'GEMMA',cat:'Plafonniers',h:'european-style-design-silver-glass-magic-bean-suspension-chandelier-lustre-bedroom-dining-room-home-decoration-lighting',
+  rooms:['salle','salon','chambre'],style:['glam'],tag:'Verre soufflé',
+  lead:"Un plafonnier aux gouttes de verre soufflé argenté, pour un jeu de lumière raffiné et scintillant.",
+  feats:['Gouttes de verre soufflé « haricots magiques »','Disponible en 3 diamètres','Lumière chaude, froide, naturelle ou variable','Montage semi-encastré'],
+  spec:[['Matière','Fer & verre argenté'],['Éclairage','LED incluses, culot E14']],
+  img:['Se730ffeef7c7470780ae61dbd4f41873d.webp?v=1777759050','S5ccfe375fc594dd8bdc2ce5da873732eV.webp?v=1777759050','Sec9f813a43514b8596bc4a7a61262accJ.webp?v=1777759050','S0aa20063dd2845dbb5dff7935f871db5D.webp?v=1777759050','S104db278e75b4fc1a40f05cb0c58a08aN.webp?v=1777759050'],
+  opts:['Taille','Lumière'],
+  v:[['57844644184389',244,['74 cm · 4 têtes','Naturelle']],['57844644217157',244,['74 cm · 4 têtes','Variable']],['57844644282693',244,['74 cm · 4 têtes','Blanc froid']],['57844644348229',244,['74 cm · 4 têtes','Blanc chaud']],
+     ['57844644577605',367,['87 cm · 6 têtes','Naturelle']],['57844644086085',367,['87 cm · 6 têtes','Variable']],['57844644118853',367,['87 cm · 6 têtes','Blanc froid']],['57844644151621',367,['87 cm · 6 têtes','Blanc chaud']],
+     ['57844644446533',493,['92 cm · 8 têtes','Naturelle']],['57844644479301',493,['92 cm · 8 têtes','Variable']],['57844644512069',493,['92 cm · 8 têtes','Blanc froid']],['57844644544837',493,['92 cm · 8 têtes','Blanc chaud']]]},
+ {id:'neba',n:'NEBA',cat:'Appliques',h:'solid-wood-wall-lamp-minimalist-long-strip-lamp-living-room-background-wall-corridor-balcony-bedroom-bedside-lighting-decoration',
+  rooms:['chambre','salon'],style:['naturel'],tag:'Bois naturel',
+  lead:"Une applique murale en bois naturel, pensée pour une lumière douce et une ambiance apaisante.",
+  feats:['Lumière douce et chaleureuse','Design naturel et épuré','Installation rapide et simple'],
+  spec:[['Matière','Bois & acrylique'],['Éclairage','LED intégrée']],
+  img:['neba-01.jpg?v=1789084027','neba-02.jpg?v=1789084027','neba-03.jpg?v=1789084027','neba-04.jpg?v=1789084027','neba-05.jpg?v=1789084027'],
+  opts:['Longueur'],
+  v:[['57603606577477',132,['60 cm']],['57603606446405',156,['80 cm']],['57603606315333',182,['100 cm']]]},
+ {id:'bulle',n:'BULLE',cat:'Appliques',h:'modern-glass-ball-wall-sconce-light-fixture-bedroom-bedside-home-decoration-living-room-gold-lighting-lamp-indoor-free-shipping',
+  rooms:['chambre','salon'],style:['glam'],tag:'Dès 83 €',
+  lead:"Une applique en verre dépoli, pour une lumière douce et enveloppante en simple ou double globe.",
+  feats:['Finitions argent, or ou noir','Simple ou double globe','Lumière chaude ou froide'],
+  spec:[['Éclairage','Culot G9, ampoule incluse']],
+  img:['S5d1999631a5e4d6fa5ecc9adbb174648l.webp?v=1777759055','S82ae9257caaa4dddaf6bfd7964d266d2n.webp?v=1777759055','Sb9b08346800843bcbbcf671f6b9268aa8.webp?v=1777759056','S592539aeef7d48e6a4ffc5e25d232964W.webp?v=1777759055','S134c59f5694849dbb2456b66144b288dn.webp?v=1777759056'],
+  opts:['Version','Finition','Lumière'],
+  v:[['57844655653189',83,['Simple globe','Argent','Chaude (2700–3500 K)']],['57844655685957',83,['Simple globe','Argent','Froide (5500–7000 K)']],['57844655718725',83,['Simple globe','Or','Chaude (2700–3500 K)']],['57844655751493',83,['Simple globe','Or','Froide (5500–7000 K)']],['57844655849797',83,['Simple globe','Noir','Chaude (2700–3500 K)']],['57844655915333',83,['Simple globe','Noir','Froide (5500–7000 K)']],
+     ['57844655948101',162,['Double globe','Argent','Chaude (2700–3500 K)']],['57844655980869',162,['Double globe','Argent','Froide (5500–7000 K)']],['57844656013637',162,['Double globe','Or','Chaude (2700–3500 K)']],['57844655817029',162,['Double globe','Or','Froide (5500–7000 K)']],['57844655784261',162,['Double globe','Noir','Chaude (2700–3500 K)']],['57844655882565',162,['Double globe','Noir','Froide (5500–7000 K)']]]},
+ {id:'duna',n:'DUNA',cat:'Appliques',h:'american-bedroom-bedside-wall-led-lights-simple-modern-kitchen-living-hotel-aisle-staircase-sconce-lamps-for-room-home-appliance',
+  rooms:['chambre','salon'],style:['naturel'],tag:'4 coloris',
+  lead:"Une applique murale à la forme organique effet pierre, qui sculpte la lumière avec caractère.",
+  feats:['4 coloris : gris, vert, blanc, orange','Diffusion vers le haut et le bas','Montage mural simple'],
+  spec:[['Matière','Résine haute qualité']],
+  img:['Sea297d41e0734c78b03fd51b38723081R.webp?v=1777759056','Scce2a673a82e4f429fa49aa4ef3878e05.webp?v=1777759056','S16c89d1076cb411290febd45f973c792R.webp?v=1777759056','S66884fd7176247b8bb8e4b8b600fcfa4q.webp?v=1777759056','S69f503250a434bcbb4f75fd4e85418b2n.webp?v=1777759056'],
+  opts:['Coloris','Ampoule'],
+  v:[['57844656046405',74,['Gris','Sans ampoule']],['57844656079173',77,['Gris','Blanc froid']],['57844656111941',77,['Gris','Blanc chaud']],['57844656144709',74,['Vert','Sans ampoule']],['57844656177477',77,['Vert','Blanc froid']],['57844656210245',77,['Vert','Blanc chaud']],['57844656243013',74,['Blanc','Sans ampoule']],['57844656275781',77,['Blanc','Blanc froid']],['57844656308549',77,['Blanc','Blanc chaud']],['57844656341317',74,['Orange','Sans ampoule']],['57844656374085',77,['Orange','Blanc froid']],['57844656406853',77,['Orange','Blanc chaud']]]},
+ {id:'lina',n:'LINA',cat:'Lampes & chevet',h:'modern-minimalist-led-longer-pendant-lights-for-bedroom-bedside-reading-chandelier-lamps-living-room-bar-coffee-decor-fixtures',
+  rooms:['chambre','bureau'],style:['minimal'],tag:'Lecture',
+  lead:"Une suspension épurée à la silhouette filaire, pensée pour un éclairage de lecture doux et précis au-dessus du lit ou du bureau.",
+  feats:['Silhouette filaire en acier noir mat','3 températures de lumière réglables','1 ou 2 têtes, 50 ou 80 cm','Interrupteur tactile ou à molette'],
+  spec:[['Matière','Acier noir mat'],['Éclairage','LED incluses · 3000 / 4000 / 6000 K']],
+  img:['Sa4aad6b2dbf6406fba7664b34cd076c8m.webp?v=1777759049','S1de626588183427ba8b6323580d77321N.webp?v=1777759049','S34f41d191c244e598c297a2248582ab4c.webp?v=1777759048','S4f93760b05644f48a5c4ce0112052d604.webp?v=1777759049','Sf57c509123924c65a16c1cbb5c5f88bcl.webp?v=1777759049'],
+  opts:['Têtes','Hauteur','Lumière'],
+  v:[['57844642513221',105,['1 tête','50 cm','3000 K · chaud']],['57844642480453',105,['1 tête','50 cm','4000 K · naturel']],['57844642447685',105,['1 tête','50 cm','6000 K · froid']],
+     ['57844642545989',146,['1 tête','80 cm','3000 K · chaud']],['57844642644293',146,['1 tête','80 cm','4000 K · naturel']],['57844642578757',146,['1 tête','80 cm','6000 K · froid']],
+     ['57844642709829',192,['2 têtes','50 cm','3000 K · chaud']],['57844642677061',192,['2 têtes','50 cm','4000 K · naturel']],['57844642611525',192,['2 têtes','50 cm','6000 K · froid']],
+     ['57844642742597',262,['2 têtes','80 cm','3000 K · chaud']],['57844642808133',262,['2 têtes','80 cm','4000 K · naturel']],['57844642775365',262,['2 têtes','80 cm','6000 K · froid']]]},
+ {id:'roka',n:'ROKA',cat:'Lampes & chevet',h:'wabi-sabi-style-travertine-led-pendant-light-modern-natural-stone-wood-chandelier-for-bedside-restaurant',
+  rooms:['chambre','bureau'],style:['naturel'],tag:'Travertin véritable',
+  lead:"Une suspension en travertin véritable, pour une lumière brute et apaisante inspirée du wabi-sabi.",
+  feats:['Pierre travertin véritable et métal','Format compact D15 × H16 cm','3 températures de lumière','Interrupteur tactile ou à molette'],
+  spec:[['Matière','Travertin & métal'],['Éclairage','LED incluse']],
+  img:['S67adb00782fb441eb1f578d997a33d72W.webp?v=1777759051','S4041277cfa4a461aaf46d46aad62d2baX.webp?v=1777759052','S8f8f9507d846435dbedd87900bff37b4N.webp?v=1777759051','Sff2677ab843a44c0a327601733ceb3f4v.webp?v=1777759051','S05deb12230694e67a2cb3e253c179533Z.webp?v=1777759051'],
+  opts:['Lumière'],
+  v:[['57844646510917',71,['3000 K · chaud']],['57844646543685',72,['4000 K · naturel']],['57844646576453',71,['6000 K · froid']]]}
 ];
+var byId={}; P.forEach(function(p){byId[p.id]=p; p.minP=Math.min.apply(null,p.v.map(function(v){return v[1]}));});
+
+var ROOMS=[
+  {k:'salon',t:'Salon',d:'Suspensions & lustres qui font la pièce',img:'leya-p1.jpg?v=1789088173'},
+  {k:'salle',t:'Salle à manger',d:'Grandes suspensions au-dessus de la table',img:'leya-p2.jpg?v=1789088173'},
+  {k:'chambre',t:'Chambre',d:'Appliques et lampes à la lumière douce',img:'neba-01.jpg?v=1789084027'},
+  {k:'bureau',t:'Bureau & lecture',d:'Lumière précise, 3 températures',img:'Sa4aad6b2dbf6406fba7664b34cd076c8m.webp?v=1777759049'}
+];
+var COLORS={Noir:'#141414',Blanc:'#f2f2f2',Or:'#c9a24a',Rouge:'#b3261e',Bleu:'#2d5db3',Orange:'#e8742a',Gris:'#8b8d8f',Vert:'#4f7a5a',Argent:'#c8ccd0'};
+
+/* ============================================================
+   UTILITAIRES
+============================================================ */
+var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return [].slice.call((r||document).querySelectorAll(s))};
+var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 var fmt=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+function img(f,w){return CDN+f+(f.indexOf('?')>-1?'&':'?')+'width='+w}
+function im(f,w,alt,cls){return '<img'+(cls?' class="'+cls+'"':'')+' loading="lazy" decoding="async" alt="'+esc(alt||'')+'" src="'+img(f,w)+'" srcset="'+img(f,w)+' 1x, '+img(f,w*2)+' 2x">'}
+function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 
-/* ---------- Grille + filtres ---------- */
-var grid=document.getElementById('grid'), filters=document.getElementById('filters');
-grid.innerHTML=PRODUCTS.map(function(p){
-  return '<a class="card rv" data-t="'+p.t+'" href="'+SHOP+p.h+'" target="_blank" rel="noopener">'+
-    '<div class="img"><img loading="lazy" alt="Luminaire '+p.n+'" src="'+CDN+p.i+'"></div><div class="shine"></div>'+
-    '<div class="info"><div><h3>'+p.n+'</h3><small>'+p.t+'</small></div>'+
-    '<div class="price"><span>dès</span>'+fmt.format(p.p)+'</div></div></a>';
-}).join('');
-var cats=['Tout'].concat(PRODUCTS.map(function(p){return p.t}).filter(function(v,i,a){return a.indexOf(v)===i}));
-filters.innerHTML=cats.map(function(c,i){return '<button class="chip'+(i?'':' on')+'" role="tab" data-c="'+c+'">'+c+'</button>'}).join('');
-filters.addEventListener('click',function(e){
-  var b=e.target.closest('.chip'); if(!b) return;
-  filters.querySelectorAll('.chip').forEach(function(x){x.classList.toggle('on',x===b)});
-  var c=b.dataset.c, cards=[].slice.call(grid.children);
-  cards.forEach(function(card){card.classList.toggle('hide',c!=='Tout'&&card.dataset.t!==c)});
-  if(window.gsap&&!reduce) gsap.fromTo(grid.querySelectorAll('.card:not(.hide)'),{opacity:0,y:30},{opacity:1,y:0,duration:.7,stagger:.05,ease:'power3.out',overwrite:true});
-  if(window.ScrollTrigger) ScrollTrigger.refresh();
-});
+$('#announce').textContent=CONFIG.announcement;
+$('#yr').textContent=new Date().getFullYear();
+$('#shopLink').href=CONFIG.shop; $('#shopLink').textContent=CONFIG.shop.replace('https://','');
+$('#allLink').href=CONFIG.shop+'/collections/all';
 
-/* inclinaison 3D des cartes */
-if(matchMedia('(hover:hover)').matches&&!reduce){
-  grid.addEventListener('mousemove',function(e){
-    var c=e.target.closest('.card'); if(!c) return;
-    var r=c.getBoundingClientRect(), x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
-    c.style.setProperty('--mx',x*100+'%'); c.style.setProperty('--my',y*100+'%');
-    c.style.transform='perspective(900px) rotateY('+((x-.5)*10)+'deg) rotateX('+((.5-y)*10)+'deg) translateY(-4px)';
-  });
-  grid.addEventListener('mouseout',function(e){var c=e.target.closest('.card'); if(c&&!c.contains(e.relatedTarget)) c.style.transform='';});
-}
-
-/* ---------- Température de couleur (Kelvin → RGB) ---------- */
-function kelvin(k){
-  var t=k/100,r,g,b;
+/* ============================================================
+   TEMPÉRATURE DE LUMIÈRE (Kelvin → couleur)
+============================================================ */
+function kelvin(k){var t=k/100,r,g,b;
   r=t<=66?255:329.698727446*Math.pow(t-60,-0.1332047592);
   g=t<=66?99.4708025861*Math.log(t)-161.1195681661:288.1221695283*Math.pow(t-60,-0.0755148492);
   b=t>=66?255:(t<=19?0:138.5177312231*Math.log(t-10)-305.0447927307);
-  var c=function(v){return Math.max(0,Math.min(255,Math.round(v)))};
-  return {r:c(r),g:c(g),b:c(b)};
-}
-var kRange=document.getElementById('kRange'), kOut=document.getElementById('kOut'), root=document.documentElement;
-var onTemp=[];
-function setTemp(k){
-  var c=kelvin(k), hex='#'+[c.r,c.g,c.b].map(function(v){return v.toString(16).padStart(2,'0')}).join('');
+  var c=function(v){return Math.max(0,Math.min(255,Math.round(v)))};return {r:c(r),g:c(g),b:c(b)}}
+var kRange=$('#kRange'),kOut=$('#kOut'),root=document.documentElement,onTemp=[];
+function setTemp(k,fromUser){
+  k=Math.max(2200,Math.min(6500,k));
+  var c=kelvin(k),hex='#'+[c.r,c.g,c.b].map(function(v){return v.toString(16).padStart(2,'0')}).join('');
   root.style.setProperty('--glow',hex);
   root.style.setProperty('--glow-soft','rgba('+c.r+','+c.g+','+c.b+',.18)');
-  kOut.textContent=k+' K';
+  kRange.value=k; kOut.textContent=Math.round(k/50)*50+' K';
+  $$('.tcard').forEach(function(t){t.classList.toggle('on',Math.abs(+t.dataset.k-k)<350)});
   onTemp.forEach(function(f){f(c)});
 }
-kRange.addEventListener('input',function(){setTemp(+kRange.value)});
+var tween;
+function glideTemp(to){
+  if(reduce){setTemp(to);return}
+  cancelAnimationFrame(tween);var from=+kRange.value,t0=performance.now();
+  (function s(t){var p=Math.min(1,(t-t0)/800),e=1-Math.pow(1-p,3);setTemp(from+(to-from)*e);if(p<1)tween=requestAnimationFrame(s)})(t0);
+}
+kRange.addEventListener('input',function(){cancelAnimationFrame(tween);setTemp(+kRange.value,true)});
+function kOf(label){var m=/(\d{4})\s?K/.exec(label);if(m)return +m[1];
+  if(/chaud|chaude/i.test(label)&&!/froid/i.test(label))return 3000;if(/naturel/i.test(label))return 4000;if(/froid/i.test(label))return 6000;return 0}
 
-/* ---------- Scène 3D ---------- */
-var canvas=document.getElementById('scene'), hero=document.getElementById('top');
-var hasGL=false;
-try{ hasGL=!!(window.THREE&&(canvas.getContext('webgl')||canvas.getContext('experimental-webgl'))); }catch(e){}
-var scrollP=0, mouse={x:0,y:0}, sm={x:0,y:0};
+/* ============================================================
+   PANIER (localStorage) → lien de commande Shopify
+============================================================ */
+var cart=lsGet('gl_cart_v2',[]);
+function findV(pid,vid){var p=byId[pid];return p&&p.v.filter(function(v){return v[0]===vid})[0]}
+cart=cart.filter(function(l){return findV(l.pid,l.vid)});
+function saveCart(){lsSet('gl_cart_v2',cart);renderCart()}
+function cartQty(){return cart.reduce(function(s,l){return s+l.qty},0)}
+function cartTotal(){return cart.reduce(function(s,l){return s+findV(l.pid,l.vid)[1]*l.qty},0)}
+function addToCart(pid,vid,qty){
+  var l=cart.filter(function(x){return x.vid===vid})[0];
+  if(l)l.qty=Math.min(20,l.qty+qty);else cart.push({pid:pid,vid:vid,qty:qty});
+  saveCart();
+  ['#cartCount','#cartCount2'].forEach(function(s){var e=$(s);e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump')});
+}
+function checkoutUrl(items){return CONFIG.shop+'/cart/'+items.map(function(l){return l.vid+':'+l.qty}).join(',')}
+function lineLabel(p,v){return v[2].join(' · ')}
 
+function renderCart(){
+  var n=cartQty();
+  $('#cartCount').textContent=n; $('#cartCount2').textContent=n;
+  var body=$('#dbody'),foot=$('#dfoot'),free=$('#free');
+  if(!cart.length){
+    body.innerHTML='<div class="empty"><p>Votre panier est vide.</p><button class="btn" data-act="closeCart">Découvrir la collection</button></div>';
+    foot.innerHTML='';free.hidden=true;return;
+  }
+  body.innerHTML=cart.map(function(l,i){
+    var p=byId[l.pid],v=findV(l.pid,l.vid);
+    return '<div class="li">'+im(p.img[0],168,p.n)+'<div><h4>'+p.n+'</h4><small>'+esc(lineLabel(p,v))+'</small>'+
+      '<div style="display:flex;align-items:center"><div class="qty"><button data-act="dec" data-i="'+i+'" aria-label="Moins">−</button><output>'+l.qty+'</output><button data-act="inc" data-i="'+i+'" aria-label="Plus">+</button></div>'+
+      '<button class="rm" data-act="rm" data-i="'+i+'">Retirer</button></div></div><div class="price">'+fmt.format(v[1]*l.qty)+'</div></div>';
+  }).join('');
+  /* suggestions : pièces d'appoint à petit prix absentes du panier */
+  var inCart=cart.map(function(l){return l.pid});
+  var ups=P.filter(function(p){return inCart.indexOf(p.id)<0}).sort(function(a,b){return a.minP-b.minP}).slice(0,2);
+  if(ups.length)body.innerHTML+='<div class="ups"><h5>Complétez votre ambiance</h5>'+ups.map(function(p){
+    return '<button class="up" data-act="quick" data-id="'+p.id+'">'+im(p.img[0],112,p.n)+'<div><b>'+p.n+'</b><span>'+p.cat+' · dès '+fmt.format(p.minP)+'</span></div><em>Choisir</em></button>'}).join('')+'</div>';
+  var tot=cartTotal();
+  foot.innerHTML='<div class="sub-t"><span>Sous-total</span><b>'+fmt.format(tot)+'</b></div><p>Taxes et frais de livraison calculés à l\'étape suivante.</p>'+
+    '<a class="btn solid block" href="'+checkoutUrl(cart)+'" target="_blank" rel="noopener">Passer commande</a>';
+  if(CONFIG.freeShippingFrom){
+    var f=CONFIG.freeShippingFrom,rest=f-tot;free.hidden=false;
+    free.innerHTML=(rest>0?'Plus que <b>'+fmt.format(rest)+'</b> pour la livraison offerte':'<b>Livraison offerte</b> débloquée ✓')+'<div class="bar"><i style="width:'+Math.min(100,tot/f*100)+'%"></i></div>';
+  }else free.hidden=true;
+}
+$('#dbody').addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b)return;var i=+b.dataset.i;
+  if(b.dataset.act==='inc')cart[i].qty=Math.min(20,cart[i].qty+1);
+  else if(b.dataset.act==='dec'){cart[i].qty--;if(cart[i].qty<1)cart.splice(i,1)}
+  else if(b.dataset.act==='rm')cart.splice(i,1);
+  else if(b.dataset.act==='closeCart'){closeAll();$('#collection').scrollIntoView({behavior:'smooth'});return}
+  else if(b.dataset.act==='quick'){closeAll();setTimeout(function(){openQuick(b.dataset.id)},350);return}
+  saveCart();
+});
+
+/* ============================================================
+   MODAL / DRAWER
+============================================================ */
+var ov=$('#ov'),modal=$('#modal'),drawer=$('#drawer'),lastFocus=null;
+function lock(on){document.body.classList.toggle('lock',on)}
+function closeAll(){modal.classList.remove('open');drawer.classList.remove('open');ov.classList.remove('open');lock(false);if(lastFocus)try{lastFocus.focus()}catch(e){}}
+function openDrawer(){lastFocus=document.activeElement;modal.classList.remove('open');drawer.classList.add('open');ov.classList.add('open');lock(true);setTimeout(function(){$('#drawerX').focus()},50)}
+ov.addEventListener('click',closeAll);
+$('#drawerX').addEventListener('click',closeAll);
+addEventListener('keydown',function(e){if(e.key==='Escape')closeAll()});
+['#cartBtn','#cartBtn2'].forEach(function(s){$(s).addEventListener('click',openDrawer)});
+
+/* ============================================================
+   BLOC D'ACHAT (galerie + options + panier) — modal & pièce du moment
+============================================================ */
+function buyBlock(p,galHost,infoHost,inModal){
+  var sel=p.v[0][2].slice(),qty=1,cur=0;
+  function match(vals){return p.v.filter(function(v){return v[2].every(function(x,i){return x===vals[i]})})[0]}
+  function pick(i,val){
+    var best=null,bs=-1;
+    p.v.forEach(function(v){if(v[2][i]!==val)return;var s=v[2].filter(function(x,j){return x===sel[j]}).length;if(s>bs){bs=s;best=v}});
+    if(best){sel=best[2].slice()}
+    var k=kOf(val);if(k&&/lumi|temp/i.test(p.opts[i]))glideTemp(k);
+  }
+  function gal(){
+    galHost.innerHTML='<div class="main">'+im(p.img[cur],900,p.n+' — vue '+(cur+1))+'</div><div class="thumbs">'+
+      p.img.map(function(f,i){return '<button class="'+(i===cur?'on':'')+'" data-g="'+i+'" aria-label="Photo '+(i+1)+'">'+im(f,152,'')+'</button>'}).join('')+'</div>';
+    var m=$('.main',galHost),mi=$('img',m);
+    mi.loading='eager';
+    if(matchMedia('(hover:hover)').matches&&!reduce)m.addEventListener('mousemove',function(e){var r=m.getBoundingClientRect();mi.style.transformOrigin=((e.clientX-r.left)/r.width*100)+'% '+((e.clientY-r.top)/r.height*100)+'%'});
+  }
+  function info(){
+    var v=match(sel)||p.v[0];
+    var multi=p.v.some(function(x){return x[1]!==p.v[0][1]});
+    infoHost.innerHTML=
+      '<p class="typ">'+p.cat+'</p><h3>'+p.n+'</h3>'+
+      '<p class="pr">'+fmt.format(v[1])+'</p>'+
+      '<p class="ld">'+esc(p.lead)+'</p>'+
+      '<ul class="feats">'+p.feats.map(function(f){return '<li>'+esc(f)+'</li>'}).join('')+'</ul>'+
+      p.opts.map(function(name,i){
+        var vals=p.v.map(function(x){return x[2][i]}).filter(function(x,j,a){return a.indexOf(x)===j});
+        return '<fieldset class="opt"><legend>'+name+'<b>'+esc(sel[i])+'</b></legend><div class="ochips">'+vals.map(function(val){
+          var t=sel.slice();t[i]=val;var ok=!!match(t);
+          return '<button type="button" class="oc'+(val===sel[i]?' on':'')+(ok?'':' dim')+'" data-i="'+i+'" data-v="'+esc(val)+'" aria-pressed="'+(val===sel[i])+'">'+(COLORS[val]?'<i style="background:'+COLORS[val]+'"></i>':'')+esc(val)+'</button>'}).join('')+'</div></fieldset>'}).join('')+
+      '<div class="buy"><div class="qty"><button data-q="-1" aria-label="Moins">−</button><output>'+qty+'</output><button data-q="1" aria-label="Plus">+</button></div>'+
+      '<button class="btn solid js-add">Ajouter · '+fmt.format(v[1]*qty)+'</button></div>'+
+      '<div class="under"><a class="link" target="_blank" rel="noopener" href="'+checkoutUrl([{vid:v[0],qty:qty}])+'">Acheter maintenant</a>'+
+      '<a class="link" target="_blank" rel="noopener" href="'+CONFIG.shop+'/products/'+p.h+'">Fiche complète</a></div>'+
+      (p.spec.length?'<div class="specs">'+p.spec.map(function(s){return '<div><span>'+s[0]+'</span><b style="font-weight:400">'+esc(s[1])+'</b></div>'}).join('')+'</div>':'')+
+      '<div class="assure"><span>Paiement sécurisé</span><span>En stock</span></div>';
+  }
+  galHost.addEventListener('click',function(e){var b=e.target.closest('[data-g]');if(!b)return;cur=+b.dataset.g;gal()});
+  infoHost.addEventListener('click',function(e){
+    var o=e.target.closest('.oc');
+    if(o){var f=document.activeElement;pick(+o.dataset.i,o.dataset.v);info();var again=$('.oc[data-i="'+o.dataset.i+'"][data-v="'+CSS.escape(o.dataset.v)+'"]',infoHost);if(again)again.focus();return}
+    var q=e.target.closest('[data-q]');
+    if(q){qty=Math.max(1,Math.min(10,qty+ +q.dataset.q));info();return}
+    var a=e.target.closest('.js-add');
+    if(a){var v=match(sel)||p.v[0];addToCart(p.id,v[0],qty);a.textContent='Ajouté ✓';
+      setTimeout(function(){if(inModal){modal.classList.remove('open');}openDrawer()},450);}
+  });
+  gal();info();
+}
+
+function openQuick(id){
+  var p=byId[id];lastFocus=document.activeElement;
+  modal.innerHTML='<button class="x" id="mx" aria-label="Fermer">×</button><div class="spot-g"><div class="gal" id="mg"></div><div class="pinfo" id="mi"></div></div>';
+  buyBlock(p,$('#mg'),$('#mi'),true);
+  $('#mx').addEventListener('click',closeAll);
+  drawer.classList.remove('open');modal.classList.add('open');ov.classList.add('open');lock(true);modal.scrollTop=0;
+  setTimeout(function(){$('#mx').focus()},60);
+}
+
+/* ============================================================
+   RENDU : réassurance, pièces, collection
+============================================================ */
+var ICON={
+  lock:'<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  size:'<svg viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><rect x="9" y="9" width="6" height="6"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6h4c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>'};
+$('#trustList').innerHTML=CONFIG.reassurance.map(function(r){return '<li>'+ICON[r.i]+'<div><b>'+esc(r.t)+'</b><small>'+esc(r.s)+'</small></div></li>'}).join('');
+
+$('#tiles').innerHTML=ROOMS.map(function(r,i){
+  var n=P.filter(function(p){return p.rooms.indexOf(r.k)>-1}).length;
+  return '<button class="tile rv" style="--d:'+i*90+'ms" data-room="'+r.k+'">'+im(r.img,700,r.t)+'<span class="go" aria-hidden="true">→</span><div><h3>'+r.t+'</h3><p>'+r.d+' · '+n+' modèles</p></div></button>'}).join('');
+
+var state={cat:'Tout',room:'all',sort:'feat'};
+var cats=['Tout'].concat(P.map(function(p){return p.cat}).filter(function(v,i,a){return a.indexOf(v)===i}));
+$('#catChips').innerHTML=cats.map(function(c,i){return '<button class="chip'+(i?'':' on')+'" role="tab" data-c="'+esc(c)+'">'+esc(c)+'</button>'}).join('');
+$('#roomSel').innerHTML='<option value="all">Toutes les pièces</option>'+ROOMS.map(function(r){return '<option value="'+r.k+'">'+r.t+'</option>'}).join('');
+
+function renderGrid(){
+  var list=P.filter(function(p){return (state.cat==='Tout'||p.cat===state.cat)&&(state.room==='all'||p.rooms.indexOf(state.room)>-1)});
+  if(state.sort==='asc')list.sort(function(a,b){return a.minP-b.minP});
+  if(state.sort==='desc')list.sort(function(a,b){return b.minP-a.minP});
+  $('#count').textContent=list.length+' luminaire'+(list.length>1?'s':'');
+  $('#grid').innerHTML=list.map(function(p){
+    var multi=p.v.some(function(v){return v[1]!==p.minP});
+    return '<button class="card" data-id="'+p.id+'"><div class="im">'+im(p.img[0],560,p.n)+(p.img[1]?im(p.img[1],560,''):'')+'<div class="shine"></div>'+(p.tag?'<span class="tag">'+esc(p.tag)+'</span>':'')+'</div>'+
+      '<div class="info"><div><h3>'+p.n+'</h3><small>'+p.cat+'</small></div><div class="price">'+(multi?'<span>dès</span>':'')+fmt.format(p.minP)+'</div></div><span class="add">Choisir mes options</span></button>'}).join('');
+  if(!reduce)$$('#grid .card').forEach(function(c,i){c.animate([{opacity:0,transform:'translateY(30px)'},{opacity:1,transform:'none'}],{duration:700,delay:i*45,easing:'cubic-bezier(.22,1,.36,1)',fill:'backwards'})});
+}
+$('#catChips').addEventListener('click',function(e){var b=e.target.closest('.chip');if(!b)return;state.cat=b.dataset.c;$$('#catChips .chip').forEach(function(c){c.classList.toggle('on',c===b)});renderGrid()});
+$('#roomSel').addEventListener('change',function(e){state.room=e.target.value;renderGrid()});
+$('#sortSel').addEventListener('change',function(e){state.sort=e.target.value;renderGrid()});
+$('#tiles').addEventListener('click',function(e){var t=e.target.closest('.tile');if(!t)return;state.room=t.dataset.room;state.cat='Tout';$('#roomSel').value=state.room;$$('#catChips .chip').forEach(function(c,i){c.classList.toggle('on',!i)});renderGrid();$('#collection').scrollIntoView({behavior:'smooth'})});
+$('#grid').addEventListener('click',function(e){var c=e.target.closest('.card');if(c)openQuick(c.dataset.id)});
+if(matchMedia('(hover:hover)').matches&&!reduce){
+  $('#grid').addEventListener('mousemove',function(e){var c=e.target.closest('.card');if(!c)return;var r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    c.style.setProperty('--mx',x*100+'%');c.style.setProperty('--my',y*100+'%');
+    c.style.transform='perspective(900px) rotateY('+((x-.5)*8)+'deg) rotateX('+((.5-y)*8)+'deg) translateY(-4px)'});
+  $('#grid').addEventListener('mouseout',function(e){var c=e.target.closest('.card');if(c&&!c.contains(e.relatedTarget))c.style.transform=''});
+}
+renderGrid();
+
+/* pièce du moment */
+buyBlock(byId.leya,$('#spotGal'),$('#spotInfo'),false);
+
+/* températures */
+var TEMPS=[
+  {k:3000,c:'#ffb55c',t:'Chaud · 3000 K',d:'Cocon, douceur, soirées. La référence pour le salon, la chambre et la salle à manger.',p:'Salon · Chambre'},
+  {k:4000,c:'#ffe3bd',t:'Naturel · 4000 K',d:'Lumière franche et équilibrée, fidèle aux couleurs. Cuisine, entrée, espaces de vie actifs.',p:'Cuisine · Entrée'},
+  {k:6000,c:'#cfe3ff',t:'Froid · 6000 K',d:'Lumière vive et tonique pour se concentrer. Bureau, plan de travail, zones techniques.',p:'Bureau · Travail'}];
+$('#temps').innerHTML=TEMPS.map(function(t,i){return '<button class="tcard rv" style="--c:'+t.c+';--d:'+i*120+'ms" data-k="'+t.k+'"><div class="k">'+t.k+' K</div><h3>'+t.t.split(' · ')[0]+'</h3><p>'+t.d+'</p><span class="ap">'+t.p+' →</span></button>'}).join('');
+$('#temps').addEventListener('click',function(e){var b=e.target.closest('.tcard');if(!b)return;glideTemp(+b.dataset.k)});
+
+/* ============================================================
+   QUIZ — recommandation selon pièce / style / budget
+============================================================ */
+var QUIZ=[
+ {q:'Pour quelle pièce ?',key:'room',o:[['salon','Salon','Lumière d\'ambiance'],['salle','Salle à manger','Au-dessus de la table'],['chambre','Chambre','Douceur & chevet'],['bureau','Bureau & lecture','Lumière précise']]},
+ {q:'Quel style vous ressemble ?',key:'style',o:[['minimal','Épuré','Nordique, lignes simples'],['naturel','Naturel','Pierre, bois, wabi-sabi'],['statement','Sculptural','Une pièce qui s\'impose'],['glam','Raffiné','Verre, or, éclat']]},
+ {q:'Votre budget ?',key:'budget',o:[['0-110','Jusqu\'à 110 €','Petits formats'],['110-300','110 – 300 €','Le sweet spot'],['300-1000','300 – 1 000 €','Pièces maîtresses'],['1000-99999','Plus de 1 000 €','Pièces d\'exception']]}];
+var qa={},qi=0,qbox=$('#qbox');
+function renderQuiz(){
+  var prog='<div class="qprog">'+QUIZ.map(function(_,i){return '<i class="'+(i<=qi?'on':'')+'"></i>'}).join('')+'</div>';
+  if(qi>=QUIZ.length){
+    var lo=+qa.budget.split('-')[0],hi=+qa.budget.split('-')[1];
+    var scored=P.map(function(p){
+      var s=0,why=[];
+      if(p.rooms.indexOf(qa.room)>-1){s+=3;why.push('Idéal '+({salon:'salon',salle:'salle à manger',chambre:'chambre',bureau:'bureau & lecture'})[qa.room])}
+      if(p.style.indexOf(qa.style)>-1){s+=3;why.push('Style '+({minimal:'épuré',naturel:'naturel',statement:'sculptural',glam:'raffiné'})[qa.style])}
+      var inB=p.v.some(function(v){return v[1]>=lo&&v[1]<=hi});
+      if(inB){s+=3;why.push('Dans votre budget')}else if(p.minP<lo*1.2&&p.minP>hi*.8)s+=1;
+      return {p:p,s:s,why:why}}).sort(function(a,b){return b.s-a.s||a.p.minP-b.p.minP}).slice(0,3);
+    qbox.innerHTML=prog+'<div class="qstep"><h3 class="qq">Voici nos <em>recommandations</em></h3><div class="qres">'+scored.map(function(r,i){
+      return '<button class="rcard" data-id="'+r.p.id+'">'+im(r.p.img[0],400,r.p.n)+'<div>'+(i===0?'<span class="top">Meilleure option</span>':'')+'<h4>'+r.p.n+'</h4><p>'+esc(r.why.join(' · ')||r.p.cat)+'</p><span class="price" style="text-align:left">'+(r.p.v.some(function(v){return v[1]!==r.p.minP})?'<span>dès</span>':'')+fmt.format(r.p.minP)+'</span></div></button>'}).join('')+'</div>'+
+      '<button class="link qrestart" id="qre">Recommencer le quiz</button></div>';
+    return;
+  }
+  var Q=QUIZ[qi];
+  qbox.innerHTML=prog+'<div class="qstep"><h3 class="qq">'+Q.q+'</h3><div class="qopts">'+Q.o.map(function(o){return '<button class="qo" data-v="'+o[0]+'"><b>'+o[1]+'</b><small>'+o[2]+'</small></button>'}).join('')+'</div>'+(qi?'<button class="link qrestart" id="qback">← Retour</button>':'')+'</div>';
+}
+qbox.addEventListener('click',function(e){
+  var o=e.target.closest('.qo');
+  if(o){qa[QUIZ[qi].key]=o.dataset.v;qi++;renderQuiz();return}
+  if(e.target.closest('#qback')){qi=Math.max(0,qi-1);renderQuiz();return}
+  if(e.target.closest('#qre')){qa={};qi=0;renderQuiz();return}
+  var r=e.target.closest('.rcard');if(r)openQuick(r.dataset.id);
+});
+renderQuiz();
+
+/* ============================================================
+   FAQ
+============================================================ */
+var FAQ=[
+ ['Quelle température de lumière choisir ?','3000 K (chaud) crée une ambiance cocooning, idéale pour salon et chambre. 4000 K (naturel) convient à la cuisine et aux pièces actives. 6000 K (froid) est plus tonique, pour le bureau ou le plan de travail. Plusieurs modèles existent dans les trois températures : choisissez-la directement dans les options du produit.'],
+ ['Quelle taille de suspension pour ma table ?','Repère courant : un diamètre (ou une longueur) d\'environ la moitié à deux tiers de la largeur de la table, suspendu à 70–80 cm au-dessus du plateau. Pour une table longue, une suspension allongée ou plusieurs luminaires alignés fonctionnent très bien.'],
+ ['Les luminaires sont-ils dimmables ?','Cela dépend du modèle : certains sont livrés avec télécommande et intensité réglable (comme LÉYA), d\'autres proposent 3 températures de lumière. Le détail est indiqué sur chaque fiche produit.'],
+ ['Les ampoules sont-elles incluses ?','La plupart des modèles sont livrés avec LED incluses ; certains (comme DUNA) proposent l\'option « sans ampoule » ou avec ampoule chaude/froide. Vérifiez la ligne « Éclairage » dans les caractéristiques.'],
+ ['Comment passer commande ?','Choisissez vos options, ajoutez au panier, puis « Passer commande » : vous êtes redirigé vers le paiement sécurisé de la boutique pour finaliser avec vos informations de livraison.']
+];
+$('#faqList').innerHTML=FAQ.map(function(f,i){return '<details'+(i===0?' open':'')+'><summary>'+esc(f[0])+'</summary><p>'+esc(f[1])+'</p></details>'}).join('');
+
+/* ============================================================
+   NAV, SCROLL, RÉVÉLATIONS
+============================================================ */
+var nav=$('#nav'),sticky=$('#sticky'),hero=$('#top'),scrollP=0,mouse={x:0,y:0};
+function onScroll(){
+  nav.classList.toggle('solid',scrollY>40);
+  scrollP=Math.min(1,scrollY/(hero.offsetHeight*.9));
+  sticky.classList.toggle('show',scrollY>hero.offsetHeight*.6);
+}
+addEventListener('scroll',onScroll,{passive:true});onScroll();
+$('#burger').addEventListener('click',function(){$('#mmenu').classList.toggle('open')});
+$('#mmenu').addEventListener('click',function(e){if(e.target.tagName==='A')$('#mmenu').classList.remove('open')});
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{rootMargin:'0px 0px -8% 0px',threshold:.05});
+$$('.rv').forEach(function(e){io.observe(e)});
+new MutationObserver(function(){$$('.rv:not(.in)').forEach(function(e){io.observe(e)})}).observe(document.body,{childList:true,subtree:true});
+addEventListener('pointermove',function(e){
+  mouse.x=e.clientX/innerWidth*2-1;mouse.y=e.clientY/innerHeight*2-1;
+  var h=$('#halo');h.classList.add('on');h.style.transform='translate('+e.clientX+'px,'+e.clientY+'px)';
+},{passive:true});
+
+/* ============================================================
+   SCÈNE 3D — suspensions cliquables
+============================================================ */
+var canvas=$('#scene'),hasGL=false;
+try{hasGL=!!(window.THREE&&(canvas.getContext('webgl')||canvas.getContext('experimental-webgl')))}catch(e){}
 if(hasGL){
   var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  var scene=new THREE.Scene();
-  scene.fog=new THREE.FogExp2(0x080605,.045);
-  var camera=new THREE.PerspectiveCamera(42,1,.1,100);
-  camera.position.set(0,0,12);
-
+  var scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x080605,.045);
+  var camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(0,0,12);
   scene.add(new THREE.AmbientLight(0xffffff,.12));
 
-  /* texture de halo */
-  function haloTex(){
-    var c=document.createElement('canvas'); c.width=c.height=256;
-    var g=c.getContext('2d'), gr=g.createRadialGradient(128,128,0,128,128,128);
-    gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.18,'rgba(255,255,255,.55)');
-    gr.addColorStop(.5,'rgba(255,255,255,.12)'); gr.addColorStop(1,'rgba(255,255,255,0)');
-    g.fillStyle=gr; g.fillRect(0,0,256,256);
-    return new THREE.CanvasTexture(c);
-  }
-  var HT=haloTex();
+  var mk=function(w,h,draw){var c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);return new THREE.CanvasTexture(c)};
+  var HT=mk(256,256,function(g){var gr=g.createRadialGradient(128,128,0,128,128,128);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.18,'rgba(255,255,255,.55)');gr.addColorStop(.5,'rgba(255,255,255,.12)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,256,256)});
+  var CT=mk(8,256,function(g,w,h){var gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h)});
 
-  var group=new THREE.Group(); scene.add(group);
-  var lamps=[];
-  /* [x, y du globe, rayon, déphasage] */
+  var group=new THREE.Group();scene.add(group);var lamps=[],bulbs=[];
   [[-3.2,-.4,.9,0],[0,-1.6,1.25,1.6],[3.2,.3,.75,3.1],[1.7,2.1,.45,4.4],[-1.7,1.6,.55,5.2]].forEach(function(d){
-    var piv=new THREE.Group(); piv.position.set(d[0],9,0); group.add(piv);
-    var len=9-d[1];
-    var cable=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,len,6),new THREE.MeshBasicMaterial({color:0x2a2520}));
-    cable.position.y=-len/2; piv.add(cable);
+    var piv=new THREE.Group();piv.position.set(d[0],9,0);group.add(piv);var len=9-d[1];
+    var cable=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,len,6),new THREE.MeshBasicMaterial({color:0x2a2520}));cable.position.y=-len/2;piv.add(cable);
+    var cap=new THREE.Mesh(new THREE.CylinderGeometry(d[2]*.22,d[2]*.28,d[2]*.35,24),new THREE.MeshStandardMaterial({color:0x16130f,metalness:.9,roughness:.3}));cap.position.y=-len+d[2]*.95;piv.add(cap);
+    var mat=new THREE.MeshStandardMaterial({color:0x2b2118,emissive:0xffb55c,emissiveIntensity:1.1,roughness:.4});
+    var bulb=new THREE.Mesh(new THREE.SphereGeometry(d[2],48,48),mat);bulb.position.y=-len;piv.add(bulb);
+    var light=new THREE.PointLight(0xffb55c,2.2,16,1.6);light.position.copy(bulb.position);piv.add(light);
+    var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:HT,color:0xffb55c,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.85}));sp.scale.setScalar(d[2]*7);sp.position.copy(bulb.position);piv.add(sp);
+    var ch=d[2]*9,cone=new THREE.Mesh(new THREE.ConeGeometry(d[2]*3.2,ch,40,1,true),new THREE.MeshBasicMaterial({map:CT,color:0xffb55c,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+    cone.position.set(0,-len-ch/2+d[2]*.3,0);piv.add(cone);
+    var L={piv:piv,mat:mat,light:light,sp:sp,cone:cone,ph:d[3],base:d[2],on:true,lvl:1};bulb.userData.lamp=L;bulbs.push(bulb);lamps.push(L)});
 
-    var cap=new THREE.Mesh(new THREE.CylinderGeometry(d[2]*.22,d[2]*.28,d[2]*.35,24),new THREE.MeshStandardMaterial({color:0x16130f,metalness:.9,roughness:.3}));
-    cap.position.y=-len+d[2]*.95; piv.add(cap);
-
-    var mat=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xffb55c,emissiveIntensity:1.6,roughness:.35});
-    var bulb=new THREE.Mesh(new THREE.SphereGeometry(d[2],48,48),mat);
-    bulb.position.y=-len; piv.add(bulb);
-
-    var light=new THREE.PointLight(0xffb55c,2.2,16,1.6);
-    light.position.copy(bulb.position); piv.add(light);
-
-    var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:HT,color:0xffb55c,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.85}));
-    sp.scale.setScalar(d[2]*7); sp.position.copy(bulb.position); piv.add(sp);
-
-    lamps.push({piv:piv,mat:mat,light:light,sp:sp,ph:d[3],len:len,base:d[2]});
-  });
-
-  /* poussière lumineuse */
-  var N=380, pos=new Float32Array(N*3), spd=[];
+  var N=380,pos=new Float32Array(N*3),spd=[];
   for(var i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*16;pos[i*3+1]=(Math.random()-.5)*10;pos[i*3+2]=(Math.random()-.5)*8;spd.push(.1+Math.random()*.3)}
-  var pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  var pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
   var pm=new THREE.PointsMaterial({color:0xffb55c,size:.035,transparent:true,opacity:.65,blending:THREE.AdditiveBlending,depthWrite:false});
-  var dust=new THREE.Points(pg,pm); scene.add(dust);
+  scene.add(new THREE.Points(pg,pm));
 
-  onTemp.push(function(c){
-    var col=new THREE.Color(c.r/255,c.g/255,c.b/255);
-    lamps.forEach(function(l){l.mat.emissive.copy(col);l.light.color.copy(col);l.sp.material.color.copy(col)});
-    pm.color.copy(col);
-  });
+  onTemp.push(function(c){var col=new THREE.Color(c.r/255,c.g/255,c.b/255);
+    lamps.forEach(function(l){l.mat.emissive.copy(col);l.light.color.copy(col);l.sp.material.color.copy(col);l.cone.material.color.copy(col)});pm.color.copy(col)});
 
-  var vis=true;
-  new IntersectionObserver(function(e){vis=e[0].isIntersecting},{threshold:0}).observe(hero);
+  function resize(){var w=canvas.clientWidth,h=canvas.clientHeight,m=innerWidth<860;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=m?58:42;
+    group.position.set(m?0:2.4,m?-.8:0,0);group.scale.setScalar(m?.72:1);camera.updateProjectionMatrix()}
+  addEventListener('resize',resize);resize();
 
-  function resize(){
-    var w=hero.clientWidth,h=hero.clientHeight;
-    renderer.setSize(w,h,false);
-    camera.aspect=w/h; camera.fov=w<860?58:42;
-    /* sur mobile, la scène est décalée vers le bas pour laisser la place au texte */
-    group.position.x=w<860?0:2.2; group.position.y=w<860?-3.2:0; group.scale.setScalar(w<860?.75:1);
-    camera.updateProjectionMatrix();
-  }
-  addEventListener('resize',resize); resize();
+  /* clic = allumer / éteindre */
+  var ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+  function hit(e){var r=canvas.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);return ray.intersectObjects(bulbs)[0]}
+  canvas.addEventListener('pointerdown',function(e){var h=hit(e);if(h){h.object.userData.lamp.on=!h.object.userData.lamp.on}});
+  canvas.addEventListener('pointermove',function(e){canvas.style.cursor=hit(e)?'pointer':''});
 
-  var clock=new THREE.Clock();
-  (function loop(){
-    requestAnimationFrame(loop);
-    if(!vis) return;
-    var t=reduce?0:clock.getElapsedTime();
-    sm.x+=(mouse.x-sm.x)*.05; sm.y+=(mouse.y-sm.y)*.05;
+  var vis=true,sm={x:0,y:0},clock=new THREE.Clock();
+  new IntersectionObserver(function(e){vis=e[0].isIntersecting}).observe(hero);
+  (function loop(){requestAnimationFrame(loop);if(!vis)return;
+    var t=reduce?0:clock.getElapsedTime();sm.x+=(mouse.x-sm.x)*.05;sm.y+=(mouse.y-sm.y)*.05;
     lamps.forEach(function(l){
-      l.piv.rotation.z=Math.sin(t*.6+l.ph)*.045+sm.x*.03;   // balancement pendulaire
-      l.piv.rotation.x=Math.cos(t*.5+l.ph)*.02;
-      var pulse=1+Math.sin(t*1.3+l.ph)*.04;                  // respiration de la lumière
-      l.light.intensity=2.2*pulse*(1-scrollP*.7);
-      l.sp.scale.setScalar(l.base*7*pulse);
-      l.sp.material.opacity=.85*(1-scrollP);
-    });
-    group.rotation.y=sm.x*.25; group.rotation.x=-sm.y*.1;
-    var a=pg.attributes.position.array;
-    for(var i=0;i<N;i++){a[i*3+1]+=spd[i]*.004; if(a[i*3+1]>5)a[i*3+1]=-5; a[i*3]+=Math.sin(t+i)*.0008}
-    pg.attributes.position.needsUpdate=true;
-    camera.position.z=12+scrollP*4;
-    renderer.render(scene,camera);
-  })();
+      l.lvl+=((l.on?1:.03)-l.lvl)*.09;
+      l.piv.rotation.z=Math.sin(t*.6+l.ph)*.045+sm.x*.03;l.piv.rotation.x=Math.cos(t*.5+l.ph)*.02;
+      var pulse=1+Math.sin(t*1.3+l.ph)*.04,k=l.lvl*(1-scrollP*.7);
+      l.mat.emissiveIntensity=.04+1.05*l.lvl;
+      l.light.intensity=2.2*pulse*k;l.sp.scale.setScalar(l.base*7*pulse);l.sp.material.opacity=.85*k;l.cone.material.opacity=.12*k});
+    group.rotation.y=sm.x*.25;group.rotation.x=-sm.y*.1;
+    var a=pg.attributes.position.array;for(var i=0;i<N;i++){a[i*3+1]+=spd[i]*.004;if(a[i*3+1]>5)a[i*3+1]=-5;a[i*3]+=Math.sin(t+i)*.0008}
+    pg.attributes.position.needsUpdate=true;camera.position.z=12+scrollP*4;renderer.render(scene,camera)})();
 }else{
-  canvas.style.display='none';
+  canvas.style.display='none';$('.hint3d').style.display='none';
   hero.style.background='radial-gradient(ellipse at 70% 40%,var(--glow-soft),transparent 60%)';
 }
 
-addEventListener('pointermove',function(e){
-  mouse.x=e.clientX/innerWidth*2-1; mouse.y=e.clientY/innerHeight*2-1;
-  var h=document.getElementById('halo'); h.classList.add('on');
-  h.style.transform='translate('+e.clientX+'px,'+e.clientY+'px)';
-},{passive:true});
-
-/* ---------- Manifeste : un mot par mot (avant GSAP) ---------- */
-var mt=document.getElementById('manifestText');
-mt.innerHTML=mt.textContent.trim().split(/\s+/).map(function(w){return '<span class="w">'+w+'</span>'}).join(' ');
-var words=[].slice.call(mt.querySelectorAll('.w'));
-function lightWords(){
-  var r=mt.getBoundingClientRect(), vh=innerHeight;
-  var p=Math.min(1,Math.max(0,(vh*.85-r.top)/(r.height+vh*.35)));
-  var n=Math.round(p*words.length);
-  words.forEach(function(w,i){w.classList.toggle('lit',i<n)});
-}
-
-/* ---------- Scroll ---------- */
-var nav=document.getElementById('nav');
-function onScroll(){
-  nav.classList.toggle('solid',scrollY>40);
-  scrollP=Math.min(1,scrollY/(hero.clientHeight*.9));
-  lightWords();
-}
-addEventListener('scroll',onScroll,{passive:true}); onScroll();
-document.getElementById('yr').textContent=new Date().getFullYear();
-
-/* ---------- Animations GSAP ---------- */
-function start(){
-  document.getElementById('loader').classList.add('done');
-  if(!window.gsap||reduce){
-    document.querySelectorAll('.rv').forEach(function(e){e.style.opacity=1;e.style.transform='none'});
-    document.querySelectorAll('.line span').forEach(function(e){e.style.transform='none'});
-    document.querySelectorAll('.stat b').forEach(function(b){b.textContent=b.dataset.n+(b.dataset.s||'')});
-    return;
-  }
-  gsap.registerPlugin(ScrollTrigger);
-  var tl=gsap.timeline({delay:.35});
-  tl.to('.line span',{y:0,duration:1.4,stagger:.14,ease:'expo.out'})
-    .to('.hero .rv',{opacity:1,y:0,duration:1,stagger:.12,ease:'power3.out'},'-=.9');
-
-  gsap.utils.toArray('section .rv, .final .rv').forEach(function(el){
-    gsap.to(el,{opacity:1,y:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 88%',once:true}});
-  });
-  /* les cartes de la grille : cascade par ligne */
-  ScrollTrigger.batch('.card',{start:'top 90%',once:true,
-    onEnter:function(b){gsap.to(b,{opacity:1,y:0,duration:.9,stagger:.08,ease:'power3.out'})}});
-
-  /* compteurs */
-  document.querySelectorAll('.stat b').forEach(function(b){
-    var o={v:0}, n=+b.dataset.n, s=b.dataset.s||'';
-    ScrollTrigger.create({trigger:b,start:'top 90%',once:true,onEnter:function(){
-      gsap.to(o,{v:n,duration:2,ease:'power2.out',onUpdate:function(){b.textContent=Math.round(o.v)+s}});
-    }});
-  });
-  /* parallaxe des visuels */
-  gsap.utils.toArray('.room img').forEach(function(im){
-    gsap.fromTo(im,{yPercent:-6},{yPercent:6,ease:'none',scrollTrigger:{trigger:im.parentNode,scrub:true}});
-  });
-  /* le texte du hero s'efface en scrollant */
-  gsap.to('.hero .wrap',{opacity:0,y:-60,ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'80% top',scrub:true}});
-}
-if(document.readyState==='complete') setTimeout(start,500); else addEventListener('load',function(){setTimeout(start,500)});
-setTimeout(function(){document.getElementById('loader').classList.add('done')},4000); // filet de sécurité
-
-setTemp(+kRange.value);
+/* ---------- init ---------- */
+setTemp(3000);renderCart();
+requestAnimationFrame(function(){hero.classList.add('in')});
+function ready(){$('#loader').classList.add('done')}
+if(document.readyState==='complete')setTimeout(ready,500);else addEventListener('load',function(){setTimeout(ready,500)});
+setTimeout(ready,4000);
 })();
 </script>
 </body>
