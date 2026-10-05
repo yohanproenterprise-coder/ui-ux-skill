@@ -1,0 +1,134 @@
+/* ============================================================
+   LA GALERIE LUMINEUSE — sections motion / 3D pour Shopify
+   Tout est préfixé .gl- pour ne pas entrer en conflit avec le thème.
+   --gl-glow est piloté en JS (curseur de température).
+============================================================ */
+:root{
+  --gl-glow:#ffb55c;
+  --gl-glow-soft:rgba(255,181,92,.18);
+  --gl-serif:'Cormorant Garamond',Georgia,serif;
+  --gl-sans:'Jost',system-ui,sans-serif;
+  --gl-line:rgba(255,235,200,.12);
+  --gl-muted:#9a8e7c;
+  --gl-ease:cubic-bezier(.22,1,.36,1);
+}
+
+.gl{position:relative;background:var(--gl-bg,#080605);color:var(--gl-text,#f4efe6);font-family:var(--gl-sans);font-weight:300;line-height:1.6;overflow:hidden}
+.gl *,.gl *::before,.gl *::after{box-sizing:border-box}
+.gl a{color:inherit;text-decoration:none}
+.gl img{display:block;max-width:100%;height:auto}
+.gl button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.gl :focus-visible{outline:2px solid var(--gl-glow);outline-offset:3px}
+.gl-wrap{width:min(1240px,100% - 48px);margin-inline:auto;position:relative}
+.gl-pad{padding:clamp(70px,11vw,160px) 0}
+
+.gl-kicker{font-size:.72rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gl-glow);margin:0 0 20px}
+.gl-h2{font-family:var(--gl-serif);font-weight:300;font-size:clamp(2.2rem,5vw,4.4rem);line-height:1.05;margin:0;color:inherit}
+.gl em{font-style:italic;color:var(--gl-glow)}
+
+/* bouton */
+.gl-btn{display:inline-flex;align-items:center;padding:14px 28px;border:1px solid var(--gl-glow);border-radius:100px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;position:relative;overflow:hidden;z-index:0;transition:color .4s,box-shadow .4s}
+.gl-btn::before{content:"";position:absolute;inset:0;background:var(--gl-glow);transform:translateY(101%);transition:transform .5s var(--gl-ease);z-index:-1}
+.gl-btn:hover{color:#000;box-shadow:0 0 40px var(--gl-glow-soft)}
+.gl-btn:hover::before{transform:none}
+
+/* révélation au scroll (actif seulement si JS présent) */
+.gl-js .gl-rv{opacity:0;transform:translateY(40px);transition:opacity 1s var(--gl-ease),transform 1s var(--gl-ease);transition-delay:var(--gl-d,0ms)}
+.gl-js .gl-rv.is-in{opacity:1;transform:none}
+
+/* ---------------- HERO ---------------- */
+.gl-hero{min-height:var(--gl-h,100vh);min-height:var(--gl-h-svh,100svh);display:grid;align-items:center}
+.gl-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+.gl-hero .gl-wrap{z-index:2;pointer-events:none;padding:110px 0}
+.gl-hero .gl-wrap>*{pointer-events:auto}
+.gl-eyebrow{font-size:.75rem;letter-spacing:.34em;text-transform:uppercase;color:var(--gl-glow);margin:0 0 26px}
+.gl-h1{font-family:var(--gl-serif);font-weight:300;font-size:clamp(3rem,8.5vw,8rem);line-height:.95;letter-spacing:-.01em;max-width:11ch;margin:0;color:inherit}
+.gl-line{display:block;overflow:hidden;padding-bottom:.08em}
+.gl-line>span{display:inline-block}
+.gl-js .gl-line>span{transform:translateY(110%);transition:transform 1.4s var(--gl-ease);transition-delay:calc(var(--gl-i,0) * 140ms + 350ms)}
+.gl-js .gl-hero.is-in .gl-line>span{transform:none}
+.gl-h1 em{text-shadow:0 0 60px var(--gl-glow-soft)}
+.gl-lead{max-width:34ch;margin:30px 0 40px;color:var(--gl-muted);font-size:1.05rem}
+.gl-cta{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.gl-hint{font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gl-muted);display:flex;align-items:center;gap:14px}
+.gl-hint::before{content:"";width:46px;height:1px;background:var(--gl-muted);transform-origin:left;animation:gl-ln 2s var(--gl-ease) infinite}
+@keyframes gl-ln{0%{transform:scaleX(0)}60%{transform:scaleX(1)}100%{transform:scaleX(1);opacity:0}}
+
+.gl-temp{position:absolute;z-index:3;right:max(24px,calc((100% - 1240px)/2));bottom:44px;width:min(320px,calc(100% - 48px));padding:20px 22px;border:1px solid var(--gl-line);border-radius:18px;background:rgba(20,16,12,.55);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.gl-temp-h{display:flex;justify-content:space-between;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gl-muted);margin-bottom:14px}
+.gl-temp output{color:var(--gl-glow);font-variant-numeric:tabular-nums}
+.gl-temp input{width:100%;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;margin:0;background:linear-gradient(90deg,#ff9a3c,#ffd9a0 45%,#fff3e0 70%,#cfe3ff)}
+.gl-temp input::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px var(--gl-glow-soft),0 0 22px var(--gl-glow);cursor:grab}
+.gl-temp input::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 0 0 5px var(--gl-glow-soft),0 0 22px var(--gl-glow);cursor:grab}
+.gl-temp-n{display:flex;justify-content:space-between;margin-top:12px;font-size:.68rem;color:var(--gl-muted);letter-spacing:.08em}
+
+.gl-halo{position:fixed;left:0;top:0;width:420px;height:420px;margin:-210px 0 0 -210px;border-radius:50%;pointer-events:none;z-index:2;background:radial-gradient(circle,var(--gl-glow-soft),transparent 65%);opacity:0;transition:opacity .6s;mix-blend-mode:screen}
+.gl-halo.on{opacity:1}
+
+/* ---------------- MARQUEE ---------------- */
+.gl-marquee{border-block:1px solid var(--gl-line);padding:22px 0}
+.gl-track{display:flex;gap:56px;width:max-content;animation:gl-mq var(--gl-speed,38s) linear infinite;font-family:var(--gl-serif);font-size:clamp(1.6rem,3vw,2.6rem);font-style:italic;font-weight:300;color:var(--gl-muted)}
+.gl-track span:nth-child(even){color:var(--gl-glow)}
+@keyframes gl-mq{to{transform:translateX(-50%)}}
+
+/* ---------------- MANIFESTE ---------------- */
+.gl-manifesto-t{font-family:var(--gl-serif);font-weight:300;font-size:clamp(1.8rem,4.2vw,3.6rem);line-height:1.2;max-width:24ch;margin:0}
+.gl-js .gl-w{display:inline-block;opacity:.14;transition:opacity .35s}
+.gl-js .gl-w.lit{opacity:1}
+
+/* ---------------- COLLECTION ---------------- */
+.gl-shead{display:flex;justify-content:space-between;align-items:flex-end;gap:30px;margin-bottom:56px;flex-wrap:wrap}
+.gl-filters{display:flex;gap:8px;flex-wrap:wrap}
+.gl-chip{padding:10px 20px;border:1px solid var(--gl-line);border-radius:100px;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gl-muted);transition:.3s}
+.gl-chip:hover{color:var(--gl-text,#f4efe6);border-color:var(--gl-glow)}
+.gl-chip.on{background:var(--gl-glow);border-color:var(--gl-glow);color:#000}
+.gl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px}
+.gl-card{position:relative;display:block;border-radius:20px;overflow:hidden;background:var(--gl-card,#1a1612);border:1px solid var(--gl-line);transition:border-color .4s,box-shadow .5s,transform .3s ease-out;will-change:transform}
+.gl-card:hover{border-color:var(--gl-glow);box-shadow:0 30px 80px -30px var(--gl-glow-soft)}
+.gl-card[hidden]{display:none}
+.gl-card-img{aspect-ratio:1/1.1;overflow:hidden;background:#0d0b09;position:relative}
+.gl-card-img img,.gl-card-img svg{width:100%;height:100%;object-fit:cover;transition:transform 1.1s var(--gl-ease),filter .6s;filter:brightness(.92)}
+.gl-card:hover .gl-card-img img{transform:scale(1.07);filter:brightness(1.05)}
+.gl-shine{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),var(--gl-glow-soft),transparent 55%)}
+.gl-card:hover .gl-shine{opacity:1}
+.gl-badge{position:absolute;top:14px;left:14px;padding:5px 12px;border-radius:100px;background:rgba(8,6,5,.75);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gl-muted)}
+.gl-info{padding:20px 22px 24px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.gl-info h3{font-family:var(--gl-serif);font-weight:400;font-size:1.7rem;line-height:1;margin:0;color:inherit}
+.gl-info small{display:block;margin-top:6px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gl-muted)}
+.gl-price{text-align:right;font-size:.95rem;white-space:nowrap}
+.gl-price span{display:block;font-size:.66rem;color:var(--gl-muted);letter-spacing:.12em;text-transform:uppercase}
+.gl-price s{display:block;color:var(--gl-muted);font-size:.8rem}
+.gl-more{text-align:center;margin-top:60px}
+
+/* ---------------- UNIVERS ---------------- */
+.gl-rooms{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:56px}
+.gl-room{position:relative;aspect-ratio:3/4;border-radius:20px;overflow:hidden;display:flex;align-items:flex-end;padding:28px;border:1px solid var(--gl-line)}
+.gl-room img,.gl-room svg{position:absolute;inset:-7% 0;width:100%;height:114%;object-fit:cover;filter:brightness(.55);transition:filter .6s;will-change:transform}
+.gl-room::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(8,6,5,.92),transparent 60%)}
+.gl-room:hover img{filter:brightness(.8)}
+.gl-room div{position:relative;z-index:1}
+.gl-room h3{font-family:var(--gl-serif);font-weight:300;font-size:2.4rem;line-height:1;margin:0;color:inherit}
+.gl-room p{color:var(--gl-muted);font-size:.85rem;margin:8px 0 0}
+
+/* ---------------- CHIFFRES ---------------- */
+.gl-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:40px}
+.gl-stat b{display:block;font-family:var(--gl-serif);font-weight:300;font-size:clamp(3rem,6vw,5rem);line-height:1;color:var(--gl-glow)}
+.gl-stat span{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gl-muted)}
+
+/* ---------------- CTA FINAL ---------------- */
+.gl-final{text-align:center}
+.gl-final::before{content:"";position:absolute;left:50%;top:50%;width:900px;height:900px;max-width:140vw;transform:translate(-50%,-50%);background:radial-gradient(circle,var(--gl-glow-soft),transparent 62%);pointer-events:none}
+.gl-final .gl-h2{max-width:14ch;margin:0 auto 40px}
+
+@media(max-width:860px){
+  .gl-rooms{grid-template-columns:1fr}
+  .gl-room{aspect-ratio:4/3}
+  .gl-temp{bottom:24px}
+  .gl-hero{align-items:start}
+  .gl-halo{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .gl *{animation:none!important;transition:none!important}
+  .gl-js .gl-rv,.gl-js .gl-line>span{opacity:1;transform:none}
+  .gl-js .gl-w{opacity:1}
+}

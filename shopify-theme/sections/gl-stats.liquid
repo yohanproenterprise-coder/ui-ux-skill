@@ -1,0 +1,44 @@
+{% render 'gl-assets' %}
+
+<section class="gl gl-pad" style="--gl-bg:{{ section.settings.bg }};--gl-text:{{ section.settings.text }};padding-block:clamp(50px,7vw,100px)">
+  <div class="gl-wrap">
+    <div class="gl-stats">
+      {%- for block in section.blocks -%}
+        <div class="gl-stat gl-rv" style="--gl-d:{{ forloop.index0 | times: 100 }}ms" {{ block.shopify_attributes }}>
+          <b data-gl-counter data-n="{{ block.settings.number }}" data-s="{{ block.settings.suffix | escape }}">{{ block.settings.number }}{{ block.settings.suffix }}</b>
+          <span>{{ block.settings.label }}</span>
+        </div>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "GL · Chiffres animés",
+  "settings": [
+    { "type": "color", "id": "bg", "label": "Fond", "default": "#080605" },
+    { "type": "color", "id": "text", "label": "Texte", "default": "#f4efe6" }
+  ],
+  "blocks": [
+    {
+      "type": "stat",
+      "name": "Chiffre",
+      "settings": [
+        { "type": "number", "id": "number", "label": "Nombre", "default": 190 },
+        { "type": "text", "id": "suffix", "label": "Suffixe (+, %, …)", "default": "+" },
+        { "type": "text", "id": "label", "label": "Légende", "default": "Luminaires" }
+      ]
+    }
+  ],
+  "max_blocks": 4,
+  "presets": [{
+    "name": "GL · Chiffres animés",
+    "blocks": [
+      { "type": "stat", "settings": { "number": 190, "suffix": "+", "label": "Luminaires" } },
+      { "type": "stat", "settings": { "number": 3, "suffix": "", "label": "Températures de lumière" } },
+      { "type": "stat", "settings": { "number": 100, "suffix": "%", "label": "Pensé pour la déco" } }
+    ]
+  }]
+}
+{% endschema %}
