@@ -30,6 +30,14 @@ Fichier à téléverser : `galerie-lumineuse-theme.zip` (ou le dossier `galerie-
 - SEO : balises Open Graph, données structurées produit, titres/descriptions du thème.
 - Accessibilité : navigation clavier, `prefers-reduced-motion`, libellés ARIA.
 
+## 5. Section « Lampe allumée au scroll » (nouveau)
+Une pièce plongée dans le noir : en faisant défiler la page, trois suspensions s'allument l'une après l'autre
+(scintillement, halo, cônes de lumière, ombres sur la table), la température monte de 2200 K à 3200 K et la caméra avance.
+- Ajout : éditeur de thème → page d'accueil → **Ajouter une section → « Lampe allumée au scroll »** (déjà placée après les produits vedettes).
+- Réglages : longueur du défilement, températures de départ et d'arrivée, textes de chaque étape (blocs) et moment d'apparition de chaque texte.
+- Bouton final : renseignez le lien du dernier bloc (collection ou produit phare).
+- Performance : Three.js n'est chargé que lorsque la section approche de l'écran. Sans WebGL, un halo animé léger prend le relais ; avec « réduire les animations » activé, la scène s'affiche allumée, sans défilement piloté.
+
 ## 4. Limites connues
 - Validé avec Theme Check (0 erreur) et testé en navigateur sur une maquette du balisage ; **à prévisualiser sur votre boutique** avant de publier.
 - Les pages « compte client » utilisent les comptes clients nouvelle génération de Shopify (pas de gabarits classiques).

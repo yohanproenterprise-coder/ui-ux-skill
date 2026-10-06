@@ -213,6 +213,61 @@
     "cta": {
       "type": "cta-banner",
       "settings": {}
+    },
+    "lamp": {
+      "type": "scroll-lamp",
+      "blocks": {
+        "s1": {
+          "type": "step",
+          "settings": {
+            "kicker": "Chapitre 1",
+            "heading": "Dans le noir,",
+            "accent": "rien.",
+            "text": "Une pièce sans lumière n'a ni forme ni caractère.",
+            "from": 0,
+            "to": 22
+          }
+        },
+        "s2": {
+          "type": "step",
+          "settings": {
+            "kicker": "Chapitre 2",
+            "heading": "Un geste,",
+            "accent": "et tout change.",
+            "text": "La lumière dessine l'espace, révèle les matières, installe l'ambiance.",
+            "from": 25,
+            "to": 50
+          }
+        },
+        "s3": {
+          "type": "step",
+          "settings": {
+            "kicker": "Chapitre 3",
+            "heading": "Chaude, douce,",
+            "accent": "enveloppante.",
+            "text": "Choisissez la température qui vous ressemble : 3000 K pour le cocon, 4000 K pour le quotidien.",
+            "from": 53,
+            "to": 78
+          }
+        },
+        "s4": {
+          "type": "step",
+          "settings": {
+            "heading": "À vous de",
+            "accent": "l'allumer.",
+            "button_label": "Choisir mon luminaire",
+            "from": 82,
+            "to": 100
+          }
+        }
+      },
+      "block_order": [
+        "s1",
+        "s2",
+        "s3",
+        "s4"
+      ],
+      "settings": {}
     }
   },
   "order": [
@@ -220,6 +275,7 @@
     "trust",
     "rooms",
     "featured",
+    "lamp",
     "marquee",
     "light",
     "story",

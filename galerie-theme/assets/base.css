@@ -431,3 +431,30 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
   .has-reveal .rv,.line span{opacity:1!important;transform:none!important}
 }
+
+/* ---------- lampe qui s'allume au scroll ---------- */
+.sl{position:relative;height:var(--sl-h,260vh);background:#050403}
+.sl-stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+.sl-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.sl-glow{position:absolute;inset:0;pointer-events:none;opacity:0;mix-blend-mode:screen}
+.sl-stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(5,4,3,.78) 0%,rgba(5,4,3,.4) 24%,transparent 40%),linear-gradient(0deg,rgba(5,4,3,.7),transparent 22%)}
+.sl-copy,.sl-hud{z-index:2}
+.sl-copy{position:absolute;inset:0;display:flex;align-items:center;margin-inline:auto;pointer-events:none}
+.sl-step{position:absolute;left:0;max-width:min(520px,86%);opacity:0;transform:translateY(26px);transition:opacity .6s var(--ease),transform .8s var(--ease);pointer-events:none;text-shadow:0 2px 30px rgba(0,0,0,.6)}
+.sl-step.on{opacity:1;transform:none;pointer-events:auto}
+.sl-hud{position:absolute;left:0;right:0;bottom:28px;display:flex;align-items:center;justify-content:center;gap:18px;font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:#d8cbb8;pointer-events:none}
+.sl-bar{width:min(240px,34vw);height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.sl-bar i{display:block;height:100%;background:var(--accent);box-shadow:0 0 12px var(--accent);transform:scaleX(0);transform-origin:left}
+.sl-k{color:var(--accent);font-variant-numeric:tabular-nums;min-width:62px;text-align:left}
+@media(max-width:980px){
+  .sl-copy{align-items:flex-start;padding-top:9svh}
+  .sl-step{max-width:100%;left:0}
+  .sl-step .h2{font-size:clamp(1.9rem,8vw,2.6rem)}
+  .sl-step .sub{font-size:.92rem}
+  .sl-stage::after{background:linear-gradient(180deg,rgba(5,4,3,.88) 0%,rgba(5,4,3,.6) 26%,transparent 46%),linear-gradient(0deg,rgba(5,4,3,.7),transparent 18%)}
+}
+@media(prefers-reduced-motion:reduce){
+  .sl{height:auto}
+  .sl-stage{position:relative;height:90svh}
+  .sl-step{transition:none}
+}

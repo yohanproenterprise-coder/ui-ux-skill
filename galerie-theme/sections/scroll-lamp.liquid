@@ -1,0 +1,77 @@
+<section
+  class="sl"
+  data-scroll-lamp
+  data-k-start="{{ section.settings.kelvin_start }}"
+  data-k-end="{{ section.settings.kelvin_end }}"
+  data-3d="{{ section.settings.enable_3d }}"
+  style="--sl-h:{{ section.settings.scroll_length }}vh"
+  aria-label="{{ section.settings.aria_label | escape }}"
+>
+  <div class="sl-stage">
+    {%- if section.settings.enable_3d -%}<canvas class="sl-canvas" aria-hidden="true"></canvas>{%- endif -%}
+    <div class="sl-glow" aria-hidden="true"></div>
+
+    <div class="wrap sl-copy">
+      {%- for block in section.blocks -%}
+        <div class="sl-step" data-step data-from="{{ block.settings.from }}" data-to="{{ block.settings.to }}" {{ block.shopify_attributes }}>
+          {%- if block.settings.kicker != blank -%}<p class="kicker">{{ block.settings.kicker }}</p>{%- endif -%}
+          <h2 class="h2">{{ block.settings.heading }} <em>{{ block.settings.accent }}</em></h2>
+          {%- if block.settings.text != blank -%}<p class="sub">{{ block.settings.text }}</p>{%- endif -%}
+          {%- if block.settings.button_label != blank -%}
+            <p style="margin-top:28px"><a class="btn solid" href="{{ block.settings.button_link | default: routes.all_products_collection_url }}">{{ block.settings.button_label }}</a></p>
+          {%- endif -%}
+        </div>
+      {%- endfor -%}
+    </div>
+
+    <div class="sl-hud" aria-hidden="true">
+      <span class="sl-hint">Faites défiler</span>
+      <span class="sl-bar"><i data-sl-bar></i></span>
+      <output class="sl-k" data-sl-k>{{ section.settings.kelvin_start }} K</output>
+    </div>
+  </div>
+</section>
+
+<script src="{{ 'scroll-lamp.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Lampe allumée au scroll",
+  "settings": [
+    { "type": "paragraph", "content": "Une pièce dans le noir : la lampe s'allume au fil du défilement. Les textes apparaissent aux étapes que vous choisissez dans les blocs." },
+    { "type": "checkbox", "id": "enable_3d", "label": "Scène 3D", "info": "Désactivée : seul un halo lumineux animé est affiché (plus léger).", "default": true },
+    { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de la hauteur d'écran)", "min": 160, "max": 420, "step": 20, "default": 260 },
+    { "type": "range", "id": "kelvin_start", "label": "Température au moment de l'allumage (K)", "min": 2200, "max": 4000, "step": 100, "default": 2200 },
+    { "type": "range", "id": "kelvin_end", "label": "Température finale (K)", "min": 2200, "max": 6500, "step": 100, "default": 3200 },
+    { "type": "text", "id": "aria_label", "label": "Description pour l'accessibilité", "default": "Une lampe design s'allume dans une pièce sombre" }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "Étape de texte",
+      "settings": [
+        { "type": "text", "id": "kicker", "label": "Sur-titre" },
+        { "type": "text", "id": "heading", "label": "Titre", "default": "Dans le noir," },
+        { "type": "text", "id": "accent", "label": "Mot mis en lumière", "default": "rien." },
+        { "type": "textarea", "id": "text", "label": "Texte" },
+        { "type": "text", "id": "button_label", "label": "Bouton — texte (optionnel)" },
+        { "type": "url", "id": "button_link", "label": "Bouton — lien" },
+        { "type": "range", "id": "from", "label": "Apparaît à (% du défilement)", "min": 0, "max": 100, "step": 5, "default": 0 },
+        { "type": "range", "id": "to", "label": "Disparaît à (% du défilement)", "min": 0, "max": 100, "step": 5, "default": 22 }
+      ]
+    }
+  ],
+  "max_blocks": 6,
+  "presets": [
+    {
+      "name": "Lampe allumée au scroll",
+      "blocks": [
+        { "type": "step", "settings": { "kicker": "Chapitre 1", "heading": "Dans le noir,", "accent": "rien.", "text": "Une pièce sans lumière n'a ni forme ni caractère.", "from": 0, "to": 22 } },
+        { "type": "step", "settings": { "kicker": "Chapitre 2", "heading": "Un geste,", "accent": "et tout change.", "text": "La lumière dessine l'espace, révèle les matières, installe l'ambiance.", "from": 25, "to": 50 } },
+        { "type": "step", "settings": { "kicker": "Chapitre 3", "heading": "Chaude, douce,", "accent": "enveloppante.", "text": "Choisissez la température qui vous ressemble : 3000 K pour le cocon, 4000 K pour le quotidien.", "from": 53, "to": 78 } },
+        { "type": "step", "settings": { "heading": "À vous de", "accent": "l'allumer.", "button_label": "Choisir mon luminaire", "from": 82, "to": 100 } }
+      ]
+    }
+  ]
+}
+{% endschema %}
