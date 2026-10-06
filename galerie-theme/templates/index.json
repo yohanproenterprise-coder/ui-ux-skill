@@ -243,9 +243,9 @@
           "type": "step",
           "settings": {
             "kicker": "Chapitre 3",
-            "heading": "Le cuivre",
+            "heading": "La matière",
             "accent": "prend vie.",
-            "text": "Cuivre poli et marbre naturel : une matière chaude qui capte la lumière et la renvoie en nuances ambrées.",
+            "text": "Volumes, reflets, ombres portées : chaque détail du luminaire se révèle.",
             "from": 53,
             "to": 78
           }
@@ -255,7 +255,7 @@
           "settings": {
             "heading": "À vous de",
             "accent": "l'allumer.",
-            "button_label": "Découvrir CUIVRE",
+            "button_label": "Découvrir ce luminaire",
             "from": 82,
             "to": 100,
             "show_product": true
@@ -269,7 +269,9 @@
         "s4"
       ],
       "settings": {
-        "product": "all-copper-marble-led-pendant-lamp-simple-light-restaurant-bar-counter-luxury-small-chandelier-bedroom-bedside-lighting"
+        "product": "nordic-designer-creative-fishbone-pendant-lights-villa-hall-led-ceiling-chandelier-lustre-home-decor-living-room-hanging-lamps",
+        "mode": "scene",
+        "lamp_style": "tubes"
       }
     }
   },

@@ -13,6 +13,7 @@
   data-k-start="{{ section.settings.kelvin_start }}"
   data-k-end="{{ section.settings.kelvin_end }}"
   data-finish="{{ section.settings.finish }}"
+  data-lamp-style="{{ section.settings.lamp_style }}"
   style="--sl-h:{{ section.settings.scroll_length }}vh"
   aria-label="{{ section.settings.aria_label | escape }}"
 >
@@ -38,7 +39,7 @@
           {%- if block.settings.kicker != blank -%}<p class="kicker">{{ block.settings.kicker }}</p>{%- endif -%}
           <h2 class="h2">{{ block.settings.heading }} <em>{{ block.settings.accent }}</em></h2>
           {%- if block.settings.text != blank -%}<p class="sub">{{ block.settings.text }}</p>{%- endif -%}
-          {%- if block.settings.show_product and use_product -%}
+          {%- if block.settings.show_product and product != blank -%}
             <p class="sl-pname">{{ product.title }}<span>{% if product.price_varies %}dès {% endif %}{{ product.price | money_without_trailing_zeros }}</span></p>
             <p style="margin-top:22px"><a class="btn solid" href="{{ product.url }}">{{ block.settings.button_label | default: 'Découvrir' }}</a></p>
           {%- elsif block.settings.button_label != blank -%}
@@ -63,14 +64,15 @@
   "name": "Lampe allumée au scroll",
   "settings": [
     { "type": "paragraph", "content": "Un produit de votre boutique plongé dans le noir : il s'allume au fil du défilement. Les textes apparaissent aux étapes que vous choisissez dans les blocs." },
-    { "type": "product", "id": "product", "label": "Produit à révéler", "info": "Ses photos, son prix et son lien sont repris automatiquement (ex. BEAMY, en cuivre)." },
-    { "type": "select", "id": "mode", "label": "Mode", "options": [{ "value": "product", "label": "Produit de la boutique" }, { "value": "scene", "label": "Décor 3D générique" }], "default": "product" },
-    { "type": "select", "id": "finish", "label": "Finition du décor 3D (mode décor)", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
-    { "type": "checkbox", "id": "enable_3d", "label": "Scène 3D (mode décor)", "default": true },
+    { "type": "product", "id": "product", "label": "Produit présenté", "info": "Son nom, son prix et son lien s'affichent à la dernière étape. En mode « photos », ses photos s'allument aussi." },
+    { "type": "select", "id": "mode", "label": "Mode", "options": [{ "value": "scene", "label": "Pièce 3D qui s'allume" }, { "value": "product", "label": "Photos du produit qui s'allument" }], "default": "scene" },
+    { "type": "select", "id": "lamp_style", "label": "Modèle de luminaire (pièce 3D)", "info": "Forme 3D inspirée d'un produit : choisissez celle qui ressemble le plus au produit présenté.", "options": [{ "value": "tubes", "label": "Tubes lumineux (type LÉYA)" }, { "value": "dome", "label": "Dôme cuivre et marbre (type CUIVRE)" }, { "value": "glass", "label": "Globes opalins (type SOLIS)" }, { "value": "ring", "label": "Couronne d'ampoules (type ORION)" }], "default": "tubes" },
+    { "type": "select", "id": "finish", "label": "Ancien réglage de finition (remplacé par le modèle)", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
+    { "type": "checkbox", "id": "enable_3d", "label": "Activer la 3D (pièce)", "default": true },
     { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de la hauteur d'écran)", "min": 160, "max": 420, "step": 20, "default": 260 },
     { "type": "range", "id": "kelvin_start", "label": "Température au moment de l'allumage (K)", "min": 2200, "max": 4000, "step": 100, "default": 2200 },
     { "type": "range", "id": "kelvin_end", "label": "Température finale (K)", "min": 2200, "max": 6500, "step": 100, "default": 3200 },
-    { "type": "text", "id": "aria_label", "label": "Description pour l'accessibilité", "default": "Un luminaire en cuivre s'allume dans une pièce sombre" }
+    { "type": "text", "id": "aria_label", "label": "Description pour l'accessibilité", "default": "Un luminaire s'allume dans une pièce sombre" }
   ],
   "blocks": [
     {
@@ -96,7 +98,7 @@
       "blocks": [
         { "type": "step", "settings": { "kicker": "Chapitre 1", "heading": "Dans le noir,", "accent": "rien.", "text": "Une pièce sans lumière n'a ni forme ni caractère.", "from": 0, "to": 22 } },
         { "type": "step", "settings": { "kicker": "Chapitre 2", "heading": "Un geste,", "accent": "et tout change.", "text": "La lumière dessine l'espace, révèle les matières, installe l'ambiance.", "from": 25, "to": 50 } },
-        { "type": "step", "settings": { "kicker": "Chapitre 3", "heading": "Le cuivre", "accent": "prend vie.", "text": "Une matière chaude qui capte la lumière et la renvoie en nuances ambrées.", "from": 53, "to": 78 } },
+        { "type": "step", "settings": { "kicker": "Chapitre 3", "heading": "La matière", "accent": "prend vie.", "text": "Volumes, reflets, ombres portées : chaque détail du luminaire se révèle.", "from": 53, "to": 78 } },
         { "type": "step", "settings": { "heading": "À vous de", "accent": "l'allumer.", "show_product": true, "button_label": "Découvrir le luminaire", "from": 82, "to": 100 } }
       ]
     }
