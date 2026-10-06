@@ -28,7 +28,7 @@
     <div class="nav-r">
       <button type="button" class="icon-btn" data-open-search aria-label="Rechercher">{% render 'icon', name: 'search' %}</button>
       {%- if shop.customer_accounts_enabled -%}
-        <a class="icon-btn" href="{{ routes.account_url }}" aria-label="Mon compte">{% render 'icon', name: 'user' %}</a>
+        <a class="icon-btn acct" href="{{ routes.account_url }}" aria-label="Mon compte">{% render 'icon', name: 'user' %}</a>
       {%- endif -%}
       <button type="button" class="icon-btn cart-btn" data-open-cart aria-label="Ouvrir le panier">
         {% render 'icon', name: 'cart' %}<span class="t">Panier</span><span class="cart-count" data-cart-count>{{ cart.item_count }}</span>
