@@ -4,6 +4,7 @@
   data-k-start="{{ section.settings.kelvin_start }}"
   data-k-end="{{ section.settings.kelvin_end }}"
   data-3d="{{ section.settings.enable_3d }}"
+  data-finish="{{ section.settings.finish }}"
   style="--sl-h:{{ section.settings.scroll_length }}vh"
   aria-label="{{ section.settings.aria_label | escape }}"
 >
@@ -39,6 +40,7 @@
   "name": "Lampe allumée au scroll",
   "settings": [
     { "type": "paragraph", "content": "Une pièce dans le noir : la lampe s'allume au fil du défilement. Les textes apparaissent aux étapes que vous choisissez dans les blocs." },
+    { "type": "select", "id": "finish", "label": "Finition des luminaires", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
     { "type": "checkbox", "id": "enable_3d", "label": "Scène 3D", "info": "Désactivée : seul un halo lumineux animé est affiché (plus léger).", "default": true },
     { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de la hauteur d'écran)", "min": 160, "max": 420, "step": 20, "default": 260 },
     { "type": "range", "id": "kelvin_start", "label": "Température au moment de l'allumage (K)", "min": 2200, "max": 4000, "step": 100, "default": 2200 },

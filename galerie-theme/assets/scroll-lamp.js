@@ -31,7 +31,8 @@
   /* ------------------------------------------------------------
      Scène 3D
   ------------------------------------------------------------ */
-  function buildScene(canvas) {
+  function buildScene(canvas, finish) {
+    var copper = finish !== 'glass';
     var THREE = window.THREE;
     var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -62,9 +63,9 @@
     var foot = new THREE.Mesh(new THREE.CylinderGeometry(.7, .8, .06, 40), std(0x16110d, .5, .3));
     foot.position.y = .03; foot.receiveShadow = true; scene.add(foot);
 
-    var vase = new THREE.Mesh(new THREE.CylinderGeometry(.17, .11, .62, 32), std(0xcfc2b0, .25));
+    var vase = new THREE.Mesh(new THREE.CylinderGeometry(.17, .11, .62, 32), copper ? std(0xb87333, .35, .85) : std(0xcfc2b0, .25));
     vase.position.set(.62, 1.31, .1); vase.castShadow = true; vase.receiveShadow = true; scene.add(vase);
-    var bowl = new THREE.Mesh(new THREE.SphereGeometry(.4, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), std(0x8a6a4a, .5));
+    var bowl = new THREE.Mesh(new THREE.SphereGeometry(.4, 40, 20, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), copper ? std(0x9c5a2c, .4, .8) : std(0x8a6a4a, .5));
     bowl.position.set(-.7, 1.1, .35); bowl.rotation.x = Math.PI; bowl.castShadow = true; bowl.receiveShadow = true; scene.add(bowl);
     [0, 1].forEach(function (i) {
       var bk = new THREE.Mesh(new THREE.BoxGeometry(.7 - i * .1, .08, .5), std(i ? 0x6a2f23 : 0x2f3a46, .6));
@@ -88,21 +89,40 @@
     /* trois suspensions (x, y, rayon) */
     var lamps = [];
     [[-1.05, 3.3, .42], [.1, 2.55, .62], [1.2, 3.55, .34]].forEach(function (d, i) {
-      var len = 10 - d[1];
-      var cable = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, len, 6), new THREE.MeshBasicMaterial({ color: 0x2a2520 }));
-      cable.position.set(d[0], d[1] + len / 2, 0); scene.add(cable);
-      var cap = new THREE.Mesh(new THREE.CylinderGeometry(d[2] * .22, d[2] * .3, d[2] * .4, 24), std(0x16130f, .3, .9));
-      cap.position.set(d[0], d[1] + d[2] * .95, 0); scene.add(cap);
+      var r = d[2], x = d[0], y = d[1], cableMat = new THREE.MeshBasicMaterial({ color: 0x2a2520 });
+      var topY = copper ? y + r * 1.15 + r * .28 : y + r;   /* sommet de l'abat-jour / du globe */
+      var len = 10 - topY;
+      var cable = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, len, 6), cableMat);
+      cable.position.set(x, topY + len / 2, 0); scene.add(cable);
+
+      var bulbY = copper ? y - r * .08 : y, bulbR = copper ? r * .52 : r;
       var mat = new THREE.MeshStandardMaterial({ color: 0x2a2018, emissive: 0xffb55c, emissiveIntensity: 0, roughness: .35 });
-      var bulb = new THREE.Mesh(new THREE.SphereGeometry(d[2], 48, 48), mat);
-      bulb.position.set(d[0], d[1], 0); scene.add(bulb);
-      var pl = new THREE.PointLight(0xffb55c, 0, 16, 2); pl.position.copy(bulb.position); scene.add(pl);
+      var bulb = new THREE.Mesh(new THREE.SphereGeometry(bulbR, 48, 48), mat);
+      bulb.position.set(x, bulbY, 0); scene.add(bulb);
+
+      var dome = null;
+      if (copper) {
+        /* abat-jour cuivre : deux coques (extérieur qui reflète la lueur, intérieur incandescent) */
+        var geo = new THREE.SphereGeometry(r * 1.15, 56, 32, 0, Math.PI * 2, 0, Math.PI * .58);
+        var outer = new THREE.MeshStandardMaterial({ color: 0xc8601f, metalness: .45, roughness: .32, emissive: 0x000000, side: THREE.FrontSide });
+        var inner = new THREE.MeshStandardMaterial({ color: 0xd9772f, metalness: .35, roughness: .4, emissive: 0x000000, side: THREE.BackSide });
+        dome = new THREE.Group();
+        dome.add(new THREE.Mesh(geo, outer)); dome.add(new THREE.Mesh(geo, inner));
+        dome.position.set(x, y + r * .28, 0); scene.add(dome); dome.userData.outer = outer; dome.userData.inner = inner;
+        var cap = new THREE.Mesh(new THREE.CylinderGeometry(r * .13, r * .2, r * .3, 24), std(0xa4521a, .3, .8));
+        cap.position.set(x, topY + r * .12, 0); scene.add(cap);
+      } else {
+        var capG = new THREE.Mesh(new THREE.CylinderGeometry(r * .22, r * .3, r * .4, 24), std(0x16130f, .3, .9));
+        capG.position.set(x, y + r * .95, 0); scene.add(capG);
+      }
+
+      var pl = new THREE.PointLight(0xffb55c, 0, 16, 2); pl.position.set(x, bulbY, 0); scene.add(pl);
       var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: HT, color: 0xffb55c, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 }));
-      sp.scale.setScalar(d[2] * 8); sp.position.copy(bulb.position); scene.add(sp);
-      var ch = d[1] - .95, cone = new THREE.Mesh(new THREE.ConeGeometry(d[2] * 2.6, ch, 40, 1, true),
+      sp.scale.setScalar(r * 8); sp.position.set(x, bulbY - (copper ? r * .1 : 0), 0); scene.add(sp);
+      var ch = y - .95, cone = new THREE.Mesh(new THREE.ConeGeometry(r * 2.6, ch, 40, 1, true),
         new THREE.MeshBasicMaterial({ map: CT, color: 0xffb55c, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-      cone.position.set(d[0], d[1] - ch / 2 + d[2] * .2, 0); scene.add(cone);
-      lamps.push({ i: i, mat: mat, pl: pl, sp: sp, cone: cone, r: d[2], x: d[0], y: d[1] });
+      cone.position.set(x, y - ch / 2 + r * .2 - (copper ? r * .2 : 0), 0); scene.add(cone);
+      lamps.push({ i: i, mat: mat, dome: dome, pl: pl, sp: sp, cone: cone, r: r, x: x, y: y });
     });
 
     /* projecteur principal : ombres sur la table */
@@ -133,7 +153,12 @@
         sm.x += (mouse.x - sm.x) * .04; sm.y += (mouse.y - sm.y) * .04;
         lamps.forEach(function (L, i) {
           var l = lv[i];
-          L.mat.emissive.copy(col); L.mat.emissiveIntensity = .02 + 1.15 * l;
+          L.mat.emissive.copy(col); L.mat.emissiveIntensity = .02 + (copper ? 1.7 : 1.15) * l;
+          if (L.dome) {
+            var cu = new THREE.Color(0xb8581c);
+            L.dome.userData.outer.emissive.copy(cu).multiplyScalar(.5 * l);
+            L.dome.userData.inner.emissive.copy(col).multiplyScalar(.55 * l);
+          }
           L.pl.color.copy(col); L.pl.intensity = 1.7 * l;
           L.sp.material.color.copy(col); L.sp.material.opacity = .5 * l; L.sp.scale.setScalar(L.r * (8 + 1.2 * Math.sin(t * 1.4 + i)));
           L.cone.material.color.copy(col); L.cone.material.opacity = .055 * l;
@@ -212,7 +237,7 @@
       sec.dataset.threeD = 'loading';
       var gl; try { gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl'); } catch (e) {}
       if (!gl) { canvas.style.display = 'none'; return; }
-      loadThree().then(function () { scene = buildScene(canvas); scene.resize(); kick(); }).catch(function () { canvas.style.display = 'none'; });
+      loadThree().then(function () { scene = buildScene(canvas, sec.dataset.finish); scene.resize(); kick(); }).catch(function () { canvas.style.display = 'none'; });
     }
 
     if ('IntersectionObserver' in window) {
