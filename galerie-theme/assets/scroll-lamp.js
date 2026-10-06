@@ -191,6 +191,25 @@
     sec.dataset.ready = '1';
     var kStart = +sec.dataset.kStart || 2200, kEnd = +sec.dataset.kEnd || 3200;
     var canvas = sec.querySelector('.sl-canvas'), glow = sec.querySelector('.sl-glow');
+    var photos = [].slice.call(sec.querySelectorAll('[data-photo]')), dust = sec.querySelector('[data-sl-dust]');
+    var dctx = dust ? dust.getContext('2d') : null, motes = [], dW = 0, dH = 0;
+    if (dust) for (var m = 0; m < 150; m++) motes.push({ x: Math.random(), y: Math.random(), s: .4 + Math.random() * 1.6, v: .00004 + Math.random() * .00012, a: .25 + Math.random() * .75, ph: Math.random() * 6.28 });
+    function sizeDust() {
+      if (!dust) return;
+      var r = dust.getBoundingClientRect(), dpr = Math.min(devicePixelRatio, 2);
+      dW = dust.width = Math.max(1, Math.round(r.width * dpr)); dH = dust.height = Math.max(1, Math.round(r.height * dpr));
+    }
+    function drawDust(L, c, t) {
+      if (!dctx) return;
+      dctx.clearRect(0, 0, dW, dH);
+      if (L < .02) return;
+      motes.forEach(function (o) {
+        o.y -= o.v * 16; if (o.y < -.02) { o.y = 1.02; o.x = Math.random(); }
+        var x = (o.x + Math.sin(t * .4 + o.ph) * .012) * dW, y = o.y * dH;
+        dctx.fillStyle = 'rgba(' + c.r + ',' + c.g + ',' + c.b + ',' + (o.a * L * .8).toFixed(3) + ')';
+        dctx.beginPath(); dctx.arc(x, y, o.s * (dW / 1000 + .6), 0, 6.283); dctx.fill();
+      });
+    }
     var steps = [].slice.call(sec.querySelectorAll('[data-step]'));
     var bar = sec.querySelector('[data-sl-bar]'), kOut = sec.querySelector('[data-sl-k]');
     var target = reduce ? .85 : 0, p = target, scene = null, visible = false, raf = 0, clock0 = performance.now();
@@ -201,7 +220,7 @@
       target = total > 0 ? clamp(-r.top / total, 0, 1) : .85;
     }
     addEventListener('scroll', measure, { passive: true });
-    addEventListener('resize', function () { measure(); if (scene) scene.resize(); });
+    addEventListener('resize', function () { measure(); sizeDust(); if (scene) scene.resize(); });
 
     function levels(pp, t) {
       /* allumage échelonné de gauche à droite, avec scintillement avant stabilisation */
@@ -225,9 +244,19 @@
       });
       if (bar) bar.style.transform = 'scaleX(' + p.toFixed(3) + ')';
       if (kOut) kOut.textContent = Math.round(kk / 50) * 50 + ' K';
-      if (glow) { glow.style.opacity = (lv[1] * (scene ? .14 : 1)).toFixed(3); glow.style.background = 'radial-gradient(ellipse 60% 55% at 62% 38%, rgba(' + c.r + ',' + c.g + ',' + c.b + ',.55), transparent 70%)'; }
+      if (glow) { glow.style.opacity = (lv[1] * (scene ? .14 : 1)).toFixed(3); glow.style.background = 'radial-gradient(ellipse 60% 55% at var(--sl-gx,62%) var(--sl-gy,38%), rgba(' + c.r + ',' + c.g + ',' + c.b + ',.55), transparent 70%)'; }
+      if (photos.length) {
+        /* le produit sort du noir : luminosité, léger travelling, bascule entre ses photos */
+        var Lp = lv[1], idx = p < .62 ? 0 : (p < .84 ? 1 : 2);
+        idx = Math.min(idx, photos.length - 1);
+        sec.style.setProperty('--sl-b', (.03 + .97 * Lp).toFixed(3));
+        sec.style.setProperty('--sl-z', (1.03 + .12 * smooth(p)).toFixed(4));
+        sec.style.setProperty('--sl-rgb', c.r + ',' + c.g + ',' + c.b);
+        photos.forEach(function (ph, i) { ph.classList.toggle('on', i === idx); });
+        drawDust(Lp, c, t);
+      }
       if (scene) scene.render(p, lv, c, t, lv[1]);
-      if (visible && (Math.abs(target - p) > .0004 || scene)) raf = requestAnimationFrame(frame);
+      if (visible && (Math.abs(target - p) > .0004 || scene || dust)) raf = requestAnimationFrame(frame);
     }
     function kick() { if (!raf && visible) raf = requestAnimationFrame(frame); }
     addEventListener('scroll', kick, { passive: true });
@@ -247,7 +276,7 @@
       }, { rootMargin: '600px 0px' }).observe(sec);
     } else { visible = true; measure(); start(); kick(); }
 
-    measure(); frame(performance.now());
+    sizeDust(); measure(); frame(performance.now());
   }
 
   function boot(scope) { [].slice.call((scope || document).querySelectorAll('[data-scroll-lamp]')).forEach(init); }

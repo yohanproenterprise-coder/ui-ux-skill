@@ -243,9 +243,9 @@
           "type": "step",
           "settings": {
             "kicker": "Chapitre 3",
-            "heading": "Chaude, douce,",
-            "accent": "enveloppante.",
-            "text": "Choisissez la température qui vous ressemble : 3000 K pour le cocon, 4000 K pour le quotidien.",
+            "heading": "Le cuivre",
+            "accent": "prend vie.",
+            "text": "Cuivre poli et marbre naturel : une matière chaude qui capte la lumière et la renvoie en nuances ambrées.",
             "from": 53,
             "to": 78
           }
@@ -255,9 +255,10 @@
           "settings": {
             "heading": "À vous de",
             "accent": "l'allumer.",
-            "button_label": "Choisir mon luminaire",
+            "button_label": "Découvrir CUIVRE",
             "from": 82,
-            "to": 100
+            "to": 100,
+            "show_product": true
           }
         }
       },
@@ -267,7 +268,9 @@
         "s3",
         "s4"
       ],
-      "settings": {}
+      "settings": {
+        "product": "all-copper-marble-led-pendant-lamp-simple-light-restaurant-bar-counter-luxury-small-chandelier-bedroom-bedside-lighting"
+      }
     }
   },
   "order": [

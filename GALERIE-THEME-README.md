@@ -30,13 +30,16 @@ Fichier à téléverser : `galerie-lumineuse-theme.zip` (ou le dossier `galerie-
 - SEO : balises Open Graph, données structurées produit, titres/descriptions du thème.
 - Accessibilité : navigation clavier, `prefers-reduced-motion`, libellés ARIA.
 
-## 5. Section « Lampe allumée au scroll » (nouveau)
-Une pièce plongée dans le noir : en faisant défiler la page, trois suspensions s'allument l'une après l'autre
-(scintillement, halo, cônes de lumière, ombres sur la table), la température monte de 2200 K à 3200 K et la caméra avance.
-- Ajout : éditeur de thème → page d'accueil → **Ajouter une section → « Lampe allumée au scroll »** (déjà placée après les produits vedettes).
-- Réglages : longueur du défilement, températures de départ et d'arrivée, textes de chaque étape (blocs) et moment d'apparition de chaque texte.
-- Bouton final : renseignez le lien du dernier bloc (collection ou produit phare).
-- Performance : Three.js n'est chargé que lorsque la section approche de l'écran. Sans WebGL, un halo animé léger prend le relais ; avec « réduire les animations » activé, la scène s'affiche allumée, sans défilement piloté.
+## 5. Section « Lampe allumée au scroll » — produit CUIVRE
+Un produit de votre boutique (par défaut **CUIVRE**, la suspension cuivre poli et marbre) plongé dans le noir :
+en défilant, il sort de l'obscurité (luminosité qui monte avec un scintillement, halo ambré, poussière lumineuse, léger travelling),
+la température passe de 2200 K à 3200 K, et les 3 premières photos du produit s'enchaînent.
+La dernière étape affiche son nom, son prix (« dès 213 € ») et un bouton vers sa fiche.
+- Ajout / changement de produit : éditeur de thème → page d'accueil → section « Lampe allumée au scroll » → champ **Produit à révéler**.
+- Textes, moments d'apparition, longueur du défilement et températures se règlent dans la section et ses blocs.
+- Mode alternatif « Décor 3D générique » (lampes en cuivre ou verre dans une pièce) si aucun produit n'est choisi.
+- Léger : pas de Three.js en mode produit (images + un canvas 2D). Avec « réduire les animations », le produit s'affiche allumé, sans défilement piloté.
+- Les photos sont celles de la fiche produit : plus elles sont sombres et contrastées, plus l'effet est fort.
 
 ## 4. Limites connues
 - Validé avec Theme Check (0 erreur) et testé en navigateur sur une maquette du balisage ; **à prévisualiser sur votre boutique** avant de publier.

@@ -1,16 +1,36 @@
+{%- liquid
+  assign product = section.settings.product
+  assign use_product = false
+  if section.settings.mode == 'product' and product != blank
+    assign use_product = true
+  endif
+-%}
+
 <section
-  class="sl"
+  class="sl{% if use_product %} sl-product-mode{% endif %}"
   data-scroll-lamp
+  data-mode="{% if use_product %}product{% else %}scene{% endif %}"
   data-k-start="{{ section.settings.kelvin_start }}"
   data-k-end="{{ section.settings.kelvin_end }}"
-  data-3d="{{ section.settings.enable_3d }}"
   data-finish="{{ section.settings.finish }}"
   style="--sl-h:{{ section.settings.scroll_length }}vh"
   aria-label="{{ section.settings.aria_label | escape }}"
 >
   <div class="sl-stage">
-    {%- if section.settings.enable_3d -%}<canvas class="sl-canvas" aria-hidden="true"></canvas>{%- endif -%}
-    <div class="sl-glow" aria-hidden="true"></div>
+    {%- if use_product -%}
+      <div class="sl-glow" aria-hidden="true"></div>
+      <div class="sl-photos" aria-hidden="true">
+        {%- for image in product.images limit: 3 -%}
+          <div class="sl-photo{% if forloop.first %} on{% endif %}" data-photo>
+            {{ image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '700, 1000, 1400', sizes: '(min-width: 980px) 50vw, 100vw', alt: product.title }}
+          </div>
+        {%- endfor -%}
+      </div>
+      <canvas class="sl-dust" data-sl-dust aria-hidden="true"></canvas>
+    {%- else -%}
+      {%- if section.settings.enable_3d -%}<canvas class="sl-canvas" aria-hidden="true"></canvas>{%- endif -%}
+      <div class="sl-glow" aria-hidden="true"></div>
+    {%- endif -%}
 
     <div class="wrap sl-copy">
       {%- for block in section.blocks -%}
@@ -18,7 +38,10 @@
           {%- if block.settings.kicker != blank -%}<p class="kicker">{{ block.settings.kicker }}</p>{%- endif -%}
           <h2 class="h2">{{ block.settings.heading }} <em>{{ block.settings.accent }}</em></h2>
           {%- if block.settings.text != blank -%}<p class="sub">{{ block.settings.text }}</p>{%- endif -%}
-          {%- if block.settings.button_label != blank -%}
+          {%- if block.settings.show_product and use_product -%}
+            <p class="sl-pname">{{ product.title }}<span>{% if product.price_varies %}dès {% endif %}{{ product.price | money_without_trailing_zeros }}</span></p>
+            <p style="margin-top:22px"><a class="btn solid" href="{{ product.url }}">{{ block.settings.button_label | default: 'Découvrir' }}</a></p>
+          {%- elsif block.settings.button_label != blank -%}
             <p style="margin-top:28px"><a class="btn solid" href="{{ block.settings.button_link | default: routes.all_products_collection_url }}">{{ block.settings.button_label }}</a></p>
           {%- endif -%}
         </div>
@@ -39,13 +62,15 @@
 {
   "name": "Lampe allumée au scroll",
   "settings": [
-    { "type": "paragraph", "content": "Une pièce dans le noir : la lampe s'allume au fil du défilement. Les textes apparaissent aux étapes que vous choisissez dans les blocs." },
-    { "type": "select", "id": "finish", "label": "Finition des luminaires", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
-    { "type": "checkbox", "id": "enable_3d", "label": "Scène 3D", "info": "Désactivée : seul un halo lumineux animé est affiché (plus léger).", "default": true },
+    { "type": "paragraph", "content": "Un produit de votre boutique plongé dans le noir : il s'allume au fil du défilement. Les textes apparaissent aux étapes que vous choisissez dans les blocs." },
+    { "type": "product", "id": "product", "label": "Produit à révéler", "info": "Ses photos, son prix et son lien sont repris automatiquement (ex. BEAMY, en cuivre)." },
+    { "type": "select", "id": "mode", "label": "Mode", "options": [{ "value": "product", "label": "Produit de la boutique" }, { "value": "scene", "label": "Décor 3D générique" }], "default": "product" },
+    { "type": "select", "id": "finish", "label": "Finition du décor 3D (mode décor)", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
+    { "type": "checkbox", "id": "enable_3d", "label": "Scène 3D (mode décor)", "default": true },
     { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de la hauteur d'écran)", "min": 160, "max": 420, "step": 20, "default": 260 },
     { "type": "range", "id": "kelvin_start", "label": "Température au moment de l'allumage (K)", "min": 2200, "max": 4000, "step": 100, "default": 2200 },
     { "type": "range", "id": "kelvin_end", "label": "Température finale (K)", "min": 2200, "max": 6500, "step": 100, "default": 3200 },
-    { "type": "text", "id": "aria_label", "label": "Description pour l'accessibilité", "default": "Une lampe design s'allume dans une pièce sombre" }
+    { "type": "text", "id": "aria_label", "label": "Description pour l'accessibilité", "default": "Un luminaire en cuivre s'allume dans une pièce sombre" }
   ],
   "blocks": [
     {
@@ -56,8 +81,9 @@
         { "type": "text", "id": "heading", "label": "Titre", "default": "Dans le noir," },
         { "type": "text", "id": "accent", "label": "Mot mis en lumière", "default": "rien." },
         { "type": "textarea", "id": "text", "label": "Texte" },
+        { "type": "checkbox", "id": "show_product", "label": "Afficher le nom, le prix et le bouton du produit", "default": false },
         { "type": "text", "id": "button_label", "label": "Bouton — texte (optionnel)" },
-        { "type": "url", "id": "button_link", "label": "Bouton — lien" },
+        { "type": "url", "id": "button_link", "label": "Bouton — lien (hors mode produit)" },
         { "type": "range", "id": "from", "label": "Apparaît à (% du défilement)", "min": 0, "max": 100, "step": 5, "default": 0 },
         { "type": "range", "id": "to", "label": "Disparaît à (% du défilement)", "min": 0, "max": 100, "step": 5, "default": 22 }
       ]
@@ -70,8 +96,8 @@
       "blocks": [
         { "type": "step", "settings": { "kicker": "Chapitre 1", "heading": "Dans le noir,", "accent": "rien.", "text": "Une pièce sans lumière n'a ni forme ni caractère.", "from": 0, "to": 22 } },
         { "type": "step", "settings": { "kicker": "Chapitre 2", "heading": "Un geste,", "accent": "et tout change.", "text": "La lumière dessine l'espace, révèle les matières, installe l'ambiance.", "from": 25, "to": 50 } },
-        { "type": "step", "settings": { "kicker": "Chapitre 3", "heading": "Chaude, douce,", "accent": "enveloppante.", "text": "Choisissez la température qui vous ressemble : 3000 K pour le cocon, 4000 K pour le quotidien.", "from": 53, "to": 78 } },
-        { "type": "step", "settings": { "heading": "À vous de", "accent": "l'allumer.", "button_label": "Choisir mon luminaire", "from": 82, "to": 100 } }
+        { "type": "step", "settings": { "kicker": "Chapitre 3", "heading": "Le cuivre", "accent": "prend vie.", "text": "Une matière chaude qui capte la lumière et la renvoie en nuances ambrées.", "from": 53, "to": 78 } },
+        { "type": "step", "settings": { "heading": "À vous de", "accent": "l'allumer.", "show_product": true, "button_label": "Découvrir le luminaire", "from": 82, "to": 100 } }
       ]
     }
   ]
