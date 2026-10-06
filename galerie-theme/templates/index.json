@@ -1,0 +1,231 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero",
+      "blocks": {
+        "b1": {
+          "type": "point",
+          "settings": {
+            "text": "Paiement sécurisé"
+          }
+        },
+        "b2": {
+          "type": "point",
+          "settings": {
+            "text": "Plusieurs tailles & finitions"
+          }
+        },
+        "b3": {
+          "type": "point",
+          "settings": {
+            "text": "LED incluses (selon modèle)"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "settings": {}
+    },
+    "trust": {
+      "type": "trust-bar",
+      "blocks": {
+        "b1": {
+          "type": "item",
+          "settings": {
+            "icon": "lock",
+            "title": "Paiement sécurisé",
+            "text": "Checkout Shopify"
+          }
+        },
+        "b2": {
+          "type": "item",
+          "settings": {
+            "icon": "size",
+            "title": "Tailles & finitions",
+            "text": "Choisissez la vôtre"
+          }
+        },
+        "b3": {
+          "type": "item",
+          "settings": {
+            "icon": "bulb",
+            "title": "LED incluses",
+            "text": "Selon les modèles"
+          }
+        },
+        "b4": {
+          "type": "item",
+          "settings": {
+            "icon": "sun",
+            "title": "3 températures",
+            "text": "Chaud, naturel, froid"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "b2",
+        "b3",
+        "b4"
+      ],
+      "settings": {}
+    },
+    "rooms": {
+      "type": "collection-tiles",
+      "blocks": {
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "Salon",
+            "text": "Suspensions & lustres"
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "Salle à manger",
+            "text": "Au-dessus de la table"
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "title": "Chambre",
+            "text": "Appliques & lampes"
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "title": "Bureau & lecture",
+            "text": "Lumière précise"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "b2",
+        "b3",
+        "b4"
+      ],
+      "settings": {}
+    },
+    "featured": {
+      "type": "featured-collection",
+      "settings": {
+        "alt_bg": true
+      }
+    },
+    "marquee": {
+      "type": "marquee",
+      "blocks": {
+        "b1": {
+          "type": "item",
+          "settings": {
+            "text": "Suspensions"
+          }
+        },
+        "b2": {
+          "type": "item",
+          "settings": {
+            "text": "Appliques"
+          }
+        },
+        "b3": {
+          "type": "item",
+          "settings": {
+            "text": "Lustres"
+          }
+        },
+        "b4": {
+          "type": "item",
+          "settings": {
+            "text": "Lampes de table"
+          }
+        },
+        "b5": {
+          "type": "item",
+          "settings": {
+            "text": "Plafonniers"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ],
+      "settings": {}
+    },
+    "light": {
+      "type": "light-temperature",
+      "settings": {}
+    },
+    "story": {
+      "type": "image-with-text",
+      "settings": {}
+    },
+    "reviews": {
+      "type": "testimonials",
+      "settings": {}
+    },
+    "faq": {
+      "type": "faq",
+      "blocks": {
+        "b1": {
+          "type": "qa",
+          "settings": {
+            "question": "Quelle température de lumière choisir ?",
+            "answer": "<p>3000 K (chaud) crée une ambiance cocooning, idéale pour salon et chambre. 4000 K (naturel) convient à la cuisine et aux pièces actives. 6000 K (froid) est plus tonique, pour le bureau ou le plan de travail.</p>"
+          }
+        },
+        "b2": {
+          "type": "qa",
+          "settings": {
+            "question": "Quelle taille de suspension pour ma table ?",
+            "answer": "<p>Repère courant : un diamètre (ou une longueur) d'environ la moitié à deux tiers de la largeur de la table, suspendu à 70–80 cm au-dessus du plateau.</p>"
+          }
+        },
+        "b3": {
+          "type": "qa",
+          "settings": {
+            "question": "Les luminaires sont-ils dimmables ?",
+            "answer": "<p>Cela dépend du modèle : certains sont livrés avec télécommande et intensité réglable, d'autres proposent 3 températures de lumière. Le détail est indiqué sur chaque fiche produit.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "b2",
+        "b3"
+      ],
+      "settings": {}
+    },
+    "newsletter": {
+      "type": "newsletter",
+      "settings": {}
+    },
+    "cta": {
+      "type": "cta-banner",
+      "settings": {}
+    }
+  },
+  "order": [
+    "hero",
+    "trust",
+    "rooms",
+    "featured",
+    "marquee",
+    "light",
+    "story",
+    "reviews",
+    "faq",
+    "newsletter",
+    "cta"
+  ]
+}

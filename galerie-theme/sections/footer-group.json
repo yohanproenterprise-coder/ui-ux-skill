@@ -1,0 +1,23 @@
+{
+  "name": "Pied de page",
+  "type": "footer",
+  "sections": {
+    "footer": {
+      "type": "footer",
+      "blocks": {
+        "menu1": {
+          "type": "menu",
+          "settings": {
+            "title": "Boutique",
+            "menu": "footer"
+          }
+        }
+      },
+      "block_order": ["menu1"],
+      "settings": {
+        "show_payment_icons": true
+      }
+    }
+  },
+  "order": ["footer"]
+}

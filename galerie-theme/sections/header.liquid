@@ -1,0 +1,72 @@
+<header class="header" data-header style="--logo-w:{{ settings.logo_width }}px">
+  <div class="wrap">
+    <a href="{{ routes.root_url }}" class="logo">
+      {%- if settings.logo != blank -%}
+        {{ settings.logo | image_url: width: 400 | image_tag: loading: 'eager', alt: shop.name, width: settings.logo_width }}
+      {%- else -%}
+        <i></i>{{ shop.name }}
+      {%- endif -%}
+    </a>
+
+    <nav aria-label="Navigation principale">
+      <ul class="menu">
+        {%- for link in linklists[section.settings.menu].links -%}
+          <li>
+            <a href="{{ link.url }}"{% if link.current %} aria-current="page"{% endif %}>{{ link.title }}</a>
+            {%- if link.links.size > 0 -%}
+              <ul class="sub-menu">
+                {%- for child in link.links -%}
+                  <li><a href="{{ child.url }}">{{ child.title }}</a></li>
+                {%- endfor -%}
+              </ul>
+            {%- endif -%}
+          </li>
+        {%- endfor -%}
+      </ul>
+    </nav>
+
+    <div class="nav-r">
+      <button type="button" class="icon-btn" data-open-search aria-label="Rechercher">{% render 'icon', name: 'search' %}</button>
+      {%- if shop.customer_accounts_enabled -%}
+        <a class="icon-btn" href="{{ routes.account_url }}" aria-label="Mon compte">{% render 'icon', name: 'user' %}</a>
+      {%- endif -%}
+      <button type="button" class="icon-btn cart-btn" data-open-cart aria-label="Ouvrir le panier">
+        {% render 'icon', name: 'cart' %}<span class="t">Panier</span><span class="cart-count" data-cart-count>{{ cart.item_count }}</span>
+      </button>
+      <button type="button" class="icon-btn burger" data-open-menu aria-label="Menu">{% render 'icon', name: 'menu' %}</button>
+    </div>
+  </div>
+</header>
+
+<div class="mmenu" data-mmenu aria-hidden="true">
+  <button type="button" class="icon-btn mm-close" data-close-menu aria-label="Fermer le menu">{% render 'icon', name: 'close' %}</button>
+  {%- for link in linklists[section.settings.menu].links -%}
+    <a href="{{ link.url }}">{{ link.title }}</a>
+    {%- if link.links.size > 0 -%}
+      <div class="mm-sub">
+        {%- for child in link.links -%}<a href="{{ child.url }}">{{ child.title }}</a>{%- endfor -%}
+      </div>
+    {%- endif -%}
+  {%- endfor -%}
+</div>
+
+<div class="search-ov" data-search aria-hidden="true" role="dialog" aria-label="Recherche">
+  <button type="button" class="icon-btn search-close" data-close-search aria-label="Fermer la recherche">{% render 'icon', name: 'close' %}</button>
+  <div class="wrap">
+    <form class="search-form" action="{{ routes.search_url }}" method="get" role="search">
+      <input type="hidden" name="type" value="product">
+      <input type="search" name="q" placeholder="Rechercher un luminaire…" autocomplete="off" aria-label="Rechercher" data-search-input>
+      <button type="submit" class="icon-btn" aria-label="Lancer la recherche">{% render 'icon', name: 'arrow' %}</button>
+    </form>
+    <div class="search-res" data-search-results></div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "En-tête",
+  "settings": [
+    { "type": "link_list", "id": "menu", "label": "Menu principal", "default": "main-menu" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,26 @@
+<div class="wrap">
+  <div class="chead"><p class="kicker">Boutique</p><h1 class="h2">Toutes les collections</h1></div>
+  <div class="tiles" style="--cols:3;padding-bottom:90px">
+    {%- for collection in collections -%}
+      {%- if collection.products_count > 0 -%}
+        <a class="tile" href="{{ collection.url }}">
+          {%- if collection.image -%}
+            {{ collection.image | image_url: width: 700 | image_tag: loading: 'lazy', alt: collection.title }}
+          {%- elsif collection.products.first.featured_image -%}
+            {{ collection.products.first.featured_image | image_url: width: 700 | image_tag: loading: 'lazy', alt: collection.title }}
+          {%- else -%}
+            {{ 'collection-1' | placeholder_svg_tag }}
+          {%- endif -%}
+          <span class="go" aria-hidden="true">{% render 'icon', name: 'arrow' %}</span>
+          <div><h3>{{ collection.title }}</h3><p>{{ collection.products_count }} modèle{% if collection.products_count > 1 %}s{% endif %}</p></div>
+        </a>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Liste des collections"
+}
+{% endschema %}

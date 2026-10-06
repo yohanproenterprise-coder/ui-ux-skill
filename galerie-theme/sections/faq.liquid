@@ -1,0 +1,48 @@
+<section class="section">
+  <div class="wrap">
+    <div class="center">
+      <p class="kicker rv">{{ section.settings.kicker }}</p>
+      <h2 class="h2 rv">{{ section.settings.heading }} <em>{{ section.settings.accent }}</em></h2>
+    </div>
+    <div class="faq rv">
+      {%- for block in section.blocks -%}
+        <details{% if forloop.first %} open{% endif %} {{ block.shopify_attributes }}>
+          <summary>{{ block.settings.question }}</summary>
+          <div class="a rte">{{ block.settings.answer }}</div>
+        </details>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "FAQ",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Sur-titre", "default": "Questions fréquentes" },
+    { "type": "text", "id": "heading", "label": "Titre", "default": "Bien choisir son" },
+    { "type": "text", "id": "accent", "label": "Mot mis en lumière", "default": "luminaire" }
+  ],
+  "blocks": [
+    {
+      "type": "qa",
+      "name": "Question",
+      "settings": [
+        { "type": "text", "id": "question", "label": "Question", "default": "Quelle température de lumière choisir ?" },
+        { "type": "richtext", "id": "answer", "label": "Réponse", "default": "<p>3000 K (chaud) pour une ambiance cocooning, 4000 K (naturel) pour les pièces actives, 6000 K (froid) pour travailler.</p>" }
+      ]
+    }
+  ],
+  "max_blocks": 10,
+  "presets": [
+    {
+      "name": "FAQ",
+      "blocks": [
+        { "type": "qa", "settings": { "question": "Quelle température de lumière choisir ?", "answer": "<p>3000 K (chaud) crée une ambiance cocooning, idéale pour salon et chambre. 4000 K (naturel) convient à la cuisine et aux pièces actives. 6000 K (froid) est plus tonique, pour le bureau ou le plan de travail.</p>" } },
+        { "type": "qa", "settings": { "question": "Quelle taille de suspension pour ma table ?", "answer": "<p>Repère courant : un diamètre (ou une longueur) d'environ la moitié à deux tiers de la largeur de la table, suspendu à 70–80 cm au-dessus du plateau.</p>" } },
+        { "type": "qa", "settings": { "question": "Les luminaires sont-ils dimmables ?", "answer": "<p>Cela dépend du modèle : certains sont livrés avec télécommande et intensité réglable, d'autres proposent 3 températures de lumière. Le détail est indiqué sur chaque fiche produit.</p>" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

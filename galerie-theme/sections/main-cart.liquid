@@ -1,0 +1,59 @@
+<div class="wrap">
+  <div class="chead"><h1 class="h2">Votre panier</h1></div>
+
+  {%- if cart.item_count == 0 -%}
+    <div class="empty">
+      <p>Votre panier est vide.</p>
+      <a class="btn" href="{{ routes.all_products_collection_url }}">Découvrir la collection</a>
+    </div>
+  {%- else -%}
+    <form action="{{ routes.cart_url }}" method="post" class="cart-page" id="cart-form">
+      <div>
+        {%- for item in cart.items -%}
+          <div class="li" style="grid-template-columns:110px 1fr auto">
+            <a href="{{ item.url }}">
+              {%- if item.image -%}{{ item.image | image_url: width: 220 | image_tag: width: 110, height: 110, loading: 'lazy', alt: item.product.title }}{%- endif -%}
+            </a>
+            <div>
+              <h3><a href="{{ item.url }}">{{ item.product.title }}</a></h3>
+              {%- unless item.product.has_only_default_variant -%}<small>{{ item.variant.title }}</small>{%- endunless -%}
+              <div style="display:flex;align-items:center">
+                <div class="qty">
+                  <label class="sr-only" for="q-{{ item.key }}">Quantité</label>
+                  <input id="q-{{ item.key }}" type="number" name="updates[]" value="{{ item.quantity }}" min="0" max="99">
+                </div>
+                <a class="rm" href="{{ item.url_to_remove }}">Retirer</a>
+              </div>
+            </div>
+            <div class="lp">
+              {%- if item.original_line_price > item.final_line_price -%}<s>{{ item.original_line_price | money_without_trailing_zeros }}</s>{%- endif -%}
+              {{ item.final_line_price | money_without_trailing_zeros }}
+            </div>
+          </div>
+        {%- endfor -%}
+      </div>
+
+      <aside class="cart-sum">
+        <div class="sub-t"><span>Sous-total</span><b>{{ cart.total_price | money_without_trailing_zeros }}</b></div>
+        <p style="font-size:.78rem;color:var(--muted)">{% if shop.taxes_included %}Taxes incluses. {% endif %}Frais de livraison calculés à l'étape suivante.</p>
+        {%- if settings.cart_note -%}
+          <label for="cart-note" style="font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Note pour la commande</label>
+          <textarea id="cart-note" name="note">{{ cart.note }}</textarea>
+        {%- endif -%}
+        <button type="submit" name="checkout" class="btn solid block">Passer commande</button>
+        <button type="submit" name="update" class="link" style="margin-top:16px">Mettre à jour les quantités</button>
+        {%- if settings.cart_show_payment_icons and shop.enabled_payment_types.size > 0 -%}
+          <div class="pay">
+            {%- for type in shop.enabled_payment_types -%}{{ type | payment_type_svg_tag: class: 'pay-icon' }}{%- endfor -%}
+          </div>
+        {%- endif -%}
+      </aside>
+    </form>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Panier"
+}
+{% endschema %}

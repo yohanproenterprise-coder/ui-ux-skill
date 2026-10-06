@@ -1,0 +1,33 @@
+{%- if section.blocks.size > 0 -%}
+  <div class="announce" data-announce role="region" aria-label="Annonces">
+    {%- for block in section.blocks -%}
+      <div class="announce-msg{% if forloop.first %} on{% endif %}" {{ block.shopify_attributes }}>
+        {%- if block.settings.link != blank -%}
+          <a href="{{ block.settings.link }}">{{ block.settings.text }}</a>
+        {%- else -%}
+          {{ block.settings.text }}
+        {%- endif -%}
+      </div>
+    {%- endfor -%}
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Barre d'annonce",
+  "max_blocks": 4,
+  "blocks": [
+    {
+      "type": "message",
+      "name": "Message",
+      "settings": [
+        { "type": "text", "id": "text", "label": "Texte", "default": "Paiement 100 % sécurisé · LED incluses sur la plupart des modèles" },
+        { "type": "url", "id": "link", "label": "Lien (optionnel)" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Barre d'annonce", "blocks": [{ "type": "message" }] }
+  ]
+}
+{% endschema %}

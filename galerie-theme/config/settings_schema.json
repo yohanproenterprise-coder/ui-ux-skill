@@ -1,0 +1,67 @@
+[
+  {
+    "name": "theme_info",
+    "theme_name": "Galerie Lumineuse",
+    "theme_author": "La Galerie Lumineuse",
+    "theme_version": "1.0.0",
+    "theme_documentation_url": "https://github.com/yohanproenterprise-coder/ui-ux-skill",
+    "theme_support_url": "https://github.com/yohanproenterprise-coder/ui-ux-skill/issues"
+  },
+  {
+    "name": "Couleurs",
+    "settings": [
+      { "type": "color", "id": "color_bg", "label": "Fond principal", "default": "#080605" },
+      { "type": "color", "id": "color_bg_alt", "label": "Fond alterné (sections)", "default": "#100d0b" },
+      { "type": "color", "id": "color_card", "label": "Fond des cartes", "default": "#17130f" },
+      { "type": "color", "id": "color_text", "label": "Texte", "default": "#f4efe6" },
+      { "type": "color", "id": "color_muted", "label": "Texte secondaire", "default": "#a3978a" },
+      { "type": "color", "id": "color_accent", "label": "Couleur d'accent (lumière)", "default": "#ffb55c" },
+      { "type": "color", "id": "color_accent_text", "label": "Texte sur l'accent", "default": "#000000" }
+    ]
+  },
+  {
+    "name": "Mise en page",
+    "settings": [
+      { "type": "range", "id": "container_width", "label": "Largeur maximale du contenu (px)", "min": 1000, "max": 1600, "step": 20, "default": 1280 },
+      { "type": "image_picker", "id": "logo", "label": "Logo (optionnel, sinon le nom de la boutique)" },
+      { "type": "range", "id": "logo_width", "label": "Largeur du logo (px)", "min": 60, "max": 300, "step": 10, "default": 160 },
+      { "type": "image_picker", "id": "favicon", "label": "Favicon" }
+    ]
+  },
+  {
+    "name": "Animations",
+    "settings": [
+      { "type": "checkbox", "id": "enable_reveal", "label": "Apparition des éléments au scroll", "default": true },
+      { "type": "checkbox", "id": "enable_halo", "label": "Halo lumineux qui suit la souris (ordinateur)", "default": true },
+      { "type": "checkbox", "id": "enable_card_tilt", "label": "Inclinaison 3D des cartes produit au survol", "default": true }
+    ]
+  },
+  {
+    "name": "Panier",
+    "settings": [
+      { "type": "paragraph", "content": "Le panier latéral s'ouvre à chaque ajout. Il peut afficher une barre de progression vers la livraison offerte et des suggestions." },
+      { "type": "number", "id": "free_shipping_threshold", "label": "Livraison offerte à partir de (montant, 0 = désactivé)", "info": "Mettez le montant uniquement si vous proposez réellement la livraison offerte à partir de ce seuil.", "default": 0 },
+      { "type": "collection", "id": "cart_upsell_collection", "label": "Collection de suggestions dans le panier" },
+      { "type": "checkbox", "id": "cart_show_payment_icons", "label": "Afficher les moyens de paiement", "default": true },
+      { "type": "checkbox", "id": "cart_note", "label": "Permettre une note de commande", "default": false }
+    ]
+  },
+  {
+    "name": "Fiche produit",
+    "settings": [
+      { "type": "checkbox", "id": "show_dynamic_checkout", "label": "Boutons de paiement express (Shop Pay, Apple Pay…)", "default": true },
+      { "type": "checkbox", "id": "show_sticky_atc", "label": "Barre « Ajouter au panier » collante", "default": true },
+      { "type": "checkbox", "id": "show_vendor", "label": "Afficher la marque / le fournisseur", "default": false }
+    ]
+  },
+  {
+    "name": "Réseaux sociaux",
+    "settings": [
+      { "type": "url", "id": "social_instagram", "label": "Instagram" },
+      { "type": "url", "id": "social_pinterest", "label": "Pinterest" },
+      { "type": "url", "id": "social_tiktok", "label": "TikTok" },
+      { "type": "url", "id": "social_facebook", "label": "Facebook" },
+      { "type": "url", "id": "social_youtube", "label": "YouTube" }
+    ]
+  }
+]

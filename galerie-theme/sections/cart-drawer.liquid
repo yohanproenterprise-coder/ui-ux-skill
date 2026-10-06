@@ -1,0 +1,107 @@
+<div class="ov" data-ov data-cart-ov></div>
+<aside class="drawer" data-drawer role="dialog" aria-modal="true" aria-label="Panier" aria-hidden="true">
+  <div class="dh">
+    <h2>Votre panier</h2>
+    <button type="button" class="icon-btn" data-close-cart aria-label="Fermer le panier">{% render 'icon', name: 'close' %}</button>
+  </div>
+
+  <div data-drawer-inner style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <span data-cart-qty hidden>{{ cart.item_count }}</span>
+    {%- if cart.item_count > 0 -%}
+      {%- assign threshold = settings.free_shipping_threshold | times: 100 -%}
+      {%- if threshold > 0 -%}
+        {%- assign remaining = threshold | minus: cart.total_price -%}
+        {%- assign pct = cart.total_price | times: 100 | divided_by: threshold | at_most: 100 -%}
+        <div class="free">
+          {%- if remaining > 0 -%}
+            Plus que <b>{{ remaining | money_without_trailing_zeros }}</b> pour la livraison offerte
+          {%- else -%}
+            <b>Livraison offerte</b> débloquée ✓
+          {%- endif -%}
+          <div class="bar"><i style="width:{{ pct }}%"></i></div>
+        </div>
+      {%- endif -%}
+
+      <div class="db">
+        {%- for item in cart.items -%}
+          <div class="li">
+            <a href="{{ item.url }}">
+              {%- if item.image -%}
+                {{ item.image | image_url: width: 168 | image_tag: width: 84, height: 84, loading: 'lazy', alt: item.product.title }}
+              {%- else -%}
+                <span class="im" style="width:84px;height:84px;display:block"></span>
+              {%- endif -%}
+            </a>
+            <div>
+              <h3><a href="{{ item.url }}">{{ item.product.title }}</a></h3>
+              {%- unless item.product.has_only_default_variant -%}<small>{{ item.variant.title }}</small>{%- endunless -%}
+              <div style="display:flex;align-items:center">
+                <div class="qty">
+                  <button type="button" data-change data-line="{{ forloop.index }}" data-qty="{{ item.quantity | minus: 1 }}" aria-label="Diminuer la quantité">−</button>
+                  <output>{{ item.quantity }}</output>
+                  <button type="button" data-change data-line="{{ forloop.index }}" data-qty="{{ item.quantity | plus: 1 }}" aria-label="Augmenter la quantité">+</button>
+                </div>
+                <button type="button" class="rm" data-change data-line="{{ forloop.index }}" data-qty="0">Retirer</button>
+              </div>
+            </div>
+            <div class="lp">
+              {%- if item.original_line_price > item.final_line_price -%}<s>{{ item.original_line_price | money_without_trailing_zeros }}</s>{%- endif -%}
+              {{ item.final_line_price | money_without_trailing_zeros }}
+            </div>
+          </div>
+        {%- endfor -%}
+
+        {%- assign upsell = settings.cart_upsell_collection -%}
+        {%- if upsell != blank -%}
+          {%- assign cart_pids = cart.items | map: 'product_id' -%}
+          {%- assign shown = 0 -%}
+          <div class="ups">
+            <h4>Complétez votre ambiance</h4>
+            {%- for p in upsell.products limit: 8 -%}
+              {%- unless cart_pids contains p.id -%}
+                {%- if shown < 2 and p.available -%}
+                  {%- assign shown = shown | plus: 1 -%}
+                  {%- if p.variants.size == 1 -%}
+                    <button type="button" class="up" data-quick-add data-variant-id="{{ p.selected_or_first_available_variant.id }}">
+                  {%- else -%}
+                    <a class="up" href="{{ p.url }}">
+                  {%- endif -%}
+                    {%- if p.featured_image -%}{{ p.featured_image | image_url: width: 112 | image_tag: width: 56, height: 56, loading: 'lazy', alt: p.title }}{%- else -%}<span></span>{%- endif -%}
+                    <div><b>{{ p.title }}</b><span>{% if p.price_varies %}dès {% endif %}{{ p.price | money_without_trailing_zeros }}</span></div>
+                    <em>{% if p.variants.size == 1 %}Ajouter{% else %}Choisir{% endif %}</em>
+                  {%- if p.variants.size == 1 -%}</button>{%- else -%}</a>{%- endif -%}
+                {%- endif -%}
+              {%- endunless -%}
+            {%- endfor -%}
+          </div>
+        {%- endif -%}
+      </div>
+
+      <div class="df">
+        <div class="sub-t"><span>Sous-total</span><b>{{ cart.total_price | money_without_trailing_zeros }}</b></div>
+        <p>{% if shop.taxes_included %}Taxes incluses. {% endif %}Frais de livraison calculés à l'étape suivante.</p>
+        <form action="{{ routes.cart_url }}" method="post">
+          <button type="submit" name="checkout" class="btn solid block">Passer commande</button>
+        </form>
+        {%- if settings.cart_show_payment_icons and shop.enabled_payment_types.size > 0 -%}
+          <div class="pay">
+            {%- for type in shop.enabled_payment_types -%}{{ type | payment_type_svg_tag: class: 'pay-icon' }}{%- endfor -%}
+          </div>
+        {%- endif -%}
+      </div>
+    {%- else -%}
+      <div class="db">
+        <div class="empty">
+          <p>Votre panier est vide.</p>
+          <a class="btn" href="{{ routes.all_products_collection_url }}">Découvrir la collection</a>
+        </div>
+      </div>
+    {%- endif -%}
+  </div>
+</aside>
+
+{% schema %}
+{
+  "name": "Panier latéral"
+}
+{% endschema %}

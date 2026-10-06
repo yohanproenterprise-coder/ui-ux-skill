@@ -1,0 +1,218 @@
+{%- liquid
+  assign current_variant = product.selected_or_first_available_variant
+  assign form_id = 'product-form-' | append: section.id
+  assign on_sale = false
+  if current_variant.compare_at_price > current_variant.price
+    assign on_sale = true
+  endif
+  assign swatch_map = section.settings.swatches | newline_to_br | strip_newlines | split: '<br />'
+-%}
+
+<div class="wrap" data-product-section data-section-id="{{ section.id }}">
+  <nav class="crumbs" aria-label="Fil d'Ariane">
+    <a href="{{ routes.root_url }}">Accueil</a> /
+    {%- if collection -%}<a href="{{ collection.url }}">{{ collection.title }}</a> /{%- endif %}
+    {{ product.title }}
+  </nav>
+
+  <div class="pgrid">
+    <div class="gal" data-gallery>
+      <div class="main">
+        {%- for media in product.media -%}
+          <div class="slide{% if media.id == current_variant.featured_media.id or forloop.first and current_variant.featured_media == blank %} on{% endif %}" data-media-id="{{ media.id }}">
+            {%- if media.media_type == 'image' -%}
+              {%- assign eager = 'lazy' -%}
+              {%- if forloop.first -%}{%- assign eager = 'eager' -%}{%- endif -%}
+              {{ media | image_url: width: 1000 | image_tag: loading: eager, widths: '500, 750, 1000, 1400', sizes: '(min-width: 980px) 55vw, 100vw', alt: media.alt | default: product.title }}
+            {%- else -%}
+              {{ media | media_tag: image_size: '1000x', controls: true }}
+            {%- endif -%}
+          </div>
+        {%- endfor -%}
+        {%- if product.media.size == 0 -%}{{ 'product-1' | placeholder_svg_tag }}{%- endif -%}
+      </div>
+      {%- if product.media.size > 1 -%}
+        <div class="thumbs">
+          {%- for media in product.media -%}
+            <button type="button" data-thumb="{{ media.id }}" aria-label="Voir le média {{ forloop.index }}">
+              {{ media.preview_image | image_url: width: 152 | image_tag: loading: 'lazy', alt: '' }}
+            </button>
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
+    </div>
+
+    <div class="pinfo">
+      {%- if product.type != blank -%}<p class="typ">{{ product.type }}</p>{%- endif -%}
+      {%- if settings.show_vendor -%}<p class="typ">{{ product.vendor }}</p>{%- endif -%}
+      <h1 class="ptitle">{{ product.title }}</h1>
+
+      <p class="pr" data-price-wrap>
+        <span data-price>{{ current_variant.price | money_without_trailing_zeros }}</span>
+        <s data-compare{% unless on_sale %} hidden{% endunless %}>{{ current_variant.compare_at_price | money_without_trailing_zeros }}</s>
+        <span class="save" data-save{% unless on_sale %} hidden{% endunless %}>
+          {%- if on_sale -%}-{{ current_variant.compare_at_price | minus: current_variant.price | times: 100 | divided_by: current_variant.compare_at_price }} %{%- endif -%}
+        </span>
+      </p>
+
+      {%- for block in section.blocks -%}
+        {%- case block.type -%}
+          {%- when 'description' -%}
+            <div class="rte" style="margin-bottom:22px" {{ block.shopify_attributes }}>{{ product.description }}</div>
+
+          {%- when 'form' -%}
+            <div {{ block.shopify_attributes }}>
+              {%- form 'product', product, id: form_id, class: 'pform', data-product-form: '' -%}
+                <input type="hidden" name="id" value="{{ current_variant.id }}" data-variant-id>
+                {%- unless product.has_only_default_variant -%}
+                  <div data-options>
+                    {%- for option in product.options_with_values -%}
+                      {%- assign opt_index = forloop.index0 -%}
+                      <fieldset class="opt" data-option-index="{{ opt_index }}">
+                        <legend>{{ option.name }}<b data-option-label>{{ option.selected_value }}</b></legend>
+                        <div class="ochips">
+                          {%- for value in option.values -%}
+                            {%- assign swatch = '' -%}
+                            {%- for line in swatch_map -%}
+                              {%- assign parts = line | split: ':' -%}
+                              {%- assign sw_key = parts[0] | strip | downcase -%}
+                              {%- assign sw_val = value | downcase -%}
+                              {%- if sw_key == sw_val -%}{%- assign swatch = parts[1] | strip -%}{%- endif -%}
+                            {%- endfor -%}
+                            <label class="oc">
+                              <input type="radio" name="option-{{ opt_index }}" value="{{ value | escape }}"{% if option.selected_value == value %} checked{% endif %}>
+                              <span>{%- if swatch != blank -%}<i style="background:{{ swatch }}"></i>{%- endif -%}{{ value }}</span>
+                            </label>
+                          {%- endfor -%}
+                        </div>
+                      </fieldset>
+                    {%- endfor -%}
+                  </div>
+                {%- endunless -%}
+
+                <div class="buy">
+                  <div class="qty">
+                    <button type="button" data-qty-step="-1" aria-label="Diminuer la quantité">−</button>
+                    <input type="number" name="quantity" value="1" min="1" max="20" aria-label="Quantité" data-qty-input>
+                    <button type="button" data-qty-step="1" aria-label="Augmenter la quantité">+</button>
+                  </div>
+                  <button type="submit" class="btn solid" data-atc{% unless current_variant.available %} disabled{% endunless %}>
+                    <span data-atc-label>{% if current_variant.available %}Ajouter au panier{% else %}Épuisé{% endif %}</span>
+                  </button>
+                </div>
+                <p class="err" data-error role="alert" hidden></p>
+
+                {%- if settings.show_dynamic_checkout -%}
+                  <div class="dyn" data-dynamic>{{ form | payment_button }}</div>
+                {%- endif -%}
+              {%- endform -%}
+            </div>
+
+          {%- when 'trust' -%}
+            <ul class="assure" {{ block.shopify_attributes }}>
+              {%- for i in (1..3) -%}
+                {%- assign t_key = 'title_' | append: i -%}
+                {%- assign s_key = 'text_' | append: i -%}
+                {%- assign i_key = 'icon_' | append: i -%}
+                {%- if block.settings[t_key] != blank -%}
+                  <li>{% render 'icon', name: block.settings[i_key] %}<div>{{ block.settings[t_key] }}<small>{{ block.settings[s_key] }}</small></div></li>
+                {%- endif -%}
+              {%- endfor -%}
+            </ul>
+
+          {%- when 'accordion' -%}
+            <div class="acc" {{ block.shopify_attributes }}>
+              <details{% if block.settings.open %} open{% endif %}>
+                <summary>{{ block.settings.title }}</summary>
+                <div class="acc-b rte">{{ block.settings.content }}</div>
+              </details>
+            </div>
+
+          {%- when 'share' -%}
+            <p style="margin-top:18px" {{ block.shopify_attributes }}>
+              <a class="link" href="mailto:?subject={{ product.title | url_encode }}&body={{ shop.url }}{{ product.url }}">Envoyer à un proche</a>
+            </p>
+
+          {%- when '@app' -%}
+            <div style="margin-top:20px" {{ block.shopify_attributes }}>{% render block %}</div>
+        {%- endcase -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</div>
+
+{%- if settings.show_sticky_atc -%}
+  <div class="sticky-atc" data-sticky-atc aria-hidden="true">
+    <div class="wrap">
+      <div class="who">
+        {%- if product.featured_image -%}{{ product.featured_image | image_url: width: 96 | image_tag: width: 48, height: 48, loading: 'lazy', alt: '' }}{%- endif -%}
+        <div><b>{{ product.title }}</b><span class="sp t" data-sticky-price>{{ current_variant.price | money_without_trailing_zeros }}</span></div>
+      </div>
+      <button type="submit" form="{{ form_id }}" class="btn solid" data-sticky-btn tabindex="-1"{% unless current_variant.available %} disabled{% endunless %}>
+        {% if current_variant.available %}Ajouter au panier{% else %}Épuisé{% endif %}
+      </button>
+    </div>
+  </div>
+{%- endif -%}
+
+<script type="application/json" data-product-json>
+  {
+    "variants": [
+      {%- for v in product.variants -%}
+        {
+          "id": {{ v.id }},
+          "options": {{ v.options | json }},
+          "price": {{ v.price | money_without_trailing_zeros | json }},
+          "compare": {% if v.compare_at_price > v.price %}{{ v.compare_at_price | money_without_trailing_zeros | json }}{% else %}null{% endif %},
+          "save": {% if v.compare_at_price > v.price %}{{ v.compare_at_price | minus: v.price | times: 100 | divided_by: v.compare_at_price }}{% else %}0{% endif %},
+          "available": {{ v.available }},
+          "media": {% if v.featured_media %}{{ v.featured_media.id }}{% else %}null{% endif %}
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ],
+    "title": {{ product.title | json }}
+  }
+</script>
+
+{{ product | structured_data }}
+
+{% schema %}
+{
+  "name": "Produit",
+  "tag": "section",
+  "settings": [
+    { "type": "textarea", "id": "swatches", "label": "Pastilles de couleur", "info": "Une ligne par couleur : Nom:#code. Exemple : Noir:#141414", "default": "Noir:#141414\nBlanc:#f2f2f2\nOr:#c9a24a\nArgent:#c8ccd0\nRouge:#b3261e\nBleu:#2d5db3\nOrange:#e8742a\nVert:#4f7a5a\nGris:#8b8d8f" }
+  ],
+  "blocks": [
+    { "type": "description", "name": "Description", "limit": 1 },
+    { "type": "form", "name": "Options & achat", "limit": 1 },
+    {
+      "type": "trust",
+      "name": "Réassurance",
+      "limit": 1,
+      "settings": [
+        { "type": "select", "id": "icon_1", "label": "Icône 1", "options": [{ "value": "lock", "label": "Cadenas" }, { "value": "truck", "label": "Livraison" }, { "value": "return", "label": "Retour" }, { "value": "shield", "label": "Bouclier" }, { "value": "chat", "label": "Message" }, { "value": "star", "label": "Étoile" }], "default": "lock" },
+        { "type": "text", "id": "title_1", "label": "Titre 1", "default": "Paiement sécurisé" },
+        { "type": "text", "id": "text_1", "label": "Texte 1", "default": "Via le checkout Shopify" },
+        { "type": "select", "id": "icon_2", "label": "Icône 2", "options": [{ "value": "lock", "label": "Cadenas" }, { "value": "truck", "label": "Livraison" }, { "value": "return", "label": "Retour" }, { "value": "shield", "label": "Bouclier" }, { "value": "chat", "label": "Message" }, { "value": "star", "label": "Étoile" }], "default": "truck" },
+        { "type": "text", "id": "title_2", "label": "Titre 2", "info": "Renseignez uniquement vos vraies conditions de livraison." },
+        { "type": "text", "id": "text_2", "label": "Texte 2" },
+        { "type": "select", "id": "icon_3", "label": "Icône 3", "options": [{ "value": "lock", "label": "Cadenas" }, { "value": "truck", "label": "Livraison" }, { "value": "return", "label": "Retour" }, { "value": "shield", "label": "Bouclier" }, { "value": "chat", "label": "Message" }, { "value": "star", "label": "Étoile" }], "default": "return" },
+        { "type": "text", "id": "title_3", "label": "Titre 3", "info": "Renseignez uniquement vos vraies conditions de retour." },
+        { "type": "text", "id": "text_3", "label": "Texte 3" }
+      ]
+    },
+    {
+      "type": "accordion",
+      "name": "Accordéon",
+      "settings": [
+        { "type": "text", "id": "title", "label": "Titre", "default": "Livraison & retours" },
+        { "type": "richtext", "id": "content", "label": "Contenu", "default": "<p>Indiquez ici vos délais de livraison, frais d'expédition et conditions de retour.</p>" },
+        { "type": "checkbox", "id": "open", "label": "Ouvert par défaut", "default": false }
+      ]
+    },
+    { "type": "share", "name": "Partager", "limit": 1 },
+    { "type": "@app" }
+  ]
+}
+{% endschema %}

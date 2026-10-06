@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="{{ settings.color_bg }}">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    {%- if settings.favicon != blank -%}
+      <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
+    {%- endif -%}
+
+    <title>
+      {{ page_title }}
+      {%- if current_tags %} – {{ current_tags | join: ', ' }}{% endif -%}
+      {%- if current_page != 1 %} – Page {{ current_page }}{% endif -%}
+      {%- unless page_title contains shop.name %} – {{ shop.name }}{% endunless -%}
+    </title>
+
+    {%- if page_description -%}
+      <meta name="description" content="{{ page_description | escape }}">
+    {%- endif -%}
+
+    {% render 'meta-tags' %}
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap">
+
+    <style>
+      :root {
+        --bg: {{ settings.color_bg }};
+        --bg2: {{ settings.color_bg_alt }};
+        --card: {{ settings.color_card }};
+        --text: {{ settings.color_text }};
+        --muted: {{ settings.color_muted }};
+        --accent: {{ settings.color_accent }};
+        {%- assign acc = settings.color_accent -%}
+        --accent-soft: rgba({{ acc.red }}, {{ acc.green }}, {{ acc.blue }}, 0.18);
+        --accent-text: {{ settings.color_accent_text }};
+        --line: rgba(255, 235, 200, 0.12);
+        --serif: 'Cormorant Garamond', Georgia, serif;
+        --sans: 'Jost', system-ui, sans-serif;
+        --container: {{ settings.container_width }}px;
+      }
+    </style>
+
+    {{ 'base.css' | asset_url | stylesheet_tag }}
+
+    {{ content_for_header }}
+  </head>
+
+  <body class="template-{{ template.name | handle }}{% if settings.enable_reveal %} has-reveal{% endif %}">
+    <a class="skip-link" href="#main">Aller au contenu</a>
+
+    {% sections 'header-group' %}
+
+    <main id="main" role="main" tabindex="-1">
+      {{ content_for_layout }}
+    </main>
+
+    {% sections 'footer-group' %}
+
+    {% section 'cart-drawer' %}
+
+    {%- if settings.enable_halo -%}
+      <div class="halo" data-halo aria-hidden="true"></div>
+    {%- endif -%}
+
+    <script>
+      window.theme = {
+        moneyFormat: {{ shop.money_format | json }},
+        currency: {{ cart.currency.iso_code | json }},
+        locale: {{ request.locale.iso_code | json }},
+        routes: {
+          cart: {{ routes.cart_url | json }},
+          cartAdd: {{ routes.cart_add_url | json }},
+          cartChange: {{ routes.cart_change_url | json }},
+          cartJson: {{ routes.cart_url | append: '.js' | json }},
+          search: {{ routes.search_url | json }},
+          predictive: {{ routes.predictive_search_url | json }}
+        }
+      };
+    </script>
+    <script src="{{ 'theme.js' | asset_url }}" defer></script>
+  </body>
+</html>

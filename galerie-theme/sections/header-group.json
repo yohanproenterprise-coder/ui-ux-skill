@@ -1,0 +1,26 @@
+{
+  "name": "En-tête",
+  "type": "header",
+  "sections": {
+    "announcement": {
+      "type": "announcement-bar",
+      "blocks": {
+        "msg1": {
+          "type": "message",
+          "settings": {
+            "text": "Paiement 100 % sécurisé · LED incluses sur la plupart des modèles"
+          }
+        }
+      },
+      "block_order": ["msg1"],
+      "settings": {}
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "menu": "main-menu"
+      }
+    }
+  },
+  "order": ["announcement", "header"]
+}
