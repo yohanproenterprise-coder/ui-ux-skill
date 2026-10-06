@@ -238,6 +238,14 @@
     var canvas = sec.querySelector('.sl-canvas'), glow = sec.querySelector('.sl-glow');
     var photos = [].slice.call(sec.querySelectorAll('[data-photo]')), dust = sec.querySelector('[data-sl-dust]');
     var dctx = dust ? dust.getContext('2d') : null, motes = [], dW = 0, dH = 0;
+    /* chaque photo devient 3 couches : ambiance, zones lumineuses, halo */
+    photos.forEach(function (ph) {
+      var base = ph.querySelector('img'); if (!base) return;
+      base.classList.add('lyr', 'base');
+      ['hl', 'bloom'].forEach(function (k) { var im = base.cloneNode(); im.className = 'lyr ' + k; im.alt = ''; im.setAttribute('aria-hidden', 'true'); ph.appendChild(im); });
+    });
+    var mx = 0, my = 0, px = 0, py = 0;
+    addEventListener('pointermove', function (e) { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; }, { passive: true });
     if (dust) for (var m = 0; m < 150; m++) motes.push({ x: Math.random(), y: Math.random(), s: .4 + Math.random() * 1.6, v: .00004 + Math.random() * .00012, a: .25 + Math.random() * .75, ph: Math.random() * 6.28 });
     function sizeDust() {
       if (!dust) return;
@@ -294,8 +302,14 @@
         /* le produit sort du noir : luminosité, léger travelling, bascule entre ses photos */
         var Lp = lv[1], idx = p < .62 ? 0 : (p < .84 ? 1 : 2);
         idx = Math.min(idx, photos.length - 1);
-        sec.style.setProperty('--sl-b', (.03 + .97 * Lp).toFixed(3));
-        sec.style.setProperty('--sl-z', (1.03 + .12 * smooth(p)).toFixed(4));
+        /* en deux temps : le luminaire s'allume (zones lumineuses + halo), puis la pièce se révèle */
+        var Lh = Lp, La = smooth((p - .34) / .4);
+        px += (-mx * 14 - px) * .06; py += (-my * 9 - py) * .06;
+        sec.style.setProperty('--sl-hl', Lh.toFixed(3));
+        sec.style.setProperty('--sl-b', (.035 + .965 * La).toFixed(3));
+        sec.style.setProperty('--sl-px', px.toFixed(1) + 'px');
+        sec.style.setProperty('--sl-py', py.toFixed(1) + 'px');
+        sec.style.setProperty('--sl-z', (1.03 + .1 * smooth(p)).toFixed(4));
         sec.style.setProperty('--sl-rgb', c.r + ',' + c.g + ',' + c.b);
         photos.forEach(function (ph, i) { ph.classList.toggle('on', i === idx); });
         drawDust(Lp, c, t);

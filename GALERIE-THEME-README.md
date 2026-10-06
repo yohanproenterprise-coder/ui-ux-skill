@@ -30,14 +30,16 @@ Fichier à téléverser : `galerie-lumineuse-theme.zip` (ou le dossier `galerie-
 - SEO : balises Open Graph, données structurées produit, titres/descriptions du thème.
 - Accessibilité : navigation clavier, `prefers-reduced-motion`, libellés ARIA.
 
-## 5. Section « Lampe allumée au scroll »
-Une pièce plongée dans le noir : en défilant, le luminaire s'allume (scintillement, halo, cônes de lumière, ombres sur la table),
-la température passe de 2200 K à 3200 K, la caméra avance. La dernière étape affiche le nom, le prix et le bouton du produit choisi.
-- **Produit présenté** : champ « Produit présenté » (par défaut LÉYA). Son nom, son prix et son lien s'affichent à la fin.
-- **Modèle de luminaire (3D)** : tubes lumineux (type LÉYA), dôme cuivre et marbre (type CUIVRE), globes opalins (type SOLIS), couronne d'ampoules (type ORION). Ce sont des formes 3D simplifiées inspirées des produits, pas leurs photos.
-- **Mode « Photos du produit qui s'allument »** : alternative légère (sans 3D) qui fait sortir les photos du produit du noir.
-- Textes des étapes, moments d'apparition, longueur du défilement et températures : réglables dans la section et ses blocs.
-- Three.js n'est chargé que lorsque la section approche de l'écran ; avec « réduire les animations », la scène s'affiche allumée, sans défilement piloté.
+## 5. Section « Lampe allumée au scroll » — la photo du produit s'allume
+La photo de **votre produit** (par défaut LÉYA) est posée plein écran sur la page, dans le noir. En défilant :
+1. le luminaire s'allume **sur la photo** (zones lumineuses qui s'embrasent, halo qui déborde, léger scintillement) ;
+2. la pièce se révèle ensuite autour de lui, la température passe de 2200 K à 3200 K, la photo avance doucement et suit la souris ;
+3. les 3 premières photos de la fiche produit s'enchaînent, puis le nom, le prix et le bouton du produit apparaissent.
+- **Produit présenté** : champ « Produit présenté ». Ce sont automatiquement les photos de sa fiche.
+- **Cadrage** : « Cadrage vertical » et « Cadrage horizontal » placent le luminaire dans le cadre (surtout utile sur téléphone).
+- **Mode « Pièce 3D qui s'allume »** : alternative sans photo (4 modèles 3D : tubes, dôme cuivre, globes, couronne).
+- Les photos où le luminaire est **déjà allumé** donnent le meilleur effet (le thème repère ses zones les plus lumineuses).
+- Pas de Three.js en mode photo (images + un petit canvas). Avec « réduire les animations », la photo s'affiche allumée, sans défilement piloté.
 
 ## 4. Limites connues
 - Validé avec Theme Check (0 erreur) et testé en navigateur sur une maquette du balisage ; **à prévisualiser sur votre boutique** avant de publier.

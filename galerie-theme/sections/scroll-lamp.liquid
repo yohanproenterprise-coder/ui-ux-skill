@@ -14,7 +14,7 @@
   data-k-end="{{ section.settings.kelvin_end }}"
   data-finish="{{ section.settings.finish }}"
   data-lamp-style="{{ section.settings.lamp_style }}"
-  style="--sl-h:{{ section.settings.scroll_length }}vh"
+  style="--sl-h:{{ section.settings.scroll_length }}vh;--sl-fy:{{ section.settings.photo_focus }}%;--sl-fx:{{ section.settings.photo_focus_x }}%"
   aria-label="{{ section.settings.aria_label | escape }}"
 >
   <div class="sl-stage">
@@ -23,7 +23,7 @@
       <div class="sl-photos" aria-hidden="true">
         {%- for image in product.images limit: 3 -%}
           <div class="sl-photo{% if forloop.first %} on{% endif %}" data-photo>
-            {{ image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '700, 1000, 1400', sizes: '(min-width: 980px) 50vw, 100vw', alt: product.title }}
+            {{ image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '700, 1000, 1400', sizes: '(min-width: 980px) 50vw, 100vw', alt: product.title, class: 'lyr base' }}
           </div>
         {%- endfor -%}
       </div>
@@ -65,10 +65,12 @@
   "settings": [
     { "type": "paragraph", "content": "Un produit de votre boutique plongé dans le noir : il s'allume au fil du défilement. Les textes apparaissent aux étapes que vous choisissez dans les blocs." },
     { "type": "product", "id": "product", "label": "Produit présenté", "info": "Son nom, son prix et son lien s'affichent à la dernière étape. En mode « photos », ses photos s'allument aussi." },
-    { "type": "select", "id": "mode", "label": "Mode", "options": [{ "value": "scene", "label": "Pièce 3D qui s'allume" }, { "value": "product", "label": "Photos du produit qui s'allument" }], "default": "scene" },
+    { "type": "select", "id": "mode", "label": "Mode", "options": [{ "value": "product", "label": "Photo réelle du produit qui s'allume" }, { "value": "scene", "label": "Pièce 3D qui s'allume" }], "default": "product" },
     { "type": "select", "id": "lamp_style", "label": "Modèle de luminaire (pièce 3D)", "info": "Forme 3D inspirée d'un produit : choisissez celle qui ressemble le plus au produit présenté.", "options": [{ "value": "tubes", "label": "Tubes lumineux (type LÉYA)" }, { "value": "dome", "label": "Dôme cuivre et marbre (type CUIVRE)" }, { "value": "glass", "label": "Globes opalins (type SOLIS)" }, { "value": "ring", "label": "Couronne d'ampoules (type ORION)" }], "default": "tubes" },
     { "type": "select", "id": "finish", "label": "Ancien réglage de finition (remplacé par le modèle)", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
     { "type": "checkbox", "id": "enable_3d", "label": "Activer la 3D (pièce)", "default": true },
+    { "type": "range", "id": "photo_focus", "label": "Cadrage vertical de la photo (%)", "info": "Monte ou descend la photo si le luminaire est coupé.", "min": 0, "max": 100, "step": 5, "default": 50 },
+    { "type": "range", "id": "photo_focus_x", "label": "Cadrage horizontal de la photo (%)", "info": "Surtout utile sur téléphone : place le luminaire dans le cadre (0 = gauche, 100 = droite).", "min": 0, "max": 100, "step": 5, "default": 50 },
     { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de la hauteur d'écran)", "min": 160, "max": 420, "step": 20, "default": 260 },
     { "type": "range", "id": "kelvin_start", "label": "Température au moment de l'allumage (K)", "min": 2200, "max": 4000, "step": 100, "default": 2200 },
     { "type": "range", "id": "kelvin_end", "label": "Température finale (K)", "min": 2200, "max": 6500, "step": 100, "default": 3200 },
