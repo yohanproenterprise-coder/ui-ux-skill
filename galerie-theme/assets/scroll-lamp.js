@@ -315,8 +315,8 @@
         px += (-mx * 12 - px) * .06; py += (-my * 8 - py) * .06;
         sec.style.setProperty('--sl-hl', Lh.toFixed(3));
         sec.style.setProperty('--sl-r', '400%'); /* plus d'ouverture depuis le centre : la photo s'allume en entier */
-        sec.style.setProperty('--sl-b', (.035 + .06 * La).toFixed(3));
-        sec.style.setProperty('--sl-bg', (.03 + .5 * Lh).toFixed(3));
+        sec.style.setProperty('--sl-b', (.17 + .05 * La).toFixed(3));
+        sec.style.setProperty('--sl-bg', (.12 + .45 * Lh).toFixed(3));
         sec.style.setProperty('--sl-px', px.toFixed(1) + 'px');
         sec.style.setProperty('--sl-py', py.toFixed(1) + 'px');
         sec.style.setProperty('--sl-z', (1 + .035 * smooth(p)).toFixed(4));
