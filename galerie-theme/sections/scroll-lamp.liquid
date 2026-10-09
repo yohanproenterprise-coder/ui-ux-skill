@@ -56,6 +56,20 @@
   </div>
 </section>
 
+{%- if use_product and section.settings.show_description -%}
+  <section class="sl-desc">
+    <div class="wrap sl-desc-grid">
+      <div class="sl-desc-head rv">
+        <p class="kicker">{{ section.settings.desc_kicker }}</p>
+        <h2 class="h2">{{ product.title }}</h2>
+        <p class="sl-desc-price">{% if product.price_varies %}dès {% endif %}{{ product.price | money_without_trailing_zeros }}</p>
+        <p style="margin-top:26px"><a class="btn solid" href="{{ product.url }}">{{ section.settings.desc_button | default: 'Voir le luminaire' }}</a></p>
+      </div>
+      <div class="sl-desc-body rte rv" style="--d:140ms">{{ product.description }}</div>
+    </div>
+  </section>
+{%- endif -%}
+
 <script src="{{ 'scroll-lamp.js' | asset_url }}" defer></script>
 
 {% schema %}
@@ -66,6 +80,9 @@
     { "type": "product", "id": "product", "label": "Produit présenté", "info": "Son nom, son prix et son lien s'affichent à la dernière étape. En mode « photos », ses photos s'allument aussi." },
     { "type": "select", "id": "mode", "label": "Mode", "options": [{ "value": "product", "label": "Photo réelle du produit qui s'allume" }, { "value": "scene", "label": "Pièce 3D qui s'allume" }], "default": "product" },
     { "type": "select", "id": "lamp_style", "label": "Modèle de luminaire (pièce 3D)", "info": "Forme 3D inspirée d'un produit : choisissez celle qui ressemble le plus au produit présenté.", "options": [{ "value": "tubes", "label": "Tubes lumineux (type LÉYA)" }, { "value": "dome", "label": "Dôme cuivre et marbre (type CUIVRE)" }, { "value": "glass", "label": "Globes opalins (type SOLIS)" }, { "value": "ring", "label": "Couronne d'ampoules (type ORION)" }], "default": "tubes" },
+    { "type": "checkbox", "id": "show_description", "label": "Afficher la description du produit sous la photo", "default": true },
+    { "type": "text", "id": "desc_kicker", "label": "Sur-titre de la description", "default": "Le luminaire" },
+    { "type": "text", "id": "desc_button", "label": "Bouton de la description", "default": "Voir le luminaire" },
     { "type": "select", "id": "finish", "label": "Ancien réglage de finition (remplacé par le modèle)", "options": [{ "value": "copper", "label": "Cuivre" }, { "value": "glass", "label": "Verre opalin" }], "default": "copper" },
     { "type": "checkbox", "id": "enable_3d", "label": "Activer la 3D (pièce)", "default": true },
     { "type": "range", "id": "lamp_x", "label": "Position du luminaire sur la photo : horizontale (%)", "info": "La lumière part de ce point puis s'étend. 0 = bord gauche de la photo, 100 = bord droit.", "min": 0, "max": 100, "step": 5, "default": 60 },

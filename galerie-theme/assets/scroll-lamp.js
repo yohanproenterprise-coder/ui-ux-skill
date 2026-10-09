@@ -267,7 +267,7 @@
       });
     }
     var steps = [].slice.call(sec.querySelectorAll('[data-step]'));
-    var bar = sec.querySelector('[data-sl-bar]'), kOut = sec.querySelector('[data-sl-k]');
+    var bar = sec.querySelector('[data-sl-bar]'), kOut = null;
     var target = reduce ? .85 : 0, p = target, scene = null, visible = false, raf = 0, clock0 = performance.now();
 
     function measure() {
@@ -303,9 +303,14 @@
       if (glow) { glow.style.opacity = (lv[1] * (scene ? .14 : 1)).toFixed(3); glow.style.background = 'radial-gradient(ellipse 60% 55% at var(--sl-gx,62%) var(--sl-gy,38%), rgba(' + c.r + ',' + c.g + ',' + c.b + ',.55), transparent 70%)'; }
       if (photos.length) {
         /* le produit sort du noir : luminosité, léger travelling, bascule entre ses photos */
-        var Lp = lv[1], idx = p < .62 ? 0 : (p < .84 ? 1 : 2);
-        idx = Math.min(idx, photos.length - 1);
-        /* la lumière naît du luminaire (halo qui s'embrase), puis un rond de lumière grandit jusqu'à révéler toute la photo */
+        var Lp = lv[1], n = photos.length;
+        /* fondu enchaîné continu entre les photos : la suivante apparaît pendant que la précédente s'éteint doucement */
+        var wts = photos.map(function (ph, i) {
+          if (n < 2) return 1;
+          var a = i === 0 ? 1 : smooth((p - (.5 + (i - 1) * .22)) / .08);
+          var nxt = i === n - 1 ? 0 : smooth((p - (.5 + i * .22)) / .08);
+          return nxt >= .995 ? 0 : a;
+        });
         var Lh = Lp, spread = smooth((p - .2) / .55), La = smooth((p - .45) / .4);
         px += (-mx * 12 - px) * .06; py += (-my * 8 - py) * .06;
         sec.style.setProperty('--sl-hl', Lh.toFixed(3));
@@ -315,8 +320,16 @@
         sec.style.setProperty('--sl-px', px.toFixed(1) + 'px');
         sec.style.setProperty('--sl-py', py.toFixed(1) + 'px');
         sec.style.setProperty('--sl-z', (1 + .035 * smooth(p)).toFixed(4));
-        if (photos[idx] && photos[idx].dataset.lx) { sec.style.setProperty('--sl-lx', photos[idx].dataset.lx + '%'); sec.style.setProperty('--sl-ly', photos[idx].dataset.ly + '%'); }
-        photos.forEach(function (ph, i) { ph.classList.toggle('on', i === idx); });
+        photos.forEach(function (ph, i) {
+          var w = wts[i];
+          ph.style.opacity = w.toFixed(3);
+          ph.style.visibility = w > .003 ? '' : 'hidden';
+          ph.classList.toggle('on', w > .003);
+          if (ph.dataset.lx) { ph.style.setProperty('--sl-lx', ph.dataset.lx + '%'); ph.style.setProperty('--sl-ly', ph.dataset.ly + '%'); }
+          /* léger souffle de lumière et de zoom pendant le changement de photo */
+          ph.style.setProperty('--sl-px', (px + (1 - w) * (i ? 22 : -22)).toFixed(1) + 'px');
+          ph.style.setProperty('--sl-z', ((1 + .035 * smooth(p)) * (1 + (i ? (1 - w) * .07 : 0))).toFixed(4));
+        });
         drawDust(Lp, c, t);
       }
       if (scene) scene.render(p, lv, c, t, lv[1]);
