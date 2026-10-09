@@ -235,8 +235,8 @@
             "heading": "Un geste,",
             "accent": "et tout change.",
             "text": "La lumière dessine l'espace, révèle les matières, installe l'ambiance.",
-            "from": 25,
-            "to": 50
+            "from": 24,
+            "to": 47
           }
         },
         "s3": {
@@ -246,8 +246,8 @@
             "heading": "Le marbre",
             "accent": "s'illumine.",
             "text": "Cuivre poli et marbre naturel : la lumière traverse la pierre et révèle toutes ses veines.",
-            "from": 53,
-            "to": 78
+            "from": 58,
+            "to": 72
           }
         },
         "s4": {
@@ -256,7 +256,7 @@
             "heading": "À vous de",
             "accent": "l'allumer.",
             "button_label": "Découvrir ce luminaire",
-            "from": 82,
+            "from": 80,
             "to": 100,
             "show_product": true
           }
