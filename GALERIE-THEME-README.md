@@ -30,16 +30,14 @@ Fichier à téléverser : `galerie-lumineuse-theme.zip` (ou le dossier `galerie-
 - SEO : balises Open Graph, données structurées produit, titres/descriptions du thème.
 - Accessibilité : navigation clavier, `prefers-reduced-motion`, libellés ARIA.
 
-## 5. Section « Lampe allumée au scroll » — la photo du produit s'allume
-La photo de **votre produit** (par défaut LÉYA) est posée plein écran sur la page, dans le noir. En défilant :
-1. le luminaire s'allume **sur la photo** (zones lumineuses qui s'embrasent, halo qui déborde, léger scintillement) ;
-2. la pièce se révèle ensuite autour de lui, la température passe de 2200 K à 3200 K, la photo avance doucement et suit la souris ;
-3. les 3 premières photos de la fiche produit s'enchaînent, puis le nom, le prix et le bouton du produit apparaissent.
+## 5. Section « Lampe allumée au scroll » — la photo de votre produit s'allume
+La photo de **votre produit** (par défaut CUIVRE) est posée sur la page, dans le noir. En défilant :
+1. un halo naît du luminaire ; 2. un **rond de lumière grandit** depuis lui et révèle toute la photo ; 3. les 3 premières photos de la fiche produit s'enchaînent ; 4. le nom, le prix et le bouton du produit apparaissent.
 - **Produit présenté** : champ « Produit présenté ». Ce sont automatiquement les photos de sa fiche.
-- **Cadrage** : « Cadrage vertical » et « Cadrage horizontal » placent le luminaire dans le cadre (surtout utile sur téléphone).
+- **Position du luminaire** : réglez « horizontale » et « verticale » (en % de la photo) pour que la lumière parte du bon endroit. Les photos carrées sont fondues dans un fond prolongé : le luminaire n'est jamais coupé.
+- Fonctionne avec **toutes les photos** (fond clair ou sombre). Les photos « propres », sans texte ni cotes dessinés dessus, donnent le plus bel effet.
 - **Mode « Pièce 3D qui s'allume »** : alternative sans photo (4 modèles 3D : tubes, dôme cuivre, globes, couronne).
-- Les photos où le luminaire est **déjà allumé** donnent le meilleur effet (le thème repère ses zones les plus lumineuses).
-- Pas de Three.js en mode photo (images + un petit canvas). Avec « réduire les animations », la photo s'affiche allumée, sans défilement piloté.
+- Pas de Three.js en mode photo. Avec « réduire les animations », la photo s'affiche allumée, sans défilement piloté.
 
 ## 4. Limites connues
 - Validé avec Theme Check (0 erreur) et testé en navigateur sur une maquette du balisage ; **à prévisualiser sur votre boutique** avant de publier.

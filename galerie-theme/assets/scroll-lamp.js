@@ -238,11 +238,14 @@
     var canvas = sec.querySelector('.sl-canvas'), glow = sec.querySelector('.sl-glow');
     var photos = [].slice.call(sec.querySelectorAll('[data-photo]')), dust = sec.querySelector('[data-sl-dust]');
     var dctx = dust ? dust.getContext('2d') : null, motes = [], dW = 0, dH = 0;
-    /* chaque photo devient 3 couches : ambiance, zones lumineuses, halo */
+    /* chaque photo devient : un fond prolongé et flouté + un cadre à 3 couches (sombre, allumée, halo) */
     photos.forEach(function (ph) {
       var base = ph.querySelector('img'); if (!base) return;
-      base.classList.add('lyr', 'base');
-      ['hl', 'bloom'].forEach(function (k) { var im = base.cloneNode(); im.className = 'lyr ' + k; im.alt = ''; im.setAttribute('aria-hidden', 'true'); ph.appendChild(im); });
+      var frame = document.createElement('div'); frame.className = 'frame';
+      var bg = base.cloneNode(); bg.className = 'bgfill'; bg.alt = ''; bg.setAttribute('aria-hidden', 'true');
+      base.className = 'lyr base'; frame.appendChild(base);
+      ['hl', 'bloom'].forEach(function (k) { var im = base.cloneNode(); im.className = 'lyr ' + k; im.alt = ''; im.setAttribute('aria-hidden', 'true'); frame.appendChild(im); });
+      ph.insertBefore(bg, ph.firstChild); ph.appendChild(frame);
     });
     var mx = 0, my = 0, px = 0, py = 0;
     addEventListener('pointermove', function (e) { mx = e.clientX / innerWidth * 2 - 1; my = e.clientY / innerHeight * 2 - 1; }, { passive: true });
@@ -302,15 +305,17 @@
         /* le produit sort du noir : luminosité, léger travelling, bascule entre ses photos */
         var Lp = lv[1], idx = p < .62 ? 0 : (p < .84 ? 1 : 2);
         idx = Math.min(idx, photos.length - 1);
-        /* en deux temps : le luminaire s'allume (zones lumineuses + halo), puis la pièce se révèle */
-        var Lh = Lp, La = smooth((p - .34) / .4);
-        px += (-mx * 14 - px) * .06; py += (-my * 9 - py) * .06;
+        /* la lumière naît du luminaire (halo qui s'embrase), puis un rond de lumière grandit jusqu'à révéler toute la photo */
+        var Lh = Lp, spread = smooth((p - .2) / .55), La = smooth((p - .45) / .4);
+        px += (-mx * 12 - px) * .06; py += (-my * 8 - py) * .06;
         sec.style.setProperty('--sl-hl', Lh.toFixed(3));
-        sec.style.setProperty('--sl-b', (.035 + .965 * La).toFixed(3));
+        sec.style.setProperty('--sl-r', (4 + 150 * spread).toFixed(1) + '%');
+        sec.style.setProperty('--sl-b', (.035 + .06 * La).toFixed(3));
+        sec.style.setProperty('--sl-bg', (.03 + .5 * smooth((p - .3) / .5)).toFixed(3));
         sec.style.setProperty('--sl-px', px.toFixed(1) + 'px');
         sec.style.setProperty('--sl-py', py.toFixed(1) + 'px');
-        sec.style.setProperty('--sl-z', (1.03 + .1 * smooth(p)).toFixed(4));
-        sec.style.setProperty('--sl-rgb', c.r + ',' + c.g + ',' + c.b);
+        sec.style.setProperty('--sl-z', (1 + .035 * smooth(p)).toFixed(4));
+        if (photos[idx] && photos[idx].dataset.lx) { sec.style.setProperty('--sl-lx', photos[idx].dataset.lx + '%'); sec.style.setProperty('--sl-ly', photos[idx].dataset.ly + '%'); }
         photos.forEach(function (ph, i) { ph.classList.toggle('on', i === idx); });
         drawDust(Lp, c, t);
       }

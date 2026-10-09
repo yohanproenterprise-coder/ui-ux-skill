@@ -459,22 +459,34 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   .sl-step{transition:none}
 }
 
-/* --- mode « photo du produit » : la photo est posée sur la page, la lampe s'allume dessus --- */
-.sl-product-mode{--sl-gx:68%;--sl-gy:46%}
+/* --- mode « photo du produit » : la photo est posée sur la page, la lumière part du luminaire et s'étend --- */
+.sl-product-mode{--sl-gx:68%;--sl-gy:48%}
 .sl-photos{position:absolute;inset:0;overflow:hidden;pointer-events:none;background:#050403}
 .sl-photo{position:absolute;inset:0;opacity:0;transition:opacity 1.4s var(--ease)}
 .sl-photo.on{opacity:1}
-.sl-photo .lyr{position:absolute;left:-3%;top:-3%;width:106%;height:106%;max-width:none;object-fit:cover;object-position:var(--sl-fx,50%) var(--sl-fy,50%);
-  transform:translate3d(var(--sl-px,0px),var(--sl-py,0px),0) scale(var(--sl-z,1.03));will-change:filter,opacity,transform}
-/* 1. l'ambiance de la pièce : très sombre, puis s'éclaire en dernier */
-.sl-photo .base{filter:brightness(var(--sl-b,.04)) saturate(calc(.5 + var(--sl-b,.04) * .55)) sepia(.08)}
-/* 2. les zones lumineuses de la photo (le luminaire lui-même) s'allument en premier */
-.sl-photo .hl{mix-blend-mode:screen;opacity:var(--sl-hl,0);filter:brightness(.7) contrast(2.7) saturate(1.25)}
-/* 3. le halo qui déborde autour des sources */
-.sl-photo .bloom{mix-blend-mode:screen;opacity:calc(var(--sl-hl,0) * .75);filter:blur(24px) brightness(1.15) contrast(2.3) saturate(1.5)}
+/* fond : la photo prolongée et floutée, pour que la photo ne soit jamais coupée ni encadrée */
+.sl-photo .bgfill{position:absolute;left:-6%;top:-6%;width:112%;height:112%;max-width:none;object-fit:cover;
+  filter:blur(56px) brightness(var(--sl-bg,.03)) saturate(.62) hue-rotate(-8deg)}
+/* cadre carré de la photo, bords fondus dans le fond */
+.sl-photo .frame{position:absolute;top:0;bottom:0;right:var(--sl-fr,5%);height:100%;aspect-ratio:1/1;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 16%,#000 84%,transparent 100%);
+  transform:translate3d(var(--sl-px,0px),var(--sl-py,0px),0) scale(var(--sl-z,1.02))}
+.sl-photo .lyr{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;will-change:filter,opacity}
+/* 1. la pièce reste très sombre */
+.sl-photo .base{filter:brightness(var(--sl-b,.04)) saturate(.7)}
+/* 2. la photo « allumée » n'apparaît que dans un rond de lumière centré sur le luminaire, qui grandit au scroll */
+.sl-photo .hl{opacity:min(1,calc(var(--sl-hl,0) * 1.4));
+  -webkit-mask-image:radial-gradient(ellipse var(--sl-r,4%) var(--sl-r,4%) at var(--sl-lx,60%) var(--sl-ly,50%),#000 38%,transparent 100%);
+  mask-image:radial-gradient(ellipse var(--sl-r,4%) var(--sl-r,4%) at var(--sl-lx,60%) var(--sl-ly,50%),#000 38%,transparent 100%)}
+/* 3. halo doux autour de la source */
+.sl-photo .bloom{mix-blend-mode:screen;opacity:calc(var(--sl-hl,0) * .55);filter:blur(30px) saturate(1.7) brightness(1.05);
+  -webkit-mask-image:radial-gradient(ellipse 26% 26% at var(--sl-lx,60%) var(--sl-ly,50%),#000 0,transparent 100%);
+  mask-image:radial-gradient(ellipse 26% 26% at var(--sl-lx,60%) var(--sl-ly,50%),#000 0,transparent 100%)}
 .sl-dust{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
 .sl-pname{margin-top:22px;font-family:var(--serif);font-size:clamp(2rem,4vw,3rem);font-weight:300;line-height:1;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
 .sl-pname span{font-family:var(--sans);font-size:1rem;color:var(--accent);letter-spacing:.06em}
 @media(max-width:980px){
-  .sl-product-mode{--sl-gx:50%;--sl-gy:68%}
+  .sl-product-mode{--sl-gx:50%;--sl-gy:70%}
+  .sl-photo .frame{left:0;right:0;top:auto;bottom:3%;height:auto;width:100%;
+    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 100%);mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 100%)}
 }

@@ -243,9 +243,9 @@
           "type": "step",
           "settings": {
             "kicker": "Chapitre 3",
-            "heading": "La matière",
-            "accent": "prend vie.",
-            "text": "Volumes, reflets, ombres portées : chaque détail du luminaire se révèle.",
+            "heading": "Le marbre",
+            "accent": "s'illumine.",
+            "text": "Cuivre poli et marbre naturel : la lumière traverse la pierre et révèle toutes ses veines.",
             "from": 53,
             "to": 78
           }
@@ -269,9 +269,12 @@
         "s4"
       ],
       "settings": {
-        "product": "nordic-designer-creative-fishbone-pendant-lights-villa-hall-led-ceiling-chandelier-lustre-home-decor-living-room-hanging-lamps",
+        "product": "all-copper-marble-led-pendant-lamp-simple-light-restaurant-bar-counter-luxury-small-chandelier-bedroom-bedside-lighting",
         "mode": "product",
-        "lamp_style": "tubes"
+        "lamp_style": "tubes",
+        "kelvin_end": 3000,
+        "lamp_x": 60,
+        "lamp_y": 50
       }
     }
   },
