@@ -465,7 +465,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
   .sl-step{max-width:100%;left:0}
   .sl-step .h2{font-size:clamp(1.9rem,8vw,2.6rem)}
   .sl-step .sub{font-size:.92rem}
-  .sl-stage::after{background:linear-gradient(180deg,rgba(5,4,3,.88) 0%,rgba(5,4,3,.6) 26%,transparent 46%)}
+  .sl-stage::after{background:linear-gradient(180deg,rgba(5,4,3,.62) 0%,rgba(5,4,3,.32) 24%,transparent 44%)}
+  .sl-photo .bgfill{filter:blur(40px) brightness(calc(var(--sl-bg,.03) * 2.1)) saturate(.7)}
 }
 @media(prefers-reduced-motion:reduce){
   .sl{height:auto}
@@ -501,8 +502,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .sl-pname span{font-family:var(--sans);font-size:1rem;color:var(--accent);letter-spacing:.06em}
 @media(max-width:980px){
   .sl-product-mode{--sl-gx:50%;--sl-gy:70%}
-  .sl-photo .frame{left:0;right:0;top:auto;bottom:0;height:auto;width:100%;
-    -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 100%);mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 100%)}
+  .sl-photo .frame{left:0;right:0;top:0;bottom:0;height:100%;width:100%;aspect-ratio:auto;-webkit-mask-image:none;mask-image:none}
 }
 
 html,body{height:100%;margin:0;overflow:hidden}
@@ -911,7 +911,12 @@ html,body{height:100%;margin:0;overflow:hidden}
           ph.style.opacity = w.toFixed(3);
           ph.style.visibility = w > .003 ? '' : 'hidden';
           ph.classList.toggle('on', w > .003);
-          if (ph.dataset.lx) { ph.style.setProperty('--sl-lx', ph.dataset.lx + '%'); ph.style.setProperty('--sl-ly', ph.dataset.ly + '%'); }
+          if (ph.dataset.lx) {
+            /* en portrait la photo carrée est recadrée au centre : on ramène le luminaire dans le cadre visible */
+            var sr = sec.querySelector('.sl-stage').getBoundingClientRect(), vis = Math.min(1, sr.width / Math.max(1, sr.height));
+            var lxv = 50 + (+ph.dataset.lx - 50) / vis;
+            ph.style.setProperty('--sl-lx', lxv.toFixed(1) + '%'); ph.style.setProperty('--sl-ly', ph.dataset.ly + '%');
+          }
           /* léger souffle de lumière et de zoom pendant le changement de photo */
           ph.style.setProperty('--sl-px', (px + (1 - w) * (i ? 22 : -22)).toFixed(1) + 'px');
           ph.style.setProperty('--sl-z', ((1 + .035 * smooth(p)) * (1 + (i ? (1 - w) * .07 : 0))).toFixed(4));

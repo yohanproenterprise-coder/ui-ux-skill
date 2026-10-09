@@ -325,7 +325,12 @@
           ph.style.opacity = w.toFixed(3);
           ph.style.visibility = w > .003 ? '' : 'hidden';
           ph.classList.toggle('on', w > .003);
-          if (ph.dataset.lx) { ph.style.setProperty('--sl-lx', ph.dataset.lx + '%'); ph.style.setProperty('--sl-ly', ph.dataset.ly + '%'); }
+          if (ph.dataset.lx) {
+            /* en portrait la photo carrée est recadrée au centre : on ramène le luminaire dans le cadre visible */
+            var sr = sec.querySelector('.sl-stage').getBoundingClientRect(), vis = Math.min(1, sr.width / Math.max(1, sr.height));
+            var lxv = 50 + (+ph.dataset.lx - 50) / vis;
+            ph.style.setProperty('--sl-lx', lxv.toFixed(1) + '%'); ph.style.setProperty('--sl-ly', ph.dataset.ly + '%');
+          }
           /* léger souffle de lumière et de zoom pendant le changement de photo */
           ph.style.setProperty('--sl-px', (px + (1 - w) * (i ? 22 : -22)).toFixed(1) + 'px');
           ph.style.setProperty('--sl-z', ((1 + .035 * smooth(p)) * (1 + (i ? (1 - w) * .07 : 0))).toFixed(4));
