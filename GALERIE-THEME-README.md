@@ -44,3 +44,11 @@ La photo de **votre produit** (par défaut CUIVRE) est posée sur la page, dans 
 - Les pages « compte client » utilisent les comptes clients nouvelle génération de Shopify (pas de gabarits classiques).
 - Polices Google (Cormorant Garamond, Jost) et Three.js (cdnjs) sont chargés depuis des CDN externes.
 - Pas de faux avis, stock limité ou compte à rebours : tout ce qui est affiché doit être réel.
+
+## Produits en scroll (accueil)
+
+La page d'accueil utilise la section **Produits en scroll** : chaque produit de la collection choisie (par défaut 3) reçoit sa scène « il sort de la pénombre et s'allume au défilement » avec ses vraies photos, puis sa description juste en dessous. Les autres produits restent en grille classique (section « Produits vedettes »).
+
+- **Choisir les produits** : dans l'éditeur, section « Produits en scroll » → collection. Créez une collection « Mis en avant » et placez-y les produits voulus, dans l'ordre voulu.
+- **Photos** : les 3 premières photos de la fiche sont utilisées. Le rendu est conçu pour des photos d'ambiance où le luminaire est allumé ; sur des photos détourées à fond blanc, l'effet est beaucoup moins réussi.
+- **Position du luminaire** : réglage global dans la section, ou par produit avec les métadonnées `custom.lamp_x` / `custom.lamp_y` (entiers 0–100).

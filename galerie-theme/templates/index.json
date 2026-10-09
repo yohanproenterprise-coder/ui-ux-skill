@@ -214,66 +214,12 @@
       "type": "cta-banner",
       "settings": {}
     },
-    "lamp": {
-      "type": "scroll-lamp",
-      "blocks": {
-        "s1": {
-          "type": "step",
-          "settings": {
-            "kicker": "Chapitre 1",
-            "heading": "Dans le noir,",
-            "accent": "rien.",
-            "text": "Une pièce sans lumière n'a ni forme ni caractère.",
-            "from": 0,
-            "to": 22
-          }
-        },
-        "s2": {
-          "type": "step",
-          "settings": {
-            "kicker": "Chapitre 2",
-            "heading": "Un geste,",
-            "accent": "et tout change.",
-            "text": "La lumière dessine l'espace, révèle les matières, installe l'ambiance.",
-            "from": 24,
-            "to": 47
-          }
-        },
-        "s3": {
-          "type": "step",
-          "settings": {
-            "kicker": "Chapitre 3",
-            "heading": "Le marbre",
-            "accent": "s'illumine.",
-            "text": "Cuivre poli et marbre naturel : la lumière traverse la pierre et révèle toutes ses veines.",
-            "from": 58,
-            "to": 72
-          }
-        },
-        "s4": {
-          "type": "step",
-          "settings": {
-            "heading": "À vous de",
-            "accent": "l'allumer.",
-            "button_label": "Découvrir ce luminaire",
-            "from": 80,
-            "to": 100,
-            "show_product": true
-          }
-        }
-      },
-      "block_order": [
-        "s1",
-        "s2",
-        "s3",
-        "s4"
-      ],
+    "lamps": {
+      "type": "featured-lamps",
       "settings": {
-        "product": "all-copper-marble-led-pendant-lamp-simple-light-restaurant-bar-counter-luxury-small-chandelier-bedroom-bedside-lighting",
-        "mode": "product",
-        "lamp_style": "tubes",
-        "kelvin_end": 3000,
-        "lamp_x": 60,
+        "count": 3,
+        "scroll_length": 240,
+        "lamp_x": 55,
         "lamp_y": 50
       }
     }
@@ -283,7 +229,7 @@
     "trust",
     "rooms",
     "featured",
-    "lamp",
+    "lamps",
     "marquee",
     "light",
     "story",

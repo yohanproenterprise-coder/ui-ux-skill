@@ -1,0 +1,69 @@
+{%- comment -%}
+  Une scène « le luminaire s'allume au scroll » pour un produit.
+  Paramètres : product, settings (section.settings), index
+{%- endcomment -%}
+{%- liquid
+  assign lx = product.metafields.custom.lamp_x | default: settings.lamp_x
+  assign ly = product.metafields.custom.lamp_y | default: settings.lamp_y
+-%}
+<section
+  class="sl sl-product-mode"
+  data-scroll-lamp
+  data-mode="product"
+  data-k-start="{{ settings.kelvin_start }}"
+  data-k-end="{{ settings.kelvin_end }}"
+  style="--sl-h:{{ settings.scroll_length }}vh;--sl-lx:{{ lx }}%;--sl-ly:{{ ly }}%"
+  aria-label="{{ product.title | escape }}"
+>
+  <div class="sl-stage">
+    <div class="sl-glow" aria-hidden="true"></div>
+    <div class="sl-photos" aria-hidden="true">
+      {%- for image in product.images limit: 3 -%}
+        <div class="sl-photo{% if forloop.first %} on{% endif %}" data-photo data-lx="{{ lx }}" data-ly="{{ ly }}">
+          {{ image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '700, 1000, 1400', sizes: '(min-width: 980px) 50vw, 100vw', alt: product.title, class: 'lyr base' }}
+        </div>
+      {%- endfor -%}
+    </div>
+    <canvas class="sl-dust" data-sl-dust aria-hidden="true"></canvas>
+
+    <div class="wrap sl-copy">
+      <div class="sl-step" data-step data-from="0" data-to="22">
+        <p class="kicker">{{ product.type | default: settings.kicker }}</p>
+        <h2 class="h2">{{ settings.h1 }} <em>{{ settings.a1 }}</em></h2>
+      </div>
+      <div class="sl-step" data-step data-from="24" data-to="47">
+        <h2 class="h2">{{ settings.h2 }} <em>{{ settings.a2 }}</em></h2>
+        <p class="sub">{{ settings.t2 }}</p>
+      </div>
+      <div class="sl-step" data-step data-from="58" data-to="72">
+        <h2 class="h2">{{ product.title }}</h2>
+        {%- assign excerpt = product.description | strip_html | strip_newlines | truncate: 150 -%}
+        {%- if excerpt != blank -%}<p class="sub">{{ excerpt }}</p>{%- endif -%}
+      </div>
+      <div class="sl-step" data-step data-from="80" data-to="100">
+        <h2 class="h2">{{ settings.h4 }} <em>{{ settings.a4 }}</em></h2>
+        <p class="sl-pname">{{ product.title }}<span>{% if product.price_varies %}dès {% endif %}{{ product.price | money_without_trailing_zeros }}</span></p>
+        <p style="margin-top:22px"><a class="btn solid" href="{{ product.url }}">{{ settings.button_label | default: 'Découvrir ce luminaire' }}</a></p>
+      </div>
+    </div>
+
+    <div class="sl-hud" aria-hidden="true">
+      <span class="sl-hint">Faites défiler</span>
+      <span class="sl-bar"><i data-sl-bar></i></span>
+    </div>
+  </div>
+</section>
+
+{%- if settings.show_description -%}
+  <section class="sl-desc">
+    <div class="wrap sl-desc-grid">
+      <div class="sl-desc-head rv">
+        <p class="kicker">{{ settings.desc_kicker }}</p>
+        <h2 class="h2">{{ product.title }}</h2>
+        <p class="sl-desc-price">{% if product.price_varies %}dès {% endif %}{{ product.price | money_without_trailing_zeros }}</p>
+        <p style="margin-top:26px"><a class="btn solid" href="{{ product.url }}">{{ settings.desc_button | default: 'Voir le luminaire' }}</a></p>
+      </div>
+      <div class="sl-desc-body rte rv" style="--d:140ms">{{ product.description }}</div>
+    </div>
+  </section>
+{%- endif -%}

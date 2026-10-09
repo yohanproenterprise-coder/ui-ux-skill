@@ -1,0 +1,39 @@
+{%- assign coll = section.settings.collection | default: collections.all -%}
+{%- for product in coll.products limit: section.settings.count -%}
+  {%- if product.images.size > 0 -%}
+    {% render 'scroll-lamp-stage', product: product, settings: section.settings, index: forloop.index0 %}
+  {%- endif -%}
+{%- endfor -%}
+
+<script src="{{ 'scroll-lamp.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Produits en scroll",
+  "settings": [
+    { "type": "paragraph", "content": "Chaque produit de la collection choisie reçoit sa propre scène : il sort de la pénombre et s'allume au défilement, avec ses vraies photos. Les 3 premières photos de chaque fiche sont utilisées : privilégiez des photos d'ambiance où le luminaire est allumé." },
+    { "type": "collection", "id": "collection", "label": "Produits mis en avant (collection)", "info": "Les produits s'affichent dans l'ordre de la collection." },
+    { "type": "range", "id": "count", "label": "Nombre de produits en scène", "min": 1, "max": 6, "step": 1, "default": 3 },
+    { "type": "range", "id": "scroll_length", "label": "Longueur du défilement par produit (% de la hauteur d'écran)", "min": 160, "max": 420, "step": 20, "default": 240 },
+    { "type": "range", "id": "lamp_x", "label": "Position du luminaire sur la photo : horizontale (%)", "info": "Réglable produit par produit avec la métadonnée de produit custom.lamp_x (nombre entier).", "min": 0, "max": 100, "step": 5, "default": 55 },
+    { "type": "range", "id": "lamp_y", "label": "Position du luminaire sur la photo : verticale (%)", "info": "Métadonnée de produit : custom.lamp_y.", "min": 0, "max": 100, "step": 5, "default": 50 },
+    { "type": "range", "id": "kelvin_start", "label": "Température au moment de l'allumage (K)", "min": 2200, "max": 4000, "step": 100, "default": 2200 },
+    { "type": "range", "id": "kelvin_end", "label": "Température finale (K)", "min": 2200, "max": 6500, "step": 100, "default": 3000 },
+    { "type": "header", "content": "Textes (identiques pour chaque produit)" },
+    { "type": "text", "id": "kicker", "label": "Sur-titre par défaut", "default": "Luminaire" },
+    { "type": "text", "id": "h1", "label": "Étape 1 — titre", "default": "Dans le noir," },
+    { "type": "text", "id": "a1", "label": "Étape 1 — mot mis en lumière", "default": "rien." },
+    { "type": "text", "id": "h2", "label": "Étape 2 — titre", "default": "Un geste," },
+    { "type": "text", "id": "a2", "label": "Étape 2 — mot mis en lumière", "default": "et tout change." },
+    { "type": "textarea", "id": "t2", "label": "Étape 2 — texte", "default": "La lumière dessine l'espace, révèle les matières, installe l'ambiance." },
+    { "type": "text", "id": "h4", "label": "Dernière étape — titre", "default": "À vous de" },
+    { "type": "text", "id": "a4", "label": "Dernière étape — mot mis en lumière", "default": "l'allumer." },
+    { "type": "text", "id": "button_label", "label": "Dernière étape — bouton", "default": "Découvrir ce luminaire" },
+    { "type": "header", "content": "Description sous chaque scène" },
+    { "type": "checkbox", "id": "show_description", "label": "Afficher la description du produit", "default": true },
+    { "type": "text", "id": "desc_kicker", "label": "Sur-titre", "default": "Le luminaire" },
+    { "type": "text", "id": "desc_button", "label": "Bouton", "default": "Voir le luminaire" }
+  ],
+  "presets": [{ "name": "Produits en scroll" }]
+}
+{% endschema %}

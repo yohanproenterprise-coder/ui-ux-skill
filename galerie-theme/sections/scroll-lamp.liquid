@@ -22,7 +22,7 @@
       <div class="sl-glow" aria-hidden="true"></div>
       <div class="sl-photos" aria-hidden="true">
         {%- for image in product.images limit: 3 -%}
-          <div class="sl-photo{% if forloop.first %} on{% endif %}" data-photo>
+          <div class="sl-photo{% if forloop.first %} on{% endif %}" data-photo data-lx="{{ section.settings.lamp_x }}" data-ly="{{ section.settings.lamp_y }}">
             {{ image | image_url: width: 1400 | image_tag: loading: 'lazy', widths: '700, 1000, 1400', sizes: '(min-width: 980px) 50vw, 100vw', alt: product.title, class: 'lyr base' }}
           </div>
         {%- endfor -%}
