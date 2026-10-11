@@ -1,32 +1,7 @@
 {
   "sections": {
     "hero": {
-      "type": "hero",
-      "blocks": {
-        "b1": {
-          "type": "point",
-          "settings": {
-            "text": "Paiement sécurisé"
-          }
-        },
-        "b2": {
-          "type": "point",
-          "settings": {
-            "text": "Plusieurs tailles & finitions"
-          }
-        },
-        "b3": {
-          "type": "point",
-          "settings": {
-            "text": "LED incluses (selon modèle)"
-          }
-        }
-      },
-      "block_order": [
-        "b1",
-        "b2",
-        "b3"
-      ],
+      "type": "hero-letters",
       "settings": {}
     },
     "trust": {
@@ -217,25 +192,78 @@
     "lamps": {
       "type": "featured-lamps",
       "settings": {
-        "count": 3,
+        "count": 2,
         "scroll_length": 240,
         "lamp_x": 55,
         "lamp_y": 50
       }
+    },
+    "band": {
+      "type": "kinetic-band",
+      "settings": {}
+    },
+    "giant": {
+      "type": "collection-giant",
+      "settings": {
+        "count": 9
+      }
+    },
+    "atelier": {
+      "type": "atelier-3d",
+      "blocks": {
+        "m1": {
+          "type": "model",
+          "settings": {
+            "style": "cylinder"
+          }
+        },
+        "m2": {
+          "type": "model",
+          "settings": {
+            "style": "bar"
+          }
+        },
+        "m3": {
+          "type": "model",
+          "settings": {
+            "style": "globes"
+          }
+        },
+        "m4": {
+          "type": "model",
+          "settings": {
+            "style": "ring"
+          }
+        }
+      },
+      "block_order": [
+        "m1",
+        "m2",
+        "m3",
+        "m4"
+      ],
+      "settings": {}
+    },
+    "film": {
+      "type": "film-vertical",
+      "settings": {}
+    },
+    "finale": {
+      "type": "finale-cinema",
+      "settings": {}
     }
   },
   "order": [
     "hero",
-    "trust",
-    "rooms",
-    "featured",
+    "band",
+    "giant",
     "lamps",
-    "marquee",
+    "atelier",
     "light",
+    "film",
     "story",
-    "reviews",
     "faq",
     "newsletter",
-    "cta"
+    "finale"
   ]
 }

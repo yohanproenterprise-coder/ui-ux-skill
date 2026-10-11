@@ -27,7 +27,7 @@
 
     {% render 'meta-tags' %}
 
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@300;400;500;600&display=swap">
 
     <style>
       :root {
@@ -41,13 +41,14 @@
         --accent-soft: rgba({{ acc.red }}, {{ acc.green }}, {{ acc.blue }}, 0.18);
         --accent-text: {{ settings.color_accent_text }};
         --line: rgba(255, 235, 200, 0.12);
-        --serif: 'Cormorant Garamond', Georgia, serif;
-        --sans: 'Jost', system-ui, sans-serif;
+        --serif: 'Instrument Serif', Georgia, serif;
+        --sans: 'Hanken Grotesk', system-ui, sans-serif;
         --container: {{ settings.container_width }}px;
       }
     </style>
 
     {{ 'base.css' | asset_url | stylesheet_tag }}
+    {{ 'letters.css' | asset_url | stylesheet_tag }}
 
     {{ content_for_header }}
   </head>
@@ -64,6 +65,10 @@
     {% sections 'footer-group' %}
 
     {% section 'cart-drawer' %}
+
+    {%- if settings.enable_grain -%}<div class="fx-grain" aria-hidden="true"></div><div class="fx-vig" aria-hidden="true"></div>{%- endif -%}
+    {%- if settings.enable_cursor -%}<div class="fx-cur" data-fx-cur aria-hidden="true"></div>{%- endif -%}
+    {%- if settings.enable_sound -%}<button type="button" class="fx-snd" data-fx-snd aria-pressed="false" aria-label="Activer ou couper le son d'ambiance"><i></i><span>Son</span></button>{%- endif -%}
 
     {%- if settings.enable_halo -%}
       <div class="halo" data-halo aria-hidden="true"></div>
@@ -85,5 +90,6 @@
       };
     </script>
     <script src="{{ 'theme.js' | asset_url }}" defer></script>
+    <script src="{{ 'fx.js' | asset_url }}" defer></script>
   </body>
 </html>

@@ -52,3 +52,22 @@ La page d'accueil utilise la section **Produits en scroll** : chaque produit de 
 - **Choisir les produits** : dans l'éditeur, section « Produits en scroll » → collection. Créez une collection « Mis en avant » et placez-y les produits voulus, dans l'ordre voulu.
 - **Photos** : les 3 premières photos de la fiche sont utilisées. Le rendu est conçu pour des photos d'ambiance où le luminaire est allumé ; sur des photos détourées à fond blanc, l'effet est beaucoup moins réussi.
 - **Position du luminaire** : réglage global dans la section, ou par produit avec les métadonnées `custom.lamp_x` / `custom.lamp_y` (entiers 0–100).
+
+
+## Direction « Lettres » (v2 du thème)
+
+Le thème suit maintenant la direction typographique cinétique : noir, ambre, Anton + Instrument Serif + Hanken Grotesk, grain de pellicule.
+
+**Accueil** (modifiable section par section dans l'éditeur) :
+1. **Accueil en lettres** : un mot géant (par défaut LUMIÈRE) rempli par vos photos. Il s'allume lettre par lettre (néon), on zoome dans une lettre jusqu'à la photo plein cadre, puis iris vers deux autres photos et trois chapitres de texte. Sans photo choisie, il reprend les photos des premiers produits de la collection : rien n'est lié à un produit en particulier.
+2. **Bandeau cinétique** : un mot qui défile et s'incline avec la vitesse.
+3. **Lignes géantes** : la collection en noms géants. Au survol : remplissage ambre et aperçu photo du produit qui suit le curseur (sur mobile : miniature).
+4. **Produits en scroll** : la scène « photo qui s'allume » pour les 2 premiers produits de la collection.
+5. **Atelier 3D** : 4 formes (cylindre, barre à tubes, globes, couronne), rotation au doigt, teinte 2200–4000 K, allumé/éteint. Chaque forme peut être liée à un produit (nom, prix, lien).
+6. **Film vertical** (masqué sans vidéo), **Finale** avec braises.
+
+**Fiches produit** : même ouverture que l'accueil, avec le nom du produit et ses 3 premières photos, puis la fiche habituelle. Le bouton final défile vers les options d'achat. Réglable (ou désactivable) dans la section « Produit ». Un bouton « Éteindre » assombrit la photo principale pour la voir s'allumer.
+
+**Effets globaux** (Réglages du thème → Animations → Effets cinéma) : grain et vignettage, curseur lumineux, bouton de son d'ambiance (le son ne démarre que sur clic).
+
+Tous les effets respectent « réduire les animations » du système. Les photos d'ambiance (luminaire allumé) donnent le meilleur résultat : sur des détourés à fond blanc, l'effet est moins réussi.

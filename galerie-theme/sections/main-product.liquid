@@ -7,8 +7,34 @@
   endif
   assign swatch_map = section.settings.swatches | newline_to_br | strip_newlines | split: '<br />'
 -%}
+{%- if section.settings.letters_intro -%}
+  {%- liquid
+    assign pw = product.title
+    if pw.size > 14
+      assign pw = pw | split: ' ' | first
+    endif
+    assign im1 = product.images[0]
+    assign im2 = product.images[1]
+    assign im3 = product.images[2]
+    assign pprice = current_variant.price | divided_by: 100
+    assign excerpt = product.description | strip_html | strip_newlines | truncate: 150
+  -%}
+  {% render 'letters-stage',
+    id: section.id,
+    word: pw,
+    img1: im1, img2: im2, img3: im3,
+    tagline: product.type,
+    length: 5,
+    s1k: product.type, s1h: section.settings.s1_heading, s1a: section.settings.s1_accent, s1t: excerpt,
+    s2k: section.settings.s2_kicker, s2h: section.settings.s2_heading, s2a: section.settings.s2_accent, s2t: section.settings.s2_text,
+    s3k: product.title, s3h: section.settings.s3_heading, s3a: section.settings.s3_accent,
+    price: pprice, btn_label: section.settings.s3_button, btn_href: '#buy', btn_buy: true
+  %}
+  <script src="{{ 'letters.js' | asset_url }}" defer></script>
+{%- endif -%}
 
-<div class="wrap" data-product-section data-section-id="{{ section.id }}">
+
+<div class="wrap" id="buy" data-product-section data-section-id="{{ section.id }}">
   <nav class="crumbs" aria-label="Fil d'Ariane">
     <a href="{{ routes.root_url }}">Accueil</a> /
     {%- if collection -%}<a href="{{ collection.url }}">{{ collection.title }}</a> /{%- endif %}
@@ -17,7 +43,7 @@
 
   <div class="pgrid">
     <div class="gal" data-gallery>
-      <div class="main">
+      <div class="main"{% if settings.enable_card_tilt %} data-tilt{% endif %}>
         {%- for media in product.media -%}
           <div class="slide{% if media.id == current_variant.featured_media.id or forloop.first and current_variant.featured_media == blank %} on{% endif %}" data-media-id="{{ media.id }}">
             {%- if media.media_type == 'image' -%}
@@ -30,6 +56,7 @@
           </div>
         {%- endfor -%}
         {%- if product.media.size == 0 -%}{{ 'product-1' | placeholder_svg_tag }}{%- endif -%}
+        {%- if product.media.size > 0 -%}<button type="button" class="amb" data-amb aria-pressed="false"><i></i><span>Éteindre</span></button>{%- endif -%}
       </div>
       {%- if product.media.size > 1 -%}
         <div class="thumbs">
@@ -181,6 +208,16 @@
   "name": "Produit",
   "tag": "section",
   "settings": [
+    { "type": "checkbox", "id": "letters_intro", "label": "Ouverture en lettres (le nom du produit rempli par ses photos)", "info": "Utilise les 3 premières photos du produit. Désactivez-la pour une fiche classique.", "default": true },
+    { "type": "text", "id": "s1_heading", "label": "Chapitre 1 — titre", "default": "La lumière" },
+    { "type": "text", "id": "s1_accent", "label": "Chapitre 1 — mot mis en lumière", "default": "révélée." },
+    { "type": "text", "id": "s2_kicker", "label": "Chapitre 2 — sur-titre", "default": "Les détails" },
+    { "type": "text", "id": "s2_heading", "label": "Chapitre 2 — titre", "default": "Chaque matière" },
+    { "type": "text", "id": "s2_accent", "label": "Chapitre 2 — mot mis en lumière", "default": "compte." },
+    { "type": "text", "id": "s2_text", "label": "Chapitre 2 — texte", "default": "Photos réelles du produit, éclairées au fil du défilement." },
+    { "type": "text", "id": "s3_heading", "label": "Chapitre 3 — titre", "default": "À vous de" },
+    { "type": "text", "id": "s3_accent", "label": "Chapitre 3 — mot mis en lumière", "default": "l'allumer." },
+    { "type": "text", "id": "s3_button", "label": "Chapitre 3 — bouton", "default": "Choisir mes options" },
     { "type": "textarea", "id": "swatches", "label": "Pastilles de couleur", "info": "Une ligne par couleur : Nom:#code. Exemple : Noir:#141414", "default": "Noir:#141414\nBlanc:#f2f2f2\nOr:#c9a24a\nArgent:#c8ccd0\nRouge:#b3261e\nBleu:#2d5db3\nOrange:#e8742a\nVert:#4f7a5a\nGris:#8b8d8f" }
   ],
   "blocks": [
