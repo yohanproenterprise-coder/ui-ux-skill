@@ -1,0 +1,55 @@
+{%- liquid
+  assign btn_link = section.settings.button_link | default: routes.all_products_collection_url
+  assign coll = section.settings.collection | default: collections.all
+  assign p1 = coll.products[0]
+  assign p2 = coll.products[1]
+  assign p3 = coll.products[2]
+  assign img1 = section.settings.image_1 | default: p1.featured_image
+  assign img2 = section.settings.image_2 | default: p2.featured_image
+  assign img3 = section.settings.image_3 | default: p3.featured_image
+-%}
+{% render 'letters-stage',
+  id: section.id,
+  word: section.settings.word,
+  img1: img1, img2: img2, img3: img3,
+  tagline: section.settings.tagline,
+  length: section.settings.length,
+  s1k: section.settings.s1_kicker, s1h: section.settings.s1_heading, s1a: section.settings.s1_accent, s1t: section.settings.s1_text,
+  s2k: section.settings.s2_kicker, s2h: section.settings.s2_heading, s2a: section.settings.s2_accent, s2t: section.settings.s2_text,
+  s3k: section.settings.s3_kicker, s3h: section.settings.s3_heading, s3a: section.settings.s3_accent,
+  btn_label: section.settings.button_label, btn_href: btn_link
+%}
+<script src="{{ 'letters.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Accueil en lettres",
+  "settings": [
+    { "type": "paragraph", "content": "Un mot géant rempli par vos photos. Il s'allume lettre par lettre ; au défilement on entre dans une lettre, la photo passe en plein cadre, puis deux autres photos suivent. Sans photo choisie, ce sont celles des premiers produits de la collection." },
+    { "type": "text", "id": "word", "label": "Mot géant", "info": "Court (4 à 9 lettres), en majuscules. Exemple : LUMIÈRE.", "default": "LUMIÈRE" },
+    { "type": "text", "id": "tagline", "label": "Phrase au-dessus du mot", "default": "Luminaires design" },
+    { "type": "collection", "id": "collection", "label": "Collection source des photos (si aucune photo choisie)" },
+    { "type": "image_picker", "id": "image_1", "label": "Photo 1 (dans les lettres)" },
+    { "type": "image_picker", "id": "image_2", "label": "Photo 2 (iris)" },
+    { "type": "image_picker", "id": "image_3", "label": "Photo 3 (iris)" },
+    { "type": "range", "id": "length", "label": "Longueur du défilement (écrans)", "min": 4, "max": 9, "step": 1, "default": 6 },
+    { "type": "header", "content": "Chapitre 1" },
+    { "type": "text", "id": "s1_kicker", "label": "Sur-titre", "default": "Luminaires design" },
+    { "type": "text", "id": "s1_heading", "label": "Titre", "default": "La lumière" },
+    { "type": "text", "id": "s1_accent", "label": "Mot mis en lumière", "default": "sculptée." },
+    { "type": "textarea", "id": "s1_text", "label": "Texte", "default": "Des suspensions, des appliques et des lampes qui s'allument comme une scène." },
+    { "type": "header", "content": "Chapitre 2" },
+    { "type": "text", "id": "s2_kicker", "label": "Sur-titre", "default": "La matière" },
+    { "type": "text", "id": "s2_heading", "label": "Titre", "default": "Chaque détail" },
+    { "type": "text", "id": "s2_accent", "label": "Mot mis en lumière", "default": "révélé." },
+    { "type": "textarea", "id": "s2_text", "label": "Texte", "default": "Pierre, métal, verre ou bois : la lumière fait ressortir les matières." },
+    { "type": "header", "content": "Chapitre 3" },
+    { "type": "text", "id": "s3_kicker", "label": "Sur-titre", "default": "La collection" },
+    { "type": "text", "id": "s3_heading", "label": "Titre", "default": "À vous de" },
+    { "type": "text", "id": "s3_accent", "label": "Mot mis en lumière", "default": "l'allumer." },
+    { "type": "text", "id": "button_label", "label": "Bouton", "default": "Voir la collection" },
+    { "type": "url", "id": "button_link", "label": "Lien du bouton" }
+  ],
+  "presets": [{ "name": "Accueil en lettres" }]
+}
+{% endschema %}

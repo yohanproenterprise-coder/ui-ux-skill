@@ -1,0 +1,50 @@
+{%- comment -%}
+  Carte produit.
+  Paramètres : product, index (optionnel), loading ('lazy'|'eager'), sizes, reveal (true|false)
+{%- endcomment -%}
+{%- liquid
+  assign p = product
+  assign card_loading = loading | default: 'lazy'
+  assign card_sizes = sizes | default: '(min-width: 1100px) 25vw, (min-width: 640px) 33vw, 50vw'
+  assign alt_1 = p.featured_image.alt | default: p.title
+  assign second = p.images[1]
+  assign delay = index | default: 0 | modulo: 4 | times: 80
+  assign on_sale = false
+  if p.compare_at_price > p.price
+    assign on_sale = true
+  endif
+-%}
+<article class="card{% if reveal %} rv{% endif %}"{% if settings.enable_card_tilt %} data-tilt{% endif %} style="--d:{{ delay }}ms">
+  <a href="{{ p.url }}" class="card-link"><span class="sr-only">{{ p.title | escape }}</span></a>
+  <div class="im">
+    {%- if p.featured_image -%}
+      {{ p.featured_image | image_url: width: 640 | image_tag: loading: card_loading, widths: '240, 360, 480, 640', sizes: card_sizes, alt: alt_1 }}
+      {%- if second -%}
+        {{ second | image_url: width: 640 | image_tag: loading: 'lazy', widths: '240, 360, 480, 640', sizes: card_sizes, alt: '' }}
+      {%- endif -%}
+    {%- else -%}
+      {{ 'product-1' | placeholder_svg_tag }}
+    {%- endif -%}
+    <div class="shine"></div>
+    <div class="badges">
+      {%- unless p.available -%}<span class="badge">Épuisé</span>{%- endunless -%}
+      {%- if on_sale and p.available -%}<span class="badge sale">Promo</span>{%- endif -%}
+    </div>
+  </div>
+  <div class="info">
+    <div>
+      <h3>{{ p.title }}</h3>
+      {%- if p.type != blank -%}<small>{{ p.type }}</small>{%- endif -%}
+    </div>
+    <div class="price">
+      {%- if p.price_varies -%}<span>dès</span>{%- endif -%}
+      {{ p.price | money_without_trailing_zeros }}
+      {%- if on_sale and p.price_varies == false -%}<s>{{ p.compare_at_price | money_without_trailing_zeros }}</s>{%- endif -%}
+    </div>
+  </div>
+  {%- if p.available and p.variants.size == 1 -%}
+    <button type="button" class="add" data-quick-add data-variant-id="{{ p.selected_or_first_available_variant.id }}">Ajouter au panier</button>
+  {%- else -%}
+    <span class="add" style="pointer-events:none">{% if p.available %}Choisir mes options{% else %}Épuisé{% endif %}</span>
+  {%- endif -%}
+</article>

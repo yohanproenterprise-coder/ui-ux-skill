@@ -1,0 +1,65 @@
+<footer class="footer">
+  <div class="wrap">
+    <div class="f-grid" style="--cols:{{ section.blocks.size | at_least: 1 }}">
+      <div>
+        <a href="{{ routes.root_url }}" class="logo"><i></i>{{ shop.name }}</a>
+        {%- if section.settings.about != blank -%}<p class="about">{{ section.settings.about }}</p>{%- endif -%}
+        <div class="soc">
+          {%- if settings.social_instagram != blank -%}<a href="{{ settings.social_instagram }}" target="_blank" rel="noopener" aria-label="Instagram">IG</a>{%- endif -%}
+          {%- if settings.social_pinterest != blank -%}<a href="{{ settings.social_pinterest }}" target="_blank" rel="noopener" aria-label="Pinterest">PIN</a>{%- endif -%}
+          {%- if settings.social_tiktok != blank -%}<a href="{{ settings.social_tiktok }}" target="_blank" rel="noopener" aria-label="TikTok">TT</a>{%- endif -%}
+          {%- if settings.social_facebook != blank -%}<a href="{{ settings.social_facebook }}" target="_blank" rel="noopener" aria-label="Facebook">FB</a>{%- endif -%}
+          {%- if settings.social_youtube != blank -%}<a href="{{ settings.social_youtube }}" target="_blank" rel="noopener" aria-label="YouTube">YT</a>{%- endif -%}
+        </div>
+      </div>
+      {%- for block in section.blocks -%}
+        <div {{ block.shopify_attributes }}>
+          <h4>{{ block.settings.title }}</h4>
+          <ul>
+            {%- for link in linklists[block.settings.menu].links -%}
+              <li><a href="{{ link.url }}">{{ link.title }}</a></li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      {%- endfor -%}
+    </div>
+
+    <div class="f-bot">
+      <span>© {{ 'now' | date: '%Y' }} {{ shop.name }}</span>
+      {%- if shop.policies.size > 0 -%}
+        <div class="f-pol">
+          {%- for policy in shop.policies -%}<a href="{{ policy.url }}">{{ policy.title }}</a>{%- endfor -%}
+        </div>
+      {%- endif -%}
+      {%- if section.settings.show_payment_icons and shop.enabled_payment_types.size > 0 -%}
+        <div class="pay">
+          {%- for type in shop.enabled_payment_types -%}{{ type | payment_type_svg_tag: class: 'pay-icon' }}{%- endfor -%}
+        </div>
+      {%- endif -%}
+    </div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Pied de page",
+  "max_blocks": 4,
+  "settings": [
+    { "type": "textarea", "id": "about", "label": "Texte de présentation", "default": "Luminaires design pour des intérieurs qui se remarquent : suspensions, appliques, lampes et plafonniers." },
+    { "type": "checkbox", "id": "show_payment_icons", "label": "Afficher les moyens de paiement", "default": true }
+  ],
+  "blocks": [
+    {
+      "type": "menu",
+      "name": "Menu",
+      "settings": [
+        { "type": "text", "id": "title", "label": "Titre", "default": "Boutique" },
+        { "type": "link_list", "id": "menu", "label": "Menu", "default": "footer" }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Pied de page", "blocks": [{ "type": "menu" }] }
+  ]
+}
+{% endschema %}

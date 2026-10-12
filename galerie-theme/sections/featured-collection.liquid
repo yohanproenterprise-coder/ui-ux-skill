@@ -1,0 +1,42 @@
+{%- assign coll = section.settings.collection | default: collections.all -%}
+<section class="section{% if section.settings.alt_bg %} alt{% endif %}">
+  <div class="wrap">
+    <div class="sh">
+      <div>
+        {%- if section.settings.kicker != blank -%}<p class="kicker rv">{{ section.settings.kicker }}</p>{%- endif -%}
+        <h2 class="h2 rv">{{ section.settings.heading }} <em>{{ section.settings.accent }}</em></h2>
+        {%- if section.settings.text != blank -%}<p class="sub rv">{{ section.settings.text }}</p>{%- endif -%}
+      </div>
+    </div>
+
+    <div class="grid" style="--cols:{{ section.settings.columns }}">
+      {%- for product in coll.products limit: section.settings.count -%}
+        {% render 'product-card', product: product, index: forloop.index0, reveal: true %}
+      {%- else -%}
+        <p class="sub">Ajoutez des produits à cette collection pour les voir apparaître ici.</p>
+      {%- endfor -%}
+    </div>
+
+    {%- if section.settings.button_label != blank -%}
+      <div class="more rv"><a class="btn" href="{{ coll.url | default: routes.all_products_collection_url }}">{{ section.settings.button_label }}</a></div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Produits vedettes",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Sur-titre", "default": "La collection" },
+    { "type": "text", "id": "heading", "label": "Titre", "default": "Pièces" },
+    { "type": "text", "id": "accent", "label": "Mot mis en lumière", "default": "signature" },
+    { "type": "textarea", "id": "text", "label": "Texte (optionnel)" },
+    { "type": "collection", "id": "collection", "label": "Collection (vide = tous les produits)" },
+    { "type": "range", "id": "count", "label": "Nombre de produits", "min": 2, "max": 16, "step": 2, "default": 8 },
+    { "type": "range", "id": "columns", "label": "Colonnes (ordinateur)", "min": 2, "max": 4, "step": 1, "default": 4 },
+    { "type": "text", "id": "button_label", "label": "Bouton « voir tout »", "default": "Voir toute la collection" },
+    { "type": "checkbox", "id": "alt_bg", "label": "Fond alterné", "default": false }
+  ],
+  "presets": [{ "name": "Produits vedettes" }]
+}
+{% endschema %}

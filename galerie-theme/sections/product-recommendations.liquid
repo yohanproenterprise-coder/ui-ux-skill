@@ -1,0 +1,22 @@
+<section class="section alt" data-recs data-url="{{ routes.product_recommendations_url }}?section_id={{ section.id }}&product_id={{ product.id }}&limit={{ section.settings.count }}&intent=related">
+  {%- if recommendations.performed and recommendations.products_count > 0 -%}
+    <div class="wrap">
+      <div class="sh"><div><p class="kicker">Vous aimerez aussi</p><h2 class="h2">{{ section.settings.heading }}</h2></div></div>
+      <div class="grid" style="--cols:4">
+        {%- for p in recommendations.products -%}
+          {% render 'product-card', product: p, index: forloop.index0, reveal: false %}
+        {%- endfor -%}
+      </div>
+    </div>
+  {%- endif -%}
+</section>
+
+{% schema %}
+{
+  "name": "Produits recommandés",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Titre", "default": "Complétez votre intérieur" },
+    { "type": "range", "id": "count", "label": "Nombre de produits", "min": 2, "max": 8, "step": 2, "default": 4 }
+  ]
+}
+{% endschema %}

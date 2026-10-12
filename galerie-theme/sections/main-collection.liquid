@@ -1,0 +1,108 @@
+{%- paginate collection.products by section.settings.per_page -%}
+  <div class="wrap">
+    <div class="chead">
+      <p class="kicker">Collection</p>
+      <h1 class="h2">{{ collection.title }}</h1>
+      {%- if collection.description != blank -%}<div class="sub rte">{{ collection.description }}</div>{%- endif -%}
+    </div>
+
+    <form class="coll-form" method="get" action="{{ collection.url }}" data-filter-form>
+      <div class="coll-bar">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          {%- if section.settings.enable_filtering and collection.filters.size > 0 -%}
+            <button type="button" class="chip btn filter-btn" data-toggle-filters style="padding:10px 20px">Filtrer</button>
+          {%- endif -%}
+          <span class="count">{{ collection.products_count }} luminaire{% if collection.products_count > 1 %}s{% endif %}</span>
+        </div>
+        {%- if section.settings.enable_sorting -%}
+          <label class="sr-only" for="sort-{{ section.id }}">Trier</label>
+          <select class="sel" id="sort-{{ section.id }}" name="sort_by" data-auto-submit>
+            {%- assign sort_by = collection.sort_by | default: collection.default_sort_by -%}
+            {%- for option in collection.sort_options -%}
+              <option value="{{ option.value }}"{% if option.value == sort_by %} selected{% endif %}>{{ option.name }}</option>
+            {%- endfor -%}
+          </select>
+        {%- endif -%}
+      </div>
+
+      <div class="coll-layout" {% unless section.settings.enable_filtering and collection.filters.size > 0 %}style="grid-template-columns:1fr"{% endunless %}>
+        {%- if section.settings.enable_filtering and collection.filters.size > 0 -%}
+          <aside class="facets" data-facets aria-label="Filtres">
+            {%- for filter in collection.filters -%}
+              <details class="facet"{% if filter.active_values.size > 0 or forloop.index <= 2 %} open{% endif %}>
+                <summary>{{ filter.label }}</summary>
+                {%- case filter.type -%}
+                  {%- when 'price_range' -%}
+                    <div class="price-in">
+                      <input type="number" name="{{ filter.min_value.param_name }}" placeholder="Min" min="0" {% if filter.min_value.value %}value="{{ filter.min_value.value | divided_by: 100 }}"{% endif %} aria-label="Prix minimum" data-auto-submit>
+                      <input type="number" name="{{ filter.max_value.param_name }}" placeholder="Max" min="0" {% if filter.max_value.value %}value="{{ filter.max_value.value | divided_by: 100 }}"{% endif %} aria-label="Prix maximum" data-auto-submit>
+                    </div>
+                  {%- else -%}
+                    <ul>
+                      {%- for value in filter.values -%}
+                        <li>
+                          <label class="{% if value.count == 0 and value.active == false %}dis{% endif %}">
+                            <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}"{% if value.active %} checked{% endif %}{% if value.count == 0 and value.active == false %} disabled{% endif %} data-auto-submit>
+                            {{ value.label }} <span style="opacity:.6">({{ value.count }})</span>
+                          </label>
+                        </li>
+                      {%- endfor -%}
+                    </ul>
+                {%- endcase -%}
+              </details>
+            {%- endfor -%}
+          </aside>
+        {%- endif -%}
+
+        <div>
+          {%- assign has_active = false -%}
+          {%- for filter in collection.filters -%}{%- if filter.active_values.size > 0 -%}{%- assign has_active = true -%}{%- endif -%}{%- endfor -%}
+          {%- if has_active -%}
+            <div class="active-f">
+              {%- for filter in collection.filters -%}
+                {%- for value in filter.active_values -%}<a href="{{ value.url_to_remove }}">{{ value.label }} ×</a>{%- endfor -%}
+                {%- if filter.type == 'price_range' and filter.min_value.value != nil or filter.max_value.value != nil -%}
+                  <a href="{{ filter.url_to_remove }}">Prix ×</a>
+                {%- endif -%}
+              {%- endfor -%}
+            </div>
+          {%- endif -%}
+
+          {%- if collection.products.size > 0 -%}
+            <div class="grid" style="--cols:{{ section.settings.columns }}">
+              {%- for product in collection.products -%}
+                {% render 'product-card', product: product, index: forloop.index0, reveal: true, loading: 'lazy' %}
+              {%- endfor -%}
+            </div>
+          {%- else -%}
+            <div class="empty"><p>Aucun produit ne correspond à votre sélection.</p><a class="btn" href="{{ collection.url }}">Réinitialiser</a></div>
+          {%- endif -%}
+
+          {%- if paginate.pages > 1 -%}
+            <nav class="pagination" aria-label="Pagination">
+              {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}">←</a>{%- endif -%}
+              {%- for part in paginate.parts -%}
+                {%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>
+                {%- elsif part.title == paginate.current_page -%}<span class="cur" aria-current="page">{{ part.title }}</span>
+                {%- else -%}<span>{{ part.title }}</span>{%- endif -%}
+              {%- endfor -%}
+              {%- if paginate.next -%}<a href="{{ paginate.next.url }}">→</a>{%- endif -%}
+            </nav>
+          {%- endif -%}
+        </div>
+      </div>
+    </form>
+  </div>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "Collection",
+  "settings": [
+    { "type": "range", "id": "columns", "label": "Colonnes (ordinateur)", "min": 2, "max": 4, "step": 1, "default": 3 },
+    { "type": "range", "id": "per_page", "label": "Produits par page", "min": 8, "max": 48, "step": 4, "default": 24 },
+    { "type": "checkbox", "id": "enable_filtering", "label": "Activer les filtres", "default": true },
+    { "type": "checkbox", "id": "enable_sorting", "label": "Activer le tri", "default": true }
+  ]
+}
+{% endschema %}

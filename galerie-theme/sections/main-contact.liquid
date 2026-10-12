@@ -1,0 +1,28 @@
+<div class="wrap">
+  <div class="page">
+    <h1>{{ page.title }}</h1>
+    <div class="rte">{{ page.content }}</div>
+
+    {%- form 'contact', class: 'fld' -%}
+      {%- if form.posted_successfully? -%}
+        <p class="ok" role="status">Merci ! Votre message a bien été envoyé, nous vous répondons rapidement.</p>
+      {%- endif -%}
+      {%- if form.errors -%}
+        <p class="err" role="alert">Veuillez vérifier les champs du formulaire.</p>
+      {%- endif -%}
+      <label class="sr-only" for="c-name">Nom</label>
+      <input id="c-name" type="text" name="contact[name]" placeholder="Votre nom" autocomplete="name" value="{{ form.name }}">
+      <label class="sr-only" for="c-email">Email</label>
+      <input id="c-email" type="email" name="contact[email]" placeholder="Votre email" autocomplete="email" required value="{{ form.email }}">
+      <label class="sr-only" for="c-body">Message</label>
+      <textarea id="c-body" name="contact[body]" rows="6" placeholder="Votre message" required>{{ form.body }}</textarea>
+      <button type="submit" class="btn solid">Envoyer</button>
+    {%- endform -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Page contact"
+}
+{% endschema %}
