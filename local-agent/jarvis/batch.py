@@ -90,9 +90,11 @@ def status():
         # le nettoyage par IA (0 à 100 %) représente environ les 3/4 du travail sur une photo
         s["photo_progress"] = int(p * .72) if (up.get("step") or "").startswith("Nettoyage") else p
         s["photo_step"] = up.get("step") or ""
-    if job["running"] and job["done"]:
-        per = (time.time() - job["started"]) / job["done"]
-        s["eta"] = int(per * (job["total"] - job["done"]))
+    s.pop("durations", None)
+    d = sorted(job.get("durations") or [])
+    if job["running"] and d:
+        # médiane des dernières photos : une mise en veille du PC ne fausse pas l'estimation
+        s["eta"] = int(d[len(d) // 2] * (job["total"] - job["done"]))
     return s
 
 
@@ -132,7 +134,7 @@ def start(folder, best=False, only_new=False):
             raise ValueError("Aucune photo dans ce dossier" + (f" (fichiers trouvés : {', '.join(others)})" if others else " (il est vide)")
                              + ". Formats acceptés : JPG, PNG, WEBP, AVIF, HEIC, TIFF, BMP.")
         job.update(running=True, folder=str(folder), out=str(out), total=len(files), done=0, current="",
-                   errors=[], started=time.time(), finished=0.0, cancel=False)
+                   errors=[], started=time.time(), finished=0.0, cancel=False, durations=[])
         try:
             import json
             _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best)}), encoding="utf-8")
@@ -152,6 +154,7 @@ def start(folder, best=False, only_new=False):
                     break
                 enhance_ai.ai_inpaint.yield_to_user()
                 job["current"] = f.name
+                t0 = time.time()
                 try:
                     img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
                     better, _ = enhance_ai.enhance(img, best)
@@ -167,6 +170,7 @@ def start(folder, best=False, only_new=False):
                     except OSError:
                         pass
                 job["done"] += 1
+                job["durations"] = (job.get("durations") or [])[-14:] + [time.time() - t0]
         finally:
             _stay_awake(False)
             job.update(running=False, current="", finished=time.time())
