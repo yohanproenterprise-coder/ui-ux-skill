@@ -376,11 +376,15 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/ai_install":
                     self._json(ai_inpaint.install(deps_only=bool(data.get("deps_only")), pack=data.get("pack", "lama")))
                 elif self.path == "/ai_upscale":
-                    self._json({"image": ai_inpaint.upscale(data.get("image", ""), data.get("factor", 2),
-                                                            data.get("quality", "fast"))})
+                    with ai_inpaint.user_priority():
+                        res = {"image": ai_inpaint.upscale(data.get("image", ""), data.get("factor", 2),
+                                                           data.get("quality", "fast"))}
+                    self._json(res)
                 elif self.path == "/ai_enhance":
                     from . import enhance_ai
-                    self._json(enhance_ai.enhance_data_url(data.get("image", ""), bool(data.get("best"))))
+                    with ai_inpaint.user_priority():
+                        res = enhance_ai.enhance_data_url(data.get("image", ""), bool(data.get("best")))
+                    self._json(res)
                 elif self.path == "/ai_warmup":
                     ai_inpaint.warmup()
                     self._json({"ok": True})
@@ -400,9 +404,13 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                     system.open_item(str(data.get("path", "")))
                     self._json({"ok": True})
                 elif self.path == "/ai_faces":
-                    self._json(ai_inpaint.restore_faces(data.get("image", ""), data.get("strength", 0.8)))
+                    with ai_inpaint.user_priority():
+                        res = ai_inpaint.restore_faces(data.get("image", ""), data.get("strength", 0.8))
+                    self._json(res)
                 elif self.path == "/ai_inpaint":
-                    self._json({"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))})
+                    with ai_inpaint.user_priority():
+                        res = {"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))}
+                    self._json(res)
                 elif self.path == "/save_image":
                     self._json(app.save_image(data.get("name"), data.get("data"), data.get("fmt"), data.get("quality", 92),
                                               data.get("source_path"), data.get("source_data"),

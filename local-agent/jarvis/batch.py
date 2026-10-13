@@ -78,7 +78,8 @@ def photos_in(folder):
 def status():
     s = dict(job)
     if job["running"]:  # avancement de la photo en cours (l'IA peut prendre du temps sur une grande photo)
-        up = enhance_ai.ai_inpaint.upscale_state
+        up = enhance_ai.ai_inpaint.batch_state
+        s["paused"] = bool(up.get("paused"))
         p = int(up.get("progress") or 0) if up.get("busy") or up.get("step") else 0
         # le nettoyage par IA (0 à 100 %) représente environ les 3/4 du travail sur une photo
         s["photo_progress"] = int(p * .72) if (up.get("step") or "").startswith("Nettoyage") else p
@@ -131,12 +132,14 @@ def start(folder, best=False, only_new=False):
         from PIL import Image, ImageOps
         out.mkdir(exist_ok=True)
         _stay_awake(True)
+        enhance_ai.ai_inpaint.set_background(True)   # les retouches du Studio passent en priorité
         if any(f.suffix.lower() in (".avif", ".heic", ".heif") for f in files):
             _register_formats()
         try:
             for f in files:
                 if job["cancel"]:
                     break
+                enhance_ai.ai_inpaint.yield_to_user()
                 job["current"] = f.name
                 try:
                     img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")

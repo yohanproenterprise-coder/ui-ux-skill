@@ -147,7 +147,9 @@ def restore(img, strength=0.7, fidelity=0.7, max_faces=8):
     out = img.convert("RGB")
     fast_ok = _have(*FAST_RESTORER)
     masks = {}
+    from . import ai_inpaint
     for _, box, pts in faces:
+        ai_inpaint.yield_to_user()
         # visage petit ou moyen : modèle rapide en 256 px (assez de détail) ; grand visage : CodeFormer en 512 px
         fast = fast_ok and (box[2] - box[0]) <= FAST_MAX
         size = 256 if fast else 512

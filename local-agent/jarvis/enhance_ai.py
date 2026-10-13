@@ -14,7 +14,8 @@ LARGE = 3200   # au-dessus, la photo est déjà très détaillée : on ne la net
 
 
 def _progress(p, step):
-    ai_inpaint.upscale_state.update(busy=True, progress=int(p), step=step)
+    ai_inpaint.yield_to_user()
+    ai_inpaint.ustate().update(busy=True, progress=int(p), step=step)
 
 
 def _blur(a, r):
@@ -110,7 +111,7 @@ def enhance(img, best=False):
         out = light_and_color(out)
         done.append("lumière et couleurs équilibrées")
     finally:
-        ai_inpaint.upscale_state.update(busy=False, progress=100, step="")
+        ai_inpaint.ustate().update(busy=False, progress=100, step="")
     return out, done
 
 

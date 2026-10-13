@@ -875,7 +875,7 @@
       const pct = st.total ? Math.round(100 * (st.done + (st.running ? (st.photo_progress || 0) / 100 : 0)) / st.total) : 0;
       q("#st-batch-bar").style.width = pct + "%";
       q("#st-batch-text").textContent = st.running
-        ? `${st.done} / ${st.total} photos${st.current ? " · " + st.current + " (" + (st.photo_progress || 0) + " %)" : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : " · la 1re photo sert à estimer le temps restant"}`
+        ? `${st.done} / ${st.total} photos${st.paused ? " · en pause le temps de ta retouche" : st.current ? " · " + st.current + " (" + (st.photo_progress || 0) + " %)" : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : " · la 1re photo sert à estimer le temps restant"}`
         : `Terminé : ${st.done - st.errors.length} photo(s) améliorée(s) dans « ${st.out} ».`;
       q("#st-batch-errors").textContent = st.errors.length ? `${st.errors.length} photo(s) ignorée(s) : ${st.errors.slice(0, 3).join(" ; ")}` : "";
       q("#st-batch-cancel").hidden = !st.running; q("#st-batch-back").hidden = st.running;

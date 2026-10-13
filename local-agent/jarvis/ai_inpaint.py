@@ -41,7 +41,46 @@ PACK_LABELS = {"enhance": "IA d'amélioration (≈ 530 Mo)","lama": "IA de retou
                "upmax": "agrandissement Qualité max (≈ 70 Mo)"}
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
-upscale_state = {"busy": False, "progress": 0}
+upscale_state = {"busy": False, "progress": 0}               # opérations lancées depuis le Studio
+batch_state = {"busy": False, "progress": 0, "step": "", "paused": False}   # amélioration de dossier
+_local = threading.local()
+_user_ops, _ops_lock, _user_idle = 0, threading.Lock(), threading.Event()
+_user_idle.set()
+
+
+def set_background(on):
+    """Le fil courant travaille en arrière-plan (dossier) : il cède la place aux retouches du Studio."""
+    _local.background = bool(on)
+
+
+def ustate():
+    """État d'avancement du travail en cours (Studio ou dossier, chacun le sien)."""
+    return batch_state if getattr(_local, "background", False) else upscale_state
+
+
+class user_priority:
+    """Pendant une retouche lancée depuis le Studio, l'amélioration de dossier se met en pause."""
+    def __enter__(self):
+        global _user_ops
+        with _ops_lock:
+            _user_ops += 1
+            _user_idle.clear()
+
+    def __exit__(self, *exc):
+        global _user_ops
+        with _ops_lock:
+            _user_ops -= 1
+            if _user_ops <= 0:
+                _user_ops = 0
+                _user_idle.set()
+
+
+def yield_to_user():
+    """Appelé régulièrement par le travail en arrière-plan : attend la fin des retouches du Studio."""
+    if getattr(_local, "background", False) and not _user_idle.is_set():
+        batch_state["paused"] = True
+        _user_idle.wait()
+        batch_state["paused"] = False
 _session, _last_use, _lock = None, 0.0, threading.Lock()
 _up_session = None
 
@@ -266,7 +305,7 @@ def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
     h, w = src.shape[:2]
     if h <= tile and w <= tile:  # tout tient en une fois : pas de découpe
         part = np.pad(src, ((0, h % 2), (0, w % 2), (0, 0)), mode="edge") if even else src
-        upscale_state["progress"] = int(progress[1])
+        ustate()["progress"] = int(progress[1])
         return run(part)[:h * scale, :w * scale]
     nx, ny = math.ceil(w / tile), math.ceil(h / tile)
     sx, sy = math.ceil(w / nx), math.ceil(h / ny)
@@ -274,6 +313,7 @@ def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
     wsum = np.zeros((h * scale, w * scale, 1), np.float32)
     tiles = [(x, y) for y in range(0, h, sy) for x in range(0, w, sx)]
     for n, (x, y) in enumerate(tiles):
+        yield_to_user()
         x0, y0, x1, y1 = max(0, x - pad), max(0, y - pad), min(w, x + sx + pad), min(h, y + sy + pad)
         part = src[y0:y1, x0:x1]
         ph, pw = part.shape[:2]
@@ -297,7 +337,7 @@ def _tiled(src, run, scale, tile, pad, progress=(0, 100), even=False):
         wgt = (wy[:, None] * wx[None, :])[..., None]
         acc[y0 * scale:y1 * scale, x0 * scale:x1 * scale] += res * wgt
         wsum[y0 * scale:y1 * scale, x0 * scale:x1 * scale] += wgt
-        upscale_state["progress"] = int(progress[0] + (progress[1] - progress[0]) * (n + 1) / len(tiles))
+        ustate()["progress"] = int(progress[0] + (progress[1] - progress[0]) * (n + 1) / len(tiles))
     acc /= np.maximum(wsum, 1e-6)
     return acc
 
@@ -333,13 +373,13 @@ def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
     if max(w, h) * factor > 8000:
         raise RuntimeError(f"Image trop grande pour ×{factor} (résultat limité à 8000 px). Réduis-la d'abord ou choisis ×2.")
     if quality == "max" and pack_ready("upmax"):
-        upscale_state.update(busy=True, progress=0)
+        ustate().update(busy=True, progress=0)
         try:
             res = _max_x2(img, progress=(0, 100 if factor == 2 else 50))
             if factor == 4:
                 res = _max_x2(res, progress=(50, 100))
         finally:
-            upscale_state["busy"] = False
+            ustate()["busy"] = False
         # 25 % d'agrandissement classique : grain réel conservé
         return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.25)
     if _up_session is None:
@@ -348,7 +388,7 @@ def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
         opts.log_severity_level = 3
         _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
-    upscale_state.update(busy=True, progress=0)
+    ustate().update(busy=True, progress=0)
     try:
         run = lambda part: _up_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
         out4 = _tiled(src, run, 4, tile, pad)
@@ -357,7 +397,7 @@ def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
             res = res.resize((w * factor, h * factor), Image.LANCZOS)
         out = np.asarray(res)
     finally:
-        upscale_state["busy"] = False
+        ustate()["busy"] = False
     # 35 % d'agrandissement classique : garde le grain réel (peau, matières) pour un rendu naturel
     res = Image.fromarray(out)
     return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.35)
@@ -376,11 +416,11 @@ def restore_faces(image_data_url, strength=0.8):
     from . import ai_face
     if not (_deps_ok() and pack_ready("faces")):
         raise RuntimeError("L'IA des visages n'est pas installée.")
-    upscale_state.update(busy=True, progress=10)
+    ustate().update(busy=True, progress=10)
     try:
         img, n = ai_face.restore(_decode(image_data_url, "RGB"), strength=float(strength), fidelity=1.0)
     finally:
-        upscale_state.update(busy=False, progress=100)
+        ustate().update(busy=False, progress=100)
     buf = io.BytesIO()
     img.save(buf, "PNG", compress_level=1)
     return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "faces": n}
