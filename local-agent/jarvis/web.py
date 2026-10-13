@@ -243,6 +243,16 @@ class App:
                 self.restart_server()
             return {**self.state(), "remote_active": want, "addresses": remote.addresses(self.port) if want else []}
         elif cmd == "update":
+            from . import batch
+            if batch.job["running"] and self.relaunch:
+                # un dossier de photos tourne : on ne le coupe pas, Jarvis redémarrera tout seul à la fin
+                message = updater.update(stage=True)
+                left = batch.job["total"] - batch.job["done"]
+                if self.relaunch not in batch.on_finish:
+                    batch.on_finish.append(self.relaunch)
+                return {**self.state(), "restarting": False,
+                        "message": message + f" Le dossier en cours n'est pas coupé : Jarvis l'installera et redémarrera "
+                                             f"tout seul à la fin ({left} photo{'s' if left > 1 else ''} restante{'s' if left > 1 else ''})."}
             message = updater.update()
             if self.relaunch:
                 self.relaunch()
@@ -475,6 +485,10 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 print("Une version plus récente de Jarvis prend le relais.")
                 os._exit(0)
             if state.get("relaunch"):
+                try:
+                    updater.apply_staged()
+                except Exception as e:
+                    print(f"Mise à jour en attente non appliquée : {e}")
                 argv = ARGV + ([] if "--no-browser" in ARGV else ["--no-browser"])
                 flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if Path(sys.executable).stem.lower() == "pythonw" else 0
                 subprocess.Popen(argv, cwd=str(updater.APP_DIR), creationflags=flags)

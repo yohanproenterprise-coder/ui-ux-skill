@@ -11,6 +11,12 @@ OUT_NAME = "Améliorées"
 job = {"running": False, "folder": "", "out": "", "total": 0, "done": 0, "current": "", "errors": [],
        "started": 0.0, "finished": 0.0, "cancel": False}
 _lock = threading.Lock()
+on_finish = []   # actions à faire quand le dossier en cours se termine (ex. redémarrer pour une mise à jour)
+
+
+def _resume_file():
+    from .config import HOME
+    return HOME / "dossier-en-cours.json"   # permet de reprendre le dossier si Jarvis est fermé en plein travail
 
 
 def _register_formats():
@@ -127,6 +133,11 @@ def start(folder, best=False, only_new=False):
                              + ". Formats acceptés : JPG, PNG, WEBP, AVIF, HEIC, TIFF, BMP.")
         job.update(running=True, folder=str(folder), out=str(out), total=len(files), done=0, current="",
                    errors=[], started=time.time(), finished=0.0, cancel=False)
+        try:
+            import json
+            _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best)}), encoding="utf-8")
+        except OSError:
+            pass
 
     def work():
         from PIL import Image, ImageOps
@@ -162,9 +173,18 @@ def start(folder, best=False, only_new=False):
             n = job["done"] - len(job["errors"])
             msg = (f"Arrêté : {n} photo(s) améliorée(s)" if job["cancel"] else f"{n} photo(s) améliorée(s)") + f" dans {out}"
             try:
+                _resume_file().unlink(missing_ok=True)   # terminé ou arrêté volontairement : rien à reprendre
+            except OSError:
+                pass
+            try:
                 system.notify("Jarvis — photos améliorées", msg)
             except Exception:
                 pass
+            while on_finish:
+                try:
+                    on_finish.pop(0)()
+                except Exception:
+                    pass
     threading.Thread(target=work, daemon=True).start()
     return status()
 
@@ -192,6 +212,16 @@ def start_watcher(cfg, every=30):
     """Vérifie régulièrement les dossiers surveillés et améliore les nouvelles photos, en arrière-plan."""
     def loop():
         time.sleep(15)
+        # dossier interrompu (Jarvis fermé, PC éteint, mise à jour…) : on reprend là où il en était
+        try:
+            import json
+            f = _resume_file()
+            if f.exists() and not job["running"] and enhance_ai.ai_inpaint._deps_ok():
+                r = json.loads(f.read_text(encoding="utf-8"))
+                if start(r["folder"], r.get("best", False), only_new=True) is None:
+                    f.unlink(missing_ok=True)
+        except Exception:
+            pass
         while True:
             for w in watch_list(cfg):
                 if job["running"]:

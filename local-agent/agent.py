@@ -16,6 +16,12 @@ import threading
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from jarvis import updater as _maj  # noqa: E402
+try:
+    _maj.apply_staged()  # mise à jour téléchargée pendant qu'un dossier de photos tournait
+except Exception as _e:
+    print(f"Mise à jour en attente non appliquée : {_e}")
+
 from jarvis import config, scheduler, system, updater  # noqa: E402
 from jarvis.config import MEMORY_FILE  # noqa: E402
 from jarvis.core import Agent, Brain  # noqa: E402
