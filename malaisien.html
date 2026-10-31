@@ -90,6 +90,7 @@ button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .intro .vi{font-weight:900;font-size:1.15rem}
 .intro .fr{color:var(--muted);font-size:.95rem}
 .intro .say{width:42px;height:42px;font-size:1.1rem;border-radius:12px}
+.ph{color:var(--muted);font-size:.92rem;font-style:italic}
 .note{background:var(--blue-l);border-radius:12px;padding:10px 14px;font-size:.9rem;margin-top:14px}
 
 /* ---------- bottom bar ---------- */
@@ -175,18 +176,19 @@ const TONE_LIST = [["cakap","parler","c se prononce « tch »"],["jalan","route"
 
 const LESSONS = [];
 UNITS.forEach((u,ui)=>{
-  u.words = u.words.map(([vi,fr])=>({vi,fr}));
+  u.words = u.words.map(([vi,fr,ph])=>({vi,fr,ph}));
   u.sents = u.sents.map(([vi,fr])=>({vi,fr}));
   const mk = (suffix,name,words,sents,rev)=>LESSONS.push({id:u.id+suffix,name,unit:u,ui,words,sents,rev});
-  mk("1","Mots 1",u.words.slice(0,6),u.sents.slice(0,2),false);
-  mk("2","Mots 2",u.words.slice(6),u.sents.slice(2),false);
-  mk("3","Révision",u.words,u.sents,true);
+  mk("1","Mots 1",u.words.slice(0,4),u.sents.slice(0,1),false);
+  mk("2","Mots 2",u.words.slice(4,8),u.sents.slice(1,2),false);
+  mk("3","Mots 3",u.words.slice(8),u.sents.slice(2),false);
+  mk("4","Révision",u.words,u.sents,true);
 });
 
 /* =====================================================================
    ÉTAT SAUVEGARDÉ
    ===================================================================== */
-const KEY = "selamat-v1";
+const KEY = "selamat-v2";
 let S = load();
 function load(){
   try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return s; }catch(e){}
@@ -314,7 +316,7 @@ function intro(){
     <div class="lbar"><button class="x" id="quit" aria-label="Quitter">✕</button><b>${L.unit.title} · ${L.name}</b></div>
     <div class="stage intro">
       <h1>Nouveaux mots</h1>
-      ${L.words.map(w=>`<div class="w"><button class="say" data-v="${w.vi}" aria-label="Écouter ${w.vi}">🔊</button><div><div class="vi">${w.vi}</div><div class="fr">${w.fr}</div></div></div>`).join("")}
+      ${L.words.map(w=>`<div class="w"><button class="say" data-v="${w.vi}" aria-label="Écouter ${w.vi}">🔊</button><div><div class="vi">${w.vi}</div><div class="fr">${w.fr}</div>${w.ph?`<div class="ph">🗣 ${w.ph}</div>`:""}</div></div>`).join("")}
       ${("speechSynthesis" in window)&&viVoice?"":`<div class="note">🔇 Aucune voix malaise détectée sur cet appareil : les exercices d'écoute sont désactivés.</div>`}
     </div>
     <div class="bottom"><button class="cta" id="go">C'est parti !</button></div>
@@ -330,7 +332,7 @@ function buildQueue(){
   const words = shuffle(L.words);
   const q = [];
   words.forEach((w,i)=>q.push({t:"mcq",dir:types[i%types.length],w}));
-  const pairs = pick(L.words,Math.min(5,L.words.length));
+  const pairs = pick(L.words,Math.min(4,L.words.length));
   q.splice(Math.min(4,q.length),0,{t:"match",pairs});
   L.sents.forEach(s=>{
     q.push({t:"build",dir:"fr2vi",s});
@@ -360,7 +362,7 @@ function beginQuiz(){
 }
 
 function hud(){
-  $("#hr").textContent = "❤️ " + hearts;
+  $("#hr").textContent = "";
   $("#pb").style.width = (Q.length? qi/Q.length*100 : 0) + "%";
 }
 
@@ -379,12 +381,12 @@ function show(){
 /* ---------- QCM ---------- */
 function renderMcq(st){
   const {dir,w}=ex;
-  if(!ex.opts) ex.opts = shuffle([w,...pick(L.unit.words.filter(x=>x!==w),3)]);
+  if(!ex.opts) ex.opts = shuffle([w,...pick(L.unit.words.filter(x=>x!==w),2)]);
   const toFr = dir==="vf"||dir==="listen";
   const title = dir==="listen" ? "Qu'est-ce que tu entends ?" : toFr ? "Que signifie ce mot ?" : "Comment dit-on en malais ?";
   const prompt = dir==="listen"
     ? `<button class="say" id="p1" aria-label="Écouter">🔊</button><button class="say slow" id="p2" aria-label="Écouter lentement">🐢</button>`
-    : toFr ? `<button class="say" id="p1" aria-label="Écouter">🔊</button><span class="big">${w.vi}</span>`
+    : toFr ? `<button class="say" id="p1" aria-label="Écouter">🔊</button><div><span class="big">${w.vi}</span>${w.ph?`<div class="ph">${w.ph}</div>`:""}</div>`
            : `<span class="big">${w.fr}</span>`;
   st.innerHTML = `<h1>${title}</h1><div class="prompt">${prompt}</div>
     <div class="opts">${ex.opts.map((o,i)=>`<button class="opt" data-i="${i}"><kbd>${i+1}</kbd>${toFr?o.fr:o.vi}</button>`).join("")}</div>`;
@@ -439,7 +441,7 @@ function renderBuild(st){
   const ans = tokens(toVi?s.vi:s.fr);
   if(!ex.bank){
     const others = L.unit.sents.filter(x=>x!==s).flatMap(x=>tokens(toVi?x.vi:x.fr)).filter(t=>!ans.includes(t));
-    ex.bank = shuffle([...ans,...pick([...new Set(others)],2)]).map((t,i)=>({t,i}));
+    ex.bank = shuffle([...ans,...pick([...new Set(others)],1)]).map((t,i)=>({t,i}));
   }
   const prompt = toVi
     ? `<div class="bubble">${s.fr}</div>`
@@ -478,7 +480,7 @@ function check(){
     btns.forEach((b,i)=>{ b.disabled=true; if(ex.opts[i]===ex.w)b.classList.add("good"); else if(i===sel)b.classList.add("bad"); b.classList.remove("sel"); });
     const right = toFr?ex.w.fr:ex.w.vi;
     if(ex.dir==="fv") speak(ex.w.vi);
-    feedback(ok, ok?"Correct !":"Mauvaise réponse", ok?`${ex.w.vi} = ${ex.w.fr}`:`Bonne réponse : ${right}`);
+    feedback(ok, ok?"Correct !":"Mauvaise réponse", ok?`${ex.w.vi} = ${ex.w.fr}${ex.w.ph?" ("+ex.w.ph+")":""}`:`Bonne réponse : ${right}`);
   }else if(ex.t==="build"){
     const toVi=ex.dir==="fr2vi";
     const target=tokens(toVi?ex.s.vi:ex.s.fr).join(" ");
@@ -489,10 +491,7 @@ function check(){
     feedback(ok, ok?"Excellent !":"Pas tout à fait", ok?`${ex.s.vi} = ${ex.s.fr}`:`Bonne réponse : ${toVi?ex.s.vi:ex.s.fr}`);
   }
 }
-function loseHeart(){
-  hearts--; hud();
-  if(hearts<=0){ phase="dead"; setTimeout(fail,700); }
-}
+function loseHeart(){}
 function feedback(ok,title,detail){
   phase="feedback";
   beep(ok);
@@ -501,7 +500,7 @@ function feedback(ok,title,detail){
   const cta=$("#cta"); cta.disabled=false; cta.textContent="Continuer";
   if(!ok){
     mistakes++;
-    if(ex.t!=="match"){ hearts--; Q.push({...ex,bank:null,opts:null}); hud(); }
+    if(ex.t!=="match"){ Q.push({...ex,bank:null,opts:null}); hud(); }
   } else if(ex.t==="match" && matchState.bad){ mistakes++; }
   hud();
 }
