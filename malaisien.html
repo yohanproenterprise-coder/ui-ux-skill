@@ -219,16 +219,33 @@ function ask(msg,yes){
   document.body.appendChild(m);
   $("#y",m).onclick=()=>{m.remove();yes()}; $("#n",m).onclick=()=>m.remove();
 }
-function toast(m){ const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function toast(m,ms=2200){ const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),ms); }
 
 let viVoice=null;
-function loadVoices(){ if(!("speechSynthesis" in window))return; viVoice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith("ms"))||null; }
+function loadVoices(){ if(!("speechSynthesis" in window))return; viVoice=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().replace("_","-").startsWith("ms"))||null; }
 if("speechSynthesis" in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+/* Voix de secours en ligne quand l'appareil n'a pas de voix malaise. Désactivée dans le viewer Claude, dont la sécurité bloque l'audio externe. */
+const CLOUD_OK = /^https?:$/.test(location.protocol)||location.protocol==="file:" ? !/claude/i.test(location.hostname) : false;
+const hasAudio = ()=>!!viVoice || CLOUD_OK;
+let curAudio=null;
+function noVoice(){ toast("Pas de voix malaise sur cet appareil. Ajoute-la dans les réglages de synthèse vocale.",3200); }
 function speak(t,rate=.85){
-  if(!("speechSynthesis" in window)){toast("Audio non disponible sur cet appareil");return}
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(t); u.lang="ms-MY"; if(viVoice)u.voice=viVoice; u.rate=rate;
-  speechSynthesis.speak(u);
+  loadVoices();
+  if(viVoice){
+    const go=()=>{ const u=new SpeechSynthesisUtterance(t); u.lang="ms-MY"; u.voice=viVoice; u.rate=rate; window._utt=u; speechSynthesis.speak(u); };
+    if(speechSynthesis.speaking||speechSynthesis.pending){ speechSynthesis.cancel(); setTimeout(go,80); } else go();
+    return;
+  }
+  if(CLOUD_OK){
+    try{
+      if(curAudio) curAudio.pause();
+      curAudio=new Audio("https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=ms&q="+encodeURIComponent(t));
+      curAudio.playbackRate = rate>=.8?1:.75;
+      curAudio.play().catch(noVoice);
+    }catch(e){ noVoice(); }
+    return;
+  }
+  noVoice();
 }
 let actx;
 function beep(ok){
@@ -316,7 +333,7 @@ function startLesson(lesson){
 }
 
 function buildQueue(){
-  const canListen = ("speechSynthesis" in window) && !!viVoice;
+  const canListen = hasAudio();
   const ws = L.words, q = [];
   if(L.rev){
     shuffle(ws).forEach(w=>q.push({t:"mcq",dir:"vf",w}));
@@ -344,10 +361,10 @@ function renderLearn(st){
     ${w.ph?`<div class="ph">🗣 ${w.ph}</div>`:""}
     <div style="font-size:1.4rem;font-weight:800;margin-top:10px">${w.fr}</div>
     ${w.ph?`<div class="note">Prononciation approximative en lettres françaises. Écoute l'audio pour les tons.</div>`:""}
-    ${("speechSynthesis" in window)&&viVoice?"":`<div class="note">🔇 Aucune voix détectée sur cet appareil : pas d'audio.</div>`}
+    ${hasAudio()?"":`<div class="note">🔇 Aucune voix détectée sur cet appareil : pas d'audio.</div>`}
   </div>`;
   $("#p1").onclick=()=>speak(w.vi);
-  if(viVoice) setTimeout(()=>speak(w.vi),250);
+  if(hasAudio()) setTimeout(()=>speak(w.vi),250);
   const c=$("#cta"); c.disabled=false; c.textContent="Continuer";
 }
 
