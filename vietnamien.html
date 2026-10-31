@@ -13,16 +13,16 @@
   --blue:#2b7fd9; --blue-l:#e3f0fd; --locked:#d5ddd8; --locked-d:#b7c2bb;
   --radius:16px;
 }
-@media (prefers-color-scheme:dark){
-  :root{--bg:#121916;--card:#1a2420;--ink:#e8f0ec;--muted:#93a69b;--line:#2b3832;
-    --primary-l:#183a2c;--red-l:#3a1e1c;--blue-l:#172a40;--locked:#2a3631;--locked-d:#1f2925}
-}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121916;--card:#1a2420;--ink:#e8f0ec;--muted:#93a69b;--line:#2b3832;
+    --primary-l:#183a2c;--red-l:#3a1e1c;--blue-l:#172a40;--locked:#2a3631;--locked-d:#1f2925;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121916;--card:#1a2420;--ink:#e8f0ec;--muted:#93a69b;--line:#2b3832;
+    --primary-l:#183a2c;--red-l:#3a1e1c;--blue-l:#172a40;--locked:#2a3631;--locked-d:#1f2925;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font-family:"Nunito","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:17px;line-height:1.4}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-#app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+#app{max-width:560px;margin:0 auto;padding-inline:env(safe-area-inset-left,0px) env(safe-area-inset-right,0px);min-height:100%;display:flex;flex-direction:column}
 
 /* ---------- top bar ---------- */
 .top{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:2px solid var(--line)}
@@ -204,6 +204,14 @@ const app = $("#app");
 const shuffle = a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const pick = (a,n)=>shuffle(a).slice(0,n);
 const tokens = s=>s.replace(/[?!.,]/g,"").split(/\s+/).filter(Boolean);
+function ask(msg,yes){
+  const m=document.createElement("div"); m.className="modal"; m.style.placeItems="center";
+  m.innerHTML=`<div class="sheet" role="dialog" style="border-radius:22px;max-width:380px;margin:16px"><h2 style="font-size:1.2rem">${msg}</h2>
+    <button class="cta" id="y" style="margin-top:16px;background:var(--red);box-shadow:0 4px 0 var(--red-d)">Oui</button>
+    <button class="cta ghost" id="n">Annuler</button></div>`;
+  document.body.appendChild(m);
+  $("#y",m).onclick=()=>{m.remove();yes()}; $("#n",m).onclick=()=>m.remove();
+}
 function toast(m){ const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
 
 let viVoice=null;
@@ -267,7 +275,7 @@ function home(){
     <div class="foot"><button id="reset">Réinitialiser ma progression</button></div>
   </div>`;
   $("#tones").onclick = tonesModal;
-  $("#reset").onclick = ()=>{ if(confirm("Effacer toute ta progression ?")){ S={xp:0,streak:0,last:"",done:{}}; save(); home(); } };
+  $("#reset").onclick = ()=>ask("Effacer toute ta progression ?",()=>{ S={xp:0,streak:0,last:"",done:{}}; save(); home(); });
   app.querySelectorAll(".node").forEach(b=>b.onclick=()=>{
     const i=+b.dataset.i;
     if(i>cur){ b.classList.add("shake"); setTimeout(()=>b.classList.remove("shake"),400); toast("Termine d'abord la leçon précédente 🔒"); return; }
@@ -345,7 +353,7 @@ function beginQuiz(){
       <button class="cta" id="cta"></button>
     </div>
   </div>`;
-  $("#quit").onclick=()=>{ if(confirm("Quitter la leçon ? Ta progression sera perdue.")) home(); };
+  $("#quit").onclick=()=>ask("Quitter la leçon ? Ta progression sera perdue.",home);
   $("#cta").onclick=onCta;
   show();
 }
