@@ -91,6 +91,9 @@ button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 .intro .fr{color:var(--muted);font-size:.95rem}
 .intro .say{width:42px;height:42px;font-size:1.1rem;border-radius:12px}
 .ph{color:var(--muted);font-size:.92rem;font-style:italic}
+.tk{font:inherit;font-weight:800;border-bottom:2px dashed var(--muted);padding:0 1px}
+.gloss{color:var(--muted);font-size:.95rem;min-height:1.4em;margin:-8px 0 14px}
+.learnc{text-align:center;padding-top:16px}
 .note{background:var(--blue-l);border-radius:12px;padding:10px 14px;font-size:.9rem;margin-top:14px}
 
 /* ---------- bottom bar ---------- */
@@ -174,21 +177,22 @@ const UNITS = [
 const TONE_LIST = [["cakap","parler","c se prononce « tch »"],["jalan","route","j se prononce « dj »"],["nyanyi","chanter","ny comme « gn » dans montagne"],
   ["ngeri","effrayant","ng nasal, même en début de mot"],["enam","six","e faible, comme dans « le »"],["tidak","non","k final : coup de glotte, presque muet"]];
 
+const EXTRA = {"ada":"avoir / il y a","tambah":"plus","sama":"pareil","dengan":"avec","berumur":"avoir l'âge de","tahun":"ans","mahu":"vouloir","suka":"aimer","apa":"quoi","khabar":"nouvelles","beri":"donner","segelas":"un verre","ini":"ceci / ce","itu":"cela / ce","dan":"et","orang":"personne","seorang":"un(e)","ke":"vers / à","di":"à / dans","sebelah":"côté","berwarna":"de couleur","makanan":"nourriture","rumah":"maison","baju":"chemise","kucing":"chat","harganya":"son prix","berkenalan":"faire connaissance","selamat":"(souhait : bon / bonne…)","ali":"(prénom)"};
+
 const LESSONS = [];
 UNITS.forEach((u,ui)=>{
   u.words = u.words.map(([vi,fr,ph])=>({vi,fr,ph}));
   u.sents = u.sents.map(([vi,fr])=>({vi,fr}));
   const mk = (suffix,name,words,sents,rev)=>LESSONS.push({id:u.id+suffix,name,unit:u,ui,words,sents,rev});
-  mk("1","Mots 1",u.words.slice(0,4),u.sents.slice(0,1),false);
-  mk("2","Mots 2",u.words.slice(4,8),u.sents.slice(1,2),false);
-  mk("3","Mots 3",u.words.slice(8),u.sents.slice(2),false);
-  mk("4","Révision",u.words,u.sents,true);
+  mk("1","Mots 1",u.words.slice(0,6),u.sents.slice(0,2),false);
+  mk("2","Mots 2",u.words.slice(6),u.sents.slice(2),false);
+  mk("3","Révision",u.words,u.sents,true);
 });
 
 /* =====================================================================
    ÉTAT SAUVEGARDÉ
    ===================================================================== */
-const KEY = "selamat-v2";
+const KEY = "selamat-v3";
 let S = load();
 function load(){
   try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return s; }catch(e){}
@@ -307,38 +311,53 @@ let L, Q, qi, hearts, mistakes, phase, ex, sel, built, matchState;
 
 function startLesson(lesson){
   L = lesson; hearts = 5; mistakes = 0; qi = 0;
-  if(L.rev){ L.words = pick(L.unit.words,8); beginQuiz(); } else intro();
-}
-
-function intro(){
-  app.innerHTML = `
-  <div class="lesson">
-    <div class="lbar"><button class="x" id="quit" aria-label="Quitter">✕</button><b>${L.unit.title} · ${L.name}</b></div>
-    <div class="stage intro">
-      <h1>Nouveaux mots</h1>
-      ${L.words.map(w=>`<div class="w"><button class="say" data-v="${w.vi}" aria-label="Écouter ${w.vi}">🔊</button><div><div class="vi">${w.vi}</div><div class="fr">${w.fr}</div>${w.ph?`<div class="ph">🗣 ${w.ph}</div>`:""}</div></div>`).join("")}
-      ${("speechSynthesis" in window)&&viVoice?"":`<div class="note">🔇 Aucune voix malaise détectée sur cet appareil : les exercices d'écoute sont désactivés.</div>`}
-    </div>
-    <div class="bottom"><button class="cta" id="go">C'est parti !</button></div>
-  </div>`;
-  $("#quit").onclick=home;
-  $("#go").onclick=beginQuiz;
-  app.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>speak(b.dataset.v));
+  if(L.rev) L.words = pick(L.unit.words,8);
+  beginQuiz();
 }
 
 function buildQueue(){
   const canListen = ("speechSynthesis" in window) && !!viVoice;
-  const types = canListen ? ["vf","listen","fv"] : ["vf","fv"];
-  const words = shuffle(L.words);
-  const q = [];
-  words.forEach((w,i)=>q.push({t:"mcq",dir:types[i%types.length],w}));
-  const pairs = pick(L.words,Math.min(4,L.words.length));
-  q.splice(Math.min(4,q.length),0,{t:"match",pairs});
-  L.sents.forEach(s=>{
-    q.push({t:"build",dir:"fr2vi",s});
-    q.push({t:"build",dir:"vi2fr",s});
-  });
+  const ws = L.words, q = [];
+  if(L.rev){
+    shuffle(ws).forEach(w=>q.push({t:"mcq",dir:"vf",w}));
+  }else{
+    // découverte par petits groupes de 3 : fiche, test aussitôt, puis association
+    for(let g=0; g<ws.length; g+=3){
+      const grp = ws.slice(g,g+3);
+      grp.forEach(w=>{ q.push({t:"learn",w}); q.push({t:"mcq",dir:"vf",w}); });
+      q.push({t:"match",pairs:grp});
+    }
+  }
+  // même mots dans l'autre sens, puis à l'oreille
+  shuffle(ws).forEach((w,i)=>q.push({t:"mcq",dir:canListen&&i%2?"listen":"fv",w}));
+  q.push({t:"match",pairs:pick(ws,Math.min(5,ws.length))});
+  // phrases : d'abord comprendre, ensuite produire
+  L.sents.forEach(s=>{ q.push({t:"build",dir:"vi2fr",s}); q.push({t:"build",dir:"fr2vi",s}); });
   return q;
+}
+
+function renderLearn(st){
+  const w=ex.w;
+  st.innerHTML=`<h1>Nouveau mot</h1><div class="learnc">
+    <button class="say" id="p1" aria-label="Écouter">🔊</button>
+    <div class="big" style="font-size:2.6rem;margin-top:14px">${w.vi}</div>
+    ${w.ph?`<div class="ph">🗣 ${w.ph}</div>`:""}
+    <div style="font-size:1.4rem;font-weight:800;margin-top:10px">${w.fr}</div>
+    ${w.ph?`<div class="note">Prononciation approximative en lettres françaises. Écoute l'audio pour les tons.</div>`:""}
+    ${("speechSynthesis" in window)&&viVoice?"":`<div class="note">🔇 Aucune voix détectée sur cet appareil : pas d'audio.</div>`}
+  </div>`;
+  $("#p1").onclick=()=>speak(w.vi);
+  if(viVoice) setTimeout(()=>speak(w.vi),250);
+  const c=$("#cta"); c.disabled=false; c.textContent="Continuer";
+}
+
+function glossFor(tok){
+  const k=tok.replace(/[?!.,]/g,"").toLowerCase();
+  if(EXTRA[k]) return EXTRA[k];
+  const all=UNITS.flatMap(u=>u.words);
+  const one=all.find(w=>w.vi.toLowerCase()===k); if(one) return one.fr;
+  const mw=all.find(w=>w.vi.toLowerCase().split(" ").includes(k)); if(mw) return mw.vi+" = "+mw.fr;
+  return "";
 }
 
 function beginQuiz(){
@@ -373,7 +392,8 @@ function show(){
   const cta=$("#cta"); cta.textContent="Vérifier"; cta.disabled=true;
   hud();
   const st=$("#stage");
-  if(ex.t==="mcq") renderMcq(st);
+  if(ex.t==="learn") renderLearn(st);
+  else if(ex.t==="mcq") renderMcq(st);
   else if(ex.t==="match") renderMatch(st);
   else renderBuild(st);
 }
@@ -445,11 +465,13 @@ function renderBuild(st){
   }
   const prompt = toVi
     ? `<div class="bubble">${s.fr}</div>`
-    : `<button class="say" id="p1" aria-label="Écouter">🔊</button><div class="bubble">${s.vi}</div>`;
+    : `<button class="say" id="p1" aria-label="Écouter">🔊</button><div class="bubble">${s.vi.split(" ").map(t=>`<button class="tk">${t}</button>`).join(" ")}</div>`;
   st.innerHTML=`<h1>${toVi?"Traduis en malais":"Traduis en français"}</h1>
     <div class="prompt">${prompt}</div>
+    ${toVi?"":`<div class="gloss" id="gl">👆 Touche un mot pour voir sa traduction.</div>`}
     <div class="answer" id="ans"></div><div class="bank" id="bank"></div>`;
   const p1=$("#p1"); if(p1)p1.onclick=()=>speak(s.vi);
+  st.querySelectorAll(".tk").forEach(b=>b.onclick=()=>{ const g=glossFor(b.textContent); $("#gl").textContent=b.textContent.replace(/[?!.,]/g,"")+" = "+(g||"mot de la phrase"); });
   drawBuild();
 }
 function drawBuild(){
@@ -472,6 +494,7 @@ function onCta(){
   qi++; show();
 }
 function check(){
+  if(ex.t==="learn"){ qi++; return show(); }
   if(ex.t==="mcq"){
     const toFr = ex.dir!=="fv";
     const chosen = ex.opts[sel];
