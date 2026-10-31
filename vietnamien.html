@@ -231,7 +231,7 @@ function noVoice(){ toast("Pas de voix vietnamienne sur cet appareil. Ajoute-la 
 function speak(t,rate=.85){
   loadVoices();
   if(viVoice){
-    const go=()=>{ const u=new SpeechSynthesisUtterance(t); u.lang="vi-VN"; u.voice=viVoice; u.rate=rate; window._utt=u; speechSynthesis.speak(u); };
+    const go=()=>{ const u=new SpeechSynthesisUtterance(t); u.onerror=e=>toast("Erreur audio : "+(e.error||"inconnue"),3200); u.lang="vi-VN"; u.voice=viVoice; u.rate=rate; window._utt=u; speechSynthesis.speak(u); };
     if(speechSynthesis.speaking||speechSynthesis.pending){ speechSynthesis.cancel(); setTimeout(go,80); } else go();
     return;
   }
@@ -240,7 +240,7 @@ function speak(t,rate=.85){
       if(curAudio) curAudio.pause();
       curAudio=new Audio("https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q="+encodeURIComponent(t));
       curAudio.playbackRate = rate>=.8?1:.75;
-      curAudio.play().catch(noVoice);
+      curAudio.play().catch(e=>toast("Audio bloqué par l'appareil ou le navigateur ("+((e&&e.name)||"erreur")+")",3200)); curAudio.onerror=()=>toast("Voix en ligne inaccessible (pas de connexion ?)",3200);
     }catch(e){ noVoice(); }
     return;
   }
@@ -313,10 +313,16 @@ function tonesModal(){
     <h2>Les 6 tons du vietnamien</h2>
     <p style="color:var(--muted);margin:0 0 8px">Une même syllabe change de sens selon le ton. Appuie sur 🔊 pour écouter.</p>
     ${TONE_LIST.map(([w,fr,d])=>`<div class="tone"><span class="t">${w}</span><div style="flex:1">${fr}<br><small>${d}</small></div><button class="say" style="width:42px;height:42px;font-size:1.1rem" data-w="${w}" aria-label="Écouter ${w}">🔊</button></div>`).join("")}
+    <div class="note" id="diag"></div>
+    <button class="cta ghost" id="tst">🔊 Tester le son</button>
     <button class="cta" style="margin-top:16px" id="cl">Fermer</button></div>`;
   document.body.appendChild(m);
   m.onclick=e=>{ if(e.target===m)m.remove(); };
   $("#cl",m).onclick=()=>m.remove();
+  const info=()=>{ loadVoices(); const n="speechSynthesis" in window?speechSynthesis.getVoices().length:0;
+    $("#diag",m).innerHTML="<b>Diagnostic du son</b><br>Voix sur l'appareil : "+n+"<br>Voix de la langue trouvée : "+(viVoice?"oui ("+viVoice.name+")":"non")+"<br>Voix de secours en ligne : "+(CLOUD_OK?"disponible":"indisponible ici")+"<br>Page : "+(location.hostname||"fichier local"); };
+  info();
+  $("#tst",m).onclick=()=>{ speak("Xin chào"); setTimeout(info,600); };
   m.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>speak(b.dataset.w,.7));
 }
 
