@@ -75,8 +75,8 @@
           <button class="st-btn primary wide st-big" id="st-magic">✨ Améliorer la photo</button>
           <p class="st-note" style="margin:6px 0 0">Un clic, rien à régler : l'IA nettoie la compression et le bruit, restaure la netteté
             et les visages, équilibre lumière et couleurs, et agrandit les petites photos. Maintiens « Avant / après » pour comparer.</p>
-          <label class="check" style="margin-top:8px"><input type="checkbox" id="st-sharp"> Netteté renforcée, façon Upscayl (plus net, plus lent)</label>
-          <label class="check"><input type="checkbox" id="st-best"> Qualité maximale (environ 3× plus lent)</label>
+          <label class="check" style="margin-top:8px"><input type="checkbox" id="st-sharp"> Netteté renforcée, façon Upscayl (plus net, rapide)</label>
+          <label class="check"><input type="checkbox" id="st-best"> Qualité maximale (bien plus lent ; avec la netteté : modèle le plus fin)</label>
           <button class="st-btn wide" id="st-batch-open2">📁 Améliorer tout un dossier</button>
           <div id="st-magic-msg" class="st-note"></div>
           <button class="st-btn wide" id="st-up-undo" hidden>↶ Annuler (revenir à la photo d'avant)</button>
@@ -187,8 +187,8 @@
         <div class="st-folders" id="st-folders"><span class="st-note">Recherche…</span></div>
         <div class="st-label">Ou colle le chemin d'un dossier</div>
         <input type="text" id="st-folder" placeholder="C:\\Users\\toi\\Pictures\\Vacances">
-        <label class="check" style="margin-top:8px"><input type="checkbox" id="st-batch-sharp"> Netteté renforcée, façon Upscayl (plus net, plus lent)</label>
-        <label class="check"><input type="checkbox" id="st-batch-best"> Qualité maximale (environ 3× plus lent)</label>
+        <label class="check" style="margin-top:8px"><input type="checkbox" id="st-batch-sharp"> Netteté renforcée, façon Upscayl (plus net, rapide)</label>
+        <label class="check"><input type="checkbox" id="st-batch-best"> Qualité maximale (bien plus lent ; avec la netteté : modèle le plus fin)</label>
         <label class="check"><input type="checkbox" id="st-batch-watch" checked> Automatique : améliorer aussi toute nouvelle photo ajoutée à ce dossier</label>
         <div id="st-batch-msg" class="st-note"></div>
         <button class="st-btn primary wide" id="st-batch-start">Lancer l'amélioration</button>
@@ -902,7 +902,7 @@
     if (!folder) return box.textContent = "Choisis un dossier dans la liste ou colle son chemin.";
     if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo)", startBatch)) return;
     const sharp = q("#st-batch-sharp").checked;
-    if (sharp && !await ensurePack("sharp", box, "L'IA netteté renforcée (≈ 67 Mo)", startBatch)) return;
+    if (sharp && q("#st-batch-best").checked && !await ensurePack("sharp", box, "Le modèle de netteté le plus fin (≈ 67 Mo)", startBatch)) return;
     box.textContent = "Lancement…";
     const r = await (await fetch("/batch_start", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder, best: q("#st-batch-best").checked, sharp }) })).json();
@@ -926,7 +926,7 @@
     const box = q("#st-magic-msg"); if (!S.full) return;
     if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo : nettoyage, visages, qualité max)", magic)) return;
     const sharp = q("#st-sharp").checked;
-    if (sharp && !await ensurePack("sharp", box, "L'IA netteté renforcée (≈ 67 Mo)", magic)) return;
+    if (sharp && q("#st-best").checked && !await ensurePack("sharp", box, "Le modèle de netteté le plus fin (≈ 67 Mo)", magic)) return;
     await runBaseAI("/ai_enhance", { best: q("#st-best").checked, sharp }, "L'IA améliore la photo…", box, (r, sec) => {
       box.innerHTML = `✓ Amélioration terminée en ${sec} s : ${esc2(r.done.join(", "))}.<br>Maintiens « Avant / après » pour comparer, « Annuler » pour revenir.`;
       q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`;

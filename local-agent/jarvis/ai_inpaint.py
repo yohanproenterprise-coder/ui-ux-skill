@@ -448,31 +448,39 @@ def _max_x2(img, tile=320, pad=20, progress=(0, 100)):
     return Image.fromarray((out.clip(0, 1) * 255).round().astype(np.uint8))
 
 
-SHARP_MODEL = MODELS / "nomos8k_sc_x4.onnx"
-_sharp_session = None
+SHARP_MODEL = MODELS / "nomos8k_sc_x4.onnx"   # netteté renforcée + qualité maximale (lourd, téléchargé)
+SHARP_FAST_MODEL = __import__("pathlib").Path(__file__).resolve().parent / "models" / "sharp-x4.onnx"  # inclus
+_sharp_session = _sharp_fast_session = None
 
 
-def _sharp_x4(img, factor=2, tile=256, pad=12):
-    """« Netteté renforcée » (façon Upscayl) : modèle 4xNomos8kSC, détails nets et rendu photo réaliste."""
-    global _sharp_session
+def _sharp_x4(img, factor=2, heavy=False):
+    """« Netteté renforcée » (façon Upscayl). Par défaut 4xLSDIRCompact (léger, ~20× plus rapide) ;
+    heavy=True : 4xNomos8kSC, le plus fin, pour la qualité maximale."""
+    global _sharp_session, _sharp_fast_session
     import numpy as np
     from PIL import Image
-    if _sharp_session is None:
-        _sharp_session = new_session(SHARP_MODEL)
+    if heavy:
+        if _sharp_session is None:
+            _sharp_session = new_session(SHARP_MODEL)
+        sess, tile, pad = _sharp_session, 256, 12
+    else:
+        if _sharp_fast_session is None:
+            _sharp_fast_session = new_session(SHARP_FAST_MODEL)
+        sess, tile, pad = _sharp_fast_session, 512, 16
     w, h = img.size
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
-    name = _sharp_session.get_inputs()[0].name
+    name = sess.get_inputs()[0].name
     ustate().update(busy=True, progress=0)
     try:
-        run = lambda part: _sharp_session.run(None, {name: part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
+        run = lambda part: sess.run(None, {name: part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
         out4 = _tiled(src, run, 4, tile, pad)
     finally:
         ustate()["busy"] = False
     res = Image.fromarray((out4.clip(0, 1) * 255).round().astype(np.uint8))
     if factor != 4:
         res = res.resize((w * factor, h * factor), Image.LANCZOS)
-    # 12 % d'agrandissement classique seulement : on garde le piqué, avec un soupçon de grain réel
-    return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.12)
+    # un peu d'agrandissement classique : grain réel, et adoucit les contours trop marqués du modèle léger
+    return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.12 if heavy else 0.22)
 
 
 def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
@@ -496,7 +504,9 @@ def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
             ustate()["busy"] = False
         # 25 % d'agrandissement classique : grain réel conservé
         return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.25)
-    if quality == "sharp" and pack_ready("sharp"):
+    if quality == "sharpmax" and pack_ready("sharp"):
+        return _sharp_x4(img, factor, heavy=True)
+    if quality in ("sharp", "sharpmax"):
         return _sharp_x4(img, factor)
     if _up_session is None:
         _up_session = new_session(UPSCALE_MODEL)
@@ -550,8 +560,8 @@ def warmup():
             gpu.selftest(UPSCALE_MODEL)   # une fois après l'installation : carte graphique vraiment plus rapide ?
             if _up_session is None:
                 _up_session = new_session(UPSCALE_MODEL)
-            if pack_ready("sharp") and _sharp_session is None:
-                globals()["_sharp_session"] = new_session(SHARP_MODEL)
+            if _sharp_fast_session is None:
+                globals()["_sharp_fast_session"] = new_session(SHARP_FAST_MODEL)
             if pack_ready("lama"):
                 _get_session()
             if pack_ready("faces"):

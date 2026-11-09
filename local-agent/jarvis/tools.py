@@ -319,7 +319,7 @@ class Tools:
 
     def enhance_folder(self, path, best=False, sharp=False):
         from . import ai_inpaint, batch
-        if sharp and not ai_inpaint.pack_ready("sharp"):
+        if sharp and best and not ai_inpaint.pack_ready("sharp"):
             ai_inpaint._download_pack("sharp")
         st = batch.start(str(self._path(path)), bool(best), sharp=bool(sharp))
         return (f"Amélioration lancée en arrière-plan : {st['total']} photo(s). Résultats dans « {st['out']} » "
@@ -523,13 +523,13 @@ TOOL_SPECS = [
            "mode": {"type": "string", "enum": ["produit", "portrait"],
                     "description": "produit : objets, matières fidèles (par défaut) ; portrait : personnes, visages"},
            "out_dir": {"type": "string", "description": "dossier de sortie (par défaut celui de la photo)"},
-           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, plus lent)"}}, ["path"]),
+           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, rapide)"}}, ["path"]),
     _tool("photo_folder_status", "Indique où en est l'amélioration automatique d'un dossier de photos "
           "(en cours, terminée, photos restantes, dossiers en automatique).", {}, []),
     _tool("enhance_folder", "Améliore automatiquement TOUTES les photos d'un dossier (comme « Améliorer la photo » "
           "du Studio), en arrière-plan. Les copies vont dans un sous-dossier « Améliorées ».",
           {"path": S, "best": {"type": "boolean", "description": "qualité maximale (beaucoup plus lent)"},
-           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, plus lent)"}}, ["path"]),
+           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, rapide)"}}, ["path"]),
     _tool("edit_photo", "Retouche une photo, un dossier entier ou un motif (*.jpg). Réglages de -100 à +100. "
           "Crée une copie (suffixe -retouche), l'original reste intact. Pour EFFACER un objet ou une personne "
           "(le fond se reconstruit), dis à l'utilisateur d'utiliser la Gomme magique du Studio (bouton Studio).",

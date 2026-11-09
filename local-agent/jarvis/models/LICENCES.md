@@ -5,6 +5,10 @@ Converti depuis Real-ESRGAN « realesr-general-x4v3 » et « realesr-general-wdn
 (mélange des poids 30 % / 70 %, méthode DNI prévue par les auteurs, pour un rendu naturel).
 Source : https://github.com/xinntao/Real-ESRGAN — © 2021 Xintao Wang, licence BSD 3-Clause.
 
+## sharp-x4.onnx — « Netteté renforcée » (modèle léger)
+4xLSDIRCompact de Philip Hofmann (Phhofm), licence CC BY 4.0 (usage commercial autorisé en citant l'auteur).
+Converti en ONNX par Jarvis (architecture SRVGGNetCompact). Source : https://github.com/Phhofm/models
+
 ## lama.onnx — IA de retouche (téléchargé à la demande, non inclus)
 LaMa (Carve / OpenCV Zoo), licence Apache 2.0 — https://github.com/advimman/lama
 

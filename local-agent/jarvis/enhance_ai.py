@@ -105,20 +105,20 @@ def enhance(img, best=False, mode=None, sharp=False):
     w, h = img.size
     done = []
     quality = "max" if best and ai_inpaint.pack_ready("upmax") else "fast"
-    if sharp and ai_inpaint.pack_ready("sharp"):
-        quality, keep = "sharp", keep * .5   # netteté renforcée : moins de photo d'origine remélangée
+    if sharp:   # netteté renforcée : moins de photo d'origine remélangée ; modèle le plus fin en qualité maximale
+        quality, keep = ("sharpmax" if best and ai_inpaint.pack_ready("sharp") else "sharp"), keep * .5
     try:
         # 1. nettoyage et netteté par IA
         if max(w, h) < SMALL:
             _progress(2, "Nettoyage de la photo par l'IA…")
             out = ai_inpaint.upscale_image(img, 2, quality=quality)
             done.append(f"agrandie ×2 ({out.width}×{out.height})")
-            done.append("compression et bruit nettoyés, netteté " + ("renforcée" if quality == "sharp" else "restaurée"))
+            done.append("compression et bruit nettoyés, netteté " + ("renforcée" if sharp else "restaurée"))
         elif max(w, h) <= LARGE:
             _progress(2, "Nettoyage de la photo par l'IA…")
-            if quality == "sharp":
+            if sharp:
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)
-                clean = ai_inpaint.upscale_image(half, 4, quality="sharp").resize((w, h), Image.LANCZOS)
+                clean = ai_inpaint.upscale_image(half, 4, quality=quality).resize((w, h), Image.LANCZOS)
                 out = Image.blend(clean, img, keep)
             elif quality == "max":
                 # qualité max : le grand modèle travaille sur la photo réduite de moitié et la ramène à sa taille
@@ -131,7 +131,7 @@ def enhance(img, best=False, mode=None, sharp=False):
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)
                 clean = ai_inpaint.upscale_image(half, 4, quality="fast").resize((w, h), Image.LANCZOS)
                 out = Image.blend(clean, img, keep)
-            done.append("compression et bruit nettoyés, netteté " + ("renforcée" if quality == "sharp" else "restaurée"))
+            done.append("compression et bruit nettoyés, netteté " + ("renforcée" if sharp else "restaurée"))
         else:
             out = img
             done.append("photo déjà en haute résolution : nettoyage IA non nécessaire")

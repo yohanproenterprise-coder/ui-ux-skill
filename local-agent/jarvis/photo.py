@@ -122,8 +122,8 @@ def enhance_photos(path, best=False, mode=None, out_dir=None, suffix="-amelioree
     files = [f for f in _targets(path) if not f.stem.endswith(suffix)] or _targets(path)
     if not files or not all(f.exists() for f in files):
         return f"ERREUR : aucune photo trouvée pour {path}"
-    if sharp and not ai_inpaint.pack_ready("sharp"):
-        ai_inpaint._download_pack("sharp")   # premier usage : télécharge le modèle de netteté (≈ 67 Mo)
+    if sharp and best and not ai_inpaint.pack_ready("sharp"):
+        ai_inpaint._download_pack("sharp")   # netteté + qualité max : modèle le plus fin (≈ 67 Mo, une fois)
     if mode and str(mode).lower() not in enhance_ai.ORIGINAL_SHARE:
         return f"ERREUR : mode inconnu. Choix : {', '.join(enhance_ai.ORIGINAL_SHARE)}"
     if any(f.suffix.lower() in (".avif", ".heic", ".heif") for f in files):
