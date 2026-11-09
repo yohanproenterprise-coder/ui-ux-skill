@@ -89,7 +89,8 @@ def info():
         st = "testing"
     else:
         st = "active" if t.get("ok") else "slower"
-    return {"state": st, "speedup": t.get("speedup"), "reason": t.get("reason", ""), "step": state["step"],
+    cpu_models = {k: v.get("why", "") for k, v in _models().items() if v.get("use") == "cpu"}
+    return {"state": st, "speedup": t.get("speedup"), "cpu_models": cpu_models, "reason": t.get("reason", ""), "step": state["step"],
             "error": state["error"], "device": t.get("device", "")}
 
 
@@ -112,6 +113,7 @@ def install(on_done=None):
                 raise RuntimeError("installation impossible : " + (r.stderr or r.stdout)[-300:])
             OFF.unlink(missing_ok=True)
             TEST.unlink(missing_ok=True)       # nouvelle mesure de vitesse au prochain démarrage
+            MODELS_FILE.unlink(missing_ok=True)
             state.update(state="", step="Installé : Jarvis redémarre pour l'utiliser…")
             if on_done:
                 on_done()
@@ -127,8 +129,34 @@ def set_enabled(on):
     if on:
         OFF.unlink(missing_ok=True)
         TEST.unlink(missing_ok=True)
+        MODELS_FILE.unlink(missing_ok=True)
     else:
         OFF.write_text("désactivée par l'utilisateur", encoding="utf-8")
+
+
+MODELS_FILE = HOME / "gpu-modeles.json"   # pour chaque modèle d'IA : carte graphique ou processeur (mesuré)
+
+
+def _models():
+    try:
+        return json.loads(MODELS_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def model_choice(path):
+    from pathlib import Path
+    return (_models().get(Path(path).name) or {}).get("use")
+
+
+def set_model_choice(path, use, reason=""):
+    from pathlib import Path
+    m = _models()
+    m[Path(path).name] = {"use": use, "why": reason}
+    try:
+        MODELS_FILE.write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
+    except OSError:
+        pass
 
 
 def selftest(model_path):

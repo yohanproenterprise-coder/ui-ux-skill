@@ -203,15 +203,19 @@ def install(deps_only=False, pack="lama"):
 
 
 class _Session:
-    """Session d'IA sur la carte graphique si elle est active, sinon sur le processeur. Si la carte graphique
-    échoue sur un modèle, celui-ci repasse tout seul (et pour de bon) sur le processeur."""
+    """Session d'IA sur la carte graphique si elle est active, sinon sur le processeur.
+    Chaque modèle est vérifié une fois sur la carte graphique : s'il y est plus lent que sur le processeur,
+    trop long à préparer (> 3 min) ou en erreur, il repasse pour de bon sur le processeur (choix mémorisé)."""
+    FIRST_TIMEOUT = 180
+
     def __init__(self, path):
         from . import gpu
         self.path, self.lock = str(path), threading.Lock()
         prov = gpu.providers()
-        self.gpu = prov[0] != "CPUExecutionProvider"
+        self.gpu = prov[0] != "CPUExecutionProvider" and gpu.model_choice(path) != "cpu"
+        self.checked = gpu.model_choice(path) == "gpu"
         try:
-            self.s = self._make(prov)
+            self.s = self._make(prov if self.gpu else ["CPUExecutionProvider"])
         except Exception:
             self.s, self.gpu = self._make(["CPUExecutionProvider"]), False
 
@@ -227,14 +231,62 @@ class _Session:
     def get_inputs(self):
         return self.s.get_inputs()
 
+    def _to_cpu(self, reason):
+        from . import gpu
+        self.s, self.gpu = self._make(["CPUExecutionProvider"]), False
+        gpu.set_model_choice(self.path, "cpu", reason)
+
+    def _check(self, *a, **k):
+        """Premier passage du modèle sur la carte graphique : préparation surveillée, puis duel avec le processeur."""
+        from . import gpu
+        st = ustate()
+        step = st.get("step", "")
+        st["step"] = "Préparation de l'IA sur la carte graphique (1re fois, jusqu'à 3 min)…"
+        box = {}
+
+        def first():
+            try:
+                with self.lock:
+                    box["out"] = self.s.run(*a, **k)
+            except Exception as e:
+                box["err"] = e
+        th = threading.Thread(target=first, daemon=True)
+        th.start()
+        th.join(self.FIRST_TIMEOUT)
+        st["step"] = step
+        if th.is_alive() or "err" in box:
+            self._to_cpu("trop long à préparer" if th.is_alive() else f"erreur : {box['err']}")
+            return self.s.run(*a, **k)
+        try:
+            t = time.time()
+            with self.lock:
+                self.s.run(*a, **k)
+            gpu_t = time.time() - t
+            cpu = self._make(["CPUExecutionProvider"])
+            t = time.time()
+            cpu.run(*a, **k)
+            cpu_t = time.time() - t
+        except Exception as e:
+            self._to_cpu(f"erreur : {e}")
+            return self.s.run(*a, **k)
+        self.checked = True
+        if gpu_t > cpu_t * .9:   # pas plus rapide pour ce modèle : processeur
+            self.s, self.gpu = cpu, False
+            gpu.set_model_choice(self.path, "cpu", f"plus lent sur la carte graphique ({gpu_t:.1f} s contre {cpu_t:.1f} s)")
+        else:
+            gpu.set_model_choice(self.path, "gpu", f"×{cpu_t / max(gpu_t, 1e-6):.1f}")
+        return box["out"]
+
     def run(self, *a, **k):
         if not self.gpu:
             return self.s.run(*a, **k)
+        if not self.checked:
+            return self._check(*a, **k)
         try:
             with self.lock:   # une seule exécution à la fois sur la carte graphique
                 return self.s.run(*a, **k)
-        except Exception:
-            self.s, self.gpu = self._make(["CPUExecutionProvider"]), False
+        except Exception as e:
+            self._to_cpu(f"erreur : {e}")
             return self.s.run(*a, **k)
 
 
@@ -400,7 +452,7 @@ SHARP_MODEL = MODELS / "nomos8k_sc_x4.onnx"
 _sharp_session = None
 
 
-def _sharp_x4(img, factor=2, tile=384, pad=16):
+def _sharp_x4(img, factor=2, tile=256, pad=12):
     """« Netteté renforcée » (façon Upscayl) : modèle 4xNomos8kSC, détails nets et rendu photo réaliste."""
     global _sharp_session
     import numpy as np

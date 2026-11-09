@@ -536,7 +536,13 @@ async function loadGpu() {
   let g; try { g = (await (await fetch("/ai_status")).json()).gpu; } catch (e) { return; }
   if (!g) return;
   let text = GPU_TEXT[g.state] || "";
-  if (g.state === "active") text = `⚡ Active : l'IA va environ ${g.speedup}× plus vite qu'avec le processeur.`;
+  if (g.state === "active") {
+    text = `⚡ Active : l'IA va environ ${g.speedup}× plus vite qu'avec le processeur.`;
+    const names = {"nomos8k_sc_x4.onnx": "netteté renforcée", "real_esrgan_x2.onnx": "qualité maximale", "codeformer.onnx": "grands visages",
+                   "gpen_bfr_256.onnx": "visages", "lama.onnx": "gomme magique", "upscale-x4.onnx": "nettoyage", "yoloface_8n.onnx": "détection des visages"};
+    const cpu = Object.keys(g.cpu_models || {}).map(k => names[k] || k);
+    if (cpu.length) text += ` Plus rapide sur le processeur, donc laissé dessus : ${cpu.join(", ")}.`;
+  }
   if (g.state === "slower") text = `Pas utilisée : ${g.reason || "pas plus rapide que le processeur"}. Jarvis reste sur le processeur.`;
   if (g.state === "error") text = "Échec de l'installation : " + (g.error || "");
   if (g.state === "installing" && g.step) text = g.step;

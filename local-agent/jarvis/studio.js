@@ -881,8 +881,9 @@
       const pct = st.total ? Math.round(100 * (st.done + (st.running ? (st.photo_progress || 0) / 100 : 0)) / st.total) : 0;
       q("#st-batch-bar").style.width = pct + "%";
       q("#st-batch-text").textContent = st.running
-        ? `${st.done} / ${st.total} photos${st.paused ? " · en pause le temps de ta retouche" : st.current ? " · " + st.current + " (" + (st.photo_progress || 0) + " %)" : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : " · la 1re photo sert à estimer le temps restant"}`
+        ? `${st.done} / ${st.total} photos${st.paused ? " · en pause le temps de ta retouche" : st.current ? " · " + st.current + " (" + (st.photo_progress || 0) + " %, " + fmtTime(st.photo_elapsed || 0) + ")" + (/carte graphique/.test(st.photo_step || "") ? " · " + st.photo_step : "") : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : " · la 1re photo sert à estimer le temps restant"}`
         : `Terminé : ${st.done - st.errors.length} photo(s) améliorée(s) dans « ${st.out} ».`;
+      if (st.skipped) q("#st-batch-text").textContent += ` (${st.skipped} déjà améliorée${st.skipped > 1 ? "s" : ""}, gardée${st.skipped > 1 ? "s" : ""})`;
       const next = (st.queue || []).map(f => f.split(/[\\/]/).pop());
       if (next.length) q("#st-batch-text").textContent += ` Ensuite : ${next.join(", ")}.`;
       q("#st-batch-errors").textContent = st.errors.length ? `${st.errors.length} photo(s) ignorée(s) : ${st.errors.slice(0, 3).join(" ; ")}` : "";
