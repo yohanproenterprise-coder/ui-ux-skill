@@ -817,7 +817,7 @@
   setEngine(S.engine);
 
   // ------------------------------------------------------- installation d'IA --
-  async function ensurePack(pack, box, label) {
+  async function ensurePack(pack, box, label, onReady) {
     // vrai si le composant est prêt ; sinon propose l'installation dans « box »
     let st; try { st = await (await fetch("/ai_status")).json(); } catch (e) { box.textContent = "Jarvis ne répond pas."; return false; }
     if (st.deps && (!pack || st.packs[pack])) return true;
@@ -830,7 +830,11 @@
         await new Promise(r => setTimeout(r, 1000));
         const s2 = await (await fetch("/ai_status")).json();
         if (s2.state === "error") { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(s2.error)}</span>`; return; }
-        if (s2.state !== "installing" && s2.deps && (!pack || s2.packs[pack])) { box.textContent = "Installé ✓ Tu peux relancer."; return; }
+        if (s2.state !== "installing" && s2.deps && (!pack || s2.packs[pack])) {
+          box.textContent = "Installé ✓" + (onReady ? " On continue…" : " Tu peux relancer.");
+          if (onReady) onReady();   // on reprend tout seul ce que l'utilisateur avait demandé
+          return;
+        }
         box.innerHTML = `${esc2(s2.step || "Installation…")}<div class="st-prog"><span style="width:${s2.progress || 0}%"></span></div>`;
       }
     };
@@ -879,6 +883,8 @@
       q("#st-batch-text").textContent = st.running
         ? `${st.done} / ${st.total} photos${st.paused ? " · en pause le temps de ta retouche" : st.current ? " · " + st.current + " (" + (st.photo_progress || 0) + " %)" : ""}${st.eta != null ? " · reste environ " + fmtTime(st.eta) : " · la 1re photo sert à estimer le temps restant"}`
         : `Terminé : ${st.done - st.errors.length} photo(s) améliorée(s) dans « ${st.out} ».`;
+      const next = (st.queue || []).map(f => f.split(/[\\/]/).pop());
+      if (next.length) q("#st-batch-text").textContent += ` Ensuite : ${next.join(", ")}.`;
       q("#st-batch-errors").textContent = st.errors.length ? `${st.errors.length} photo(s) ignorée(s) : ${st.errors.slice(0, 3).join(" ; ")}` : "";
       q("#st-batch-cancel").hidden = !st.running; q("#st-batch-back").hidden = st.running;
       q("#st-batch-folder").onclick = () => fetch("/open_folder", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: st.out }) });
@@ -890,16 +896,18 @@
   q("#st-batch-back").onclick = () => { clearInterval(batchPoll); openBatchChoose(); };
   q("#st-batch-close").onclick = () => { q("#st-batch").hidden = true; clearInterval(batchPoll); };
   q("#st-batch-cancel").onclick = () => fetch("/batch_cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-  q("#st-batch-start").onclick = async () => {
+  q("#st-batch-start").onclick = async function startBatch() {
     const box = q("#st-batch-msg"), folder = q("#st-folder").value.trim();
     if (!folder) return box.textContent = "Choisis un dossier dans la liste ou colle son chemin.";
-    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo)")) return;
+    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo)", startBatch)) return;
     const sharp = q("#st-batch-sharp").checked;
-    if (sharp && !await ensurePack("sharp", box, "L'IA netteté renforcée (≈ 67 Mo)")) return;
+    if (sharp && !await ensurePack("sharp", box, "L'IA netteté renforcée (≈ 67 Mo)", startBatch)) return;
+    box.textContent = "Lancement…";
     const r = await (await fetch("/batch_start", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ folder, best: q("#st-batch-best").checked, sharp }) })).json();
     if (r.error === "introuvable") r.error = "Jarvis doit être redémarré pour utiliser la mise à jour : ferme-le complètement puis relance-le.";
     if (r.error) return box.innerHTML = `<span style="color:var(--err)">${esc2(r.error)}</span>`;
+    box.textContent = "";
     if (q("#st-batch-watch").checked)
       await fetch("/photo_watch", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ folder, on: true, best: q("#st-batch-best").checked, sharp }) });
@@ -913,11 +921,11 @@
   }
 
   // ------------------------------------------------ amélioration en un clic --
-  q("#st-magic").onclick = async () => {
+  q("#st-magic").onclick = async function magic() {
     const box = q("#st-magic-msg"); if (!S.full) return;
-    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo : nettoyage, visages, qualité max)")) return;
+    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo : nettoyage, visages, qualité max)", magic)) return;
     const sharp = q("#st-sharp").checked;
-    if (sharp && !await ensurePack("sharp", box, "L'IA netteté renforcée (≈ 67 Mo)")) return;
+    if (sharp && !await ensurePack("sharp", box, "L'IA netteté renforcée (≈ 67 Mo)", magic)) return;
     await runBaseAI("/ai_enhance", { best: q("#st-best").checked, sharp }, "L'IA améliore la photo…", box, (r, sec) => {
       box.innerHTML = `✓ Amélioration terminée en ${sec} s : ${esc2(r.done.join(", "))}.<br>Maintiens « Avant / après » pour comparer, « Annuler » pour revenir.`;
       q("#st-name").textContent = `${S.name} · ${S.full.width}×${S.full.height}`;

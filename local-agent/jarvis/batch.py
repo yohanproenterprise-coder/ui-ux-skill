@@ -69,9 +69,35 @@ def clean_path(folder):
         from urllib.parse import unquote
         s = unquote(s[8:])
     p = Path(s).expanduser()
+    if not p.exists():
+        p = _fuzzy(p)
     if p.is_file():
         p = p.parent
     return p
+
+
+def _norm(name):
+    import unicodedata
+    n = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().casefold()
+    return "".join(c for c in n if c.isalnum())
+
+
+def _fuzzy(p):
+    """Chemin tapé à la main : retrouve les dossiers malgré les espaces, majuscules ou accents
+    (ex. « NEWPHOTOSHOPIFY » → « NEW PHOTO SHOPIFY »)."""
+    parts = p.parts
+    cur = Path(parts[0]) if parts else p
+    for part in parts[1:]:
+        nxt = cur / part
+        if not nxt.exists() and cur.is_dir():
+            try:
+                match = [c for c in cur.iterdir() if _norm(c.name) == _norm(part)]
+            except OSError:
+                match = []
+            if len(match) == 1:
+                nxt = match[0]
+        cur = nxt
+    return cur
 
 
 def photos_in(folder):
@@ -83,6 +109,7 @@ def photos_in(folder):
 
 def status():
     s = dict(job)
+    s["queue"] = [q["folder"] for q in queue]
     if job["running"]:  # avancement de la photo en cours (l'IA peut prendre du temps sur une grande photo)
         up = enhance_ai.ai_inpaint.batch_state
         s["paused"] = bool(up.get("paused"))
@@ -109,18 +136,37 @@ def _target(folder, out, f):
     return dest / f"{f.stem}.{'png' if f.suffix.lower() == '.png' else 'jpg'}"
 
 
+queue = []        # dossiers demandés pendant qu'un autre tournait : lancés l'un après l'autre
 _failed = set()   # photos en échec (chemin, date) : la surveillance ne les réessaie pas en boucle
 
 
+def _save_resume(folder, best, sharp):
+    try:
+        import json
+        _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best), "sharp": bool(sharp),
+                                              "queue": queue}), encoding="utf-8")
+    except OSError:
+        pass
+
+
 def start(folder, best=False, only_new=False, sharp=False):
-    """Lance l'amélioration du dossier. only_new : seulement les photos pas encore améliorées (surveillance)."""
+    """Lance l'amélioration du dossier. only_new : seulement les photos pas encore améliorées (surveillance).
+    Si un autre dossier est en cours, celui-ci est mis dans la file et démarrera juste après."""
     folder = clean_path(folder)
     if not folder.is_dir():
         raise ValueError(f"Dossier introuvable : {folder}. Astuce : dans l'explorateur, clic droit sur le dossier → "
                          "« Copier en tant que chemin d'accès », puis colle-le ici.")
     with _lock:
         if job["running"]:
-            raise RuntimeError("Une amélioration de dossier est déjà en cours.")
+            if only_new:
+                return None
+            if Path(job["folder"]) == folder:
+                return status()   # déjà en cours pour ce dossier : on affiche simplement l'avancement
+            item = {"folder": str(folder), "best": bool(best), "sharp": bool(sharp)}
+            if all(Path(q["folder"]) != folder for q in queue):
+                queue.append(item)
+                _save_resume(job["folder"], job.get("best"), job.get("sharp"))
+            return {**status(), "queued": True, "position": 1 + [Path(q["folder"]) for q in queue].index(folder)}
         files = photos_in(folder)
         out = folder / OUT_NAME
         if only_new:
@@ -134,12 +180,9 @@ def start(folder, best=False, only_new=False, sharp=False):
             raise ValueError("Aucune photo dans ce dossier" + (f" (fichiers trouvés : {', '.join(others)})" if others else " (il est vide)")
                              + ". Formats acceptés : JPG, PNG, WEBP, AVIF, HEIC, TIFF, BMP.")
         job.update(running=True, folder=str(folder), out=str(out), total=len(files), done=0, current="",
-                   errors=[], started=time.time(), finished=0.0, cancel=False, durations=[])
-        try:
-            import json
-            _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best), "sharp": bool(sharp)}), encoding="utf-8")
-        except OSError:
-            pass
+                   errors=[], started=time.time(), finished=0.0, cancel=False, durations=[], best=bool(best),
+                   sharp=bool(sharp))
+        _save_resume(folder, best, sharp)
 
     def work():
         from PIL import Image, ImageOps
@@ -176,6 +219,8 @@ def start(folder, best=False, only_new=False, sharp=False):
             job.update(running=False, current="", finished=time.time())
             n = job["done"] - len(job["errors"])
             msg = (f"Arrêté : {n} photo(s) améliorée(s)" if job["cancel"] else f"{n} photo(s) améliorée(s)") + f" dans {out}"
+            if job["cancel"]:
+                queue.clear()   # « Arrêter » arrête aussi la file d'attente
             try:
                 _resume_file().unlink(missing_ok=True)   # terminé ou arrêté volontairement : rien à reprendre
             except OSError:
@@ -184,11 +229,19 @@ def start(folder, best=False, only_new=False, sharp=False):
                 system.notify("Jarvis — photos améliorées", msg)
             except Exception:
                 pass
-            while on_finish:
+            while queue:   # dossier suivant de la file (les redémarrages en attente patientent encore)
+                nxt = queue.pop(0)
                 try:
-                    on_finish.pop(0)()
+                    if start(nxt["folder"], nxt.get("best", False), sharp=nxt.get("sharp", False)):
+                        break
                 except Exception:
-                    pass
+                    continue
+            else:
+                while on_finish:
+                    try:
+                        on_finish.pop(0)()
+                    except Exception:
+                        pass
     threading.Thread(target=work, daemon=True).start()
     return status()
 
@@ -222,8 +275,15 @@ def start_watcher(cfg, every=30):
             f = _resume_file()
             if f.exists() and not job["running"] and enhance_ai.ai_inpaint._deps_ok():
                 r = json.loads(f.read_text(encoding="utf-8"))
+                queue[:] = [q for q in r.get("queue", []) if isinstance(q, dict) and q.get("folder")]
                 if start(r["folder"], r.get("best", False), only_new=True, sharp=r.get("sharp", False)) is None:
                     f.unlink(missing_ok=True)
+                    while queue and not job["running"]:
+                        nxt = queue.pop(0)
+                        try:
+                            start(nxt["folder"], nxt.get("best", False), sharp=nxt.get("sharp", False))
+                        except Exception:
+                            pass
         except Exception:
             pass
         while True:
