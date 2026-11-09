@@ -242,6 +242,25 @@ class App:
             if want != self.bound_remote and self.restart_server:
                 self.restart_server()
             return {**self.state(), "remote_active": want, "addresses": remote.addresses(self.port) if want else []}
+        elif cmd == "gpu":
+            from . import batch, gpu
+            want = (arg or {}).get("action")
+            restart = self.relaunch
+            if restart and batch.job["running"]:   # jamais couper un dossier en cours : redémarrage à la fin
+                restart = lambda: batch.on_finish.append(self.relaunch) if self.relaunch not in batch.on_finish else None
+            if want == "install":
+                gpu.install(on_done=restart)
+                return {**self.state(), "gpu": gpu.info(), "restarting": not batch.job["running"],
+                        "message": "Installation du moteur carte graphique…" + (
+                            "" if not batch.job["running"] else " Jarvis l'utilisera après le dossier en cours.")}
+            if want in ("on", "off"):
+                gpu.set_enabled(want == "on")
+                if restart:
+                    restart()
+                msg = "Carte graphique " + ("activée" if want == "on" else "désactivée") + (
+                    " : Jarvis redémarre…" if not batch.job["running"] else " : appliqué à la fin du dossier en cours.")
+                return {**self.state(), "gpu": gpu.info(), "message": msg, "restarting": not batch.job["running"]}
+            return {**self.state(), "gpu": gpu.info()}
         elif cmd == "update":
             from . import batch
             if batch.job["running"] and self.relaunch:
@@ -308,7 +327,7 @@ def serve(cfg, workdir, port=7860, open_browser=True):
         def do_GET(self):
             path = self.path.split("?")[0]
             if path == "/version":
-                return self._json({"version": CODE_VERSION})
+                return self._json({"version": CODE_VERSION, "pid": os.getpid()})
             if path == "/manifest.json":
                 return self._json({"name": "Jarvis", "short_name": "Jarvis", "start_url": "/", "display": "standalone",
                                    "background_color": "#05080f", "theme_color": "#05080f", "lang": "fr",
@@ -393,17 +412,18 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/ai_enhance":
                     from . import enhance_ai
                     with ai_inpaint.user_priority():
-                        res = enhance_ai.enhance_data_url(data.get("image", ""), bool(data.get("best")))
+                        res = enhance_ai.enhance_data_url(data.get("image", ""), bool(data.get("best")), bool(data.get("sharp")))
                     self._json(res)
                 elif self.path == "/ai_warmup":
                     ai_inpaint.warmup()
                     self._json({"ok": True})
                 elif self.path == "/batch_start":
                     from . import batch
-                    self._json(batch.start(data.get("folder", ""), bool(data.get("best"))))
+                    self._json(batch.start(data.get("folder", ""), bool(data.get("best")), sharp=bool(data.get("sharp"))))
                 elif self.path == "/photo_watch":
                     from . import batch
-                    self._json(batch.set_watch(app.cfg, data.get("folder", ""), bool(data.get("on", True)), bool(data.get("best"))))
+                    self._json(batch.set_watch(app.cfg, data.get("folder", ""), bool(data.get("on", True)), bool(data.get("best")),
+                                               bool(data.get("sharp"))))
                 elif self.path == "/batch_cancel":
                     from . import batch
                     self._json(batch.cancel())
@@ -466,6 +486,12 @@ def serve(cfg, workdir, port=7860, open_browser=True):
     app.relaunch = relaunch
     from . import batch
     batch.start_watcher(app.cfg)
+
+    def gpu_check():  # mesure carte graphique / processeur une fois après l'installation du moteur
+        from . import gpu
+        if gpu.available() and ai_inpaint._deps_ok():
+            gpu.selftest(ai_inpaint.UPSCALE_MODEL)
+    threading.Thread(target=gpu_check, daemon=True).start()
 
     def restart():
         # appelé depuis une requête : on ferme le serveur dans un autre fil, la boucle ci-dessous le rouvre

@@ -107,7 +107,7 @@ def _text(img, text, position="bas-droite", size=None, color="#ffffff"):
     return img
 
 
-def enhance_photos(path, best=False, mode=None, out_dir=None, suffix="-amelioree", limit=20):
+def enhance_photos(path, best=False, mode=None, out_dir=None, suffix="-amelioree", limit=20, sharp=False):
     """Exactement l'amélioration du bouton ✨ du Studio (nettoyage IA, visages, lumière et couleurs),
     enregistrée comme dans le Studio : JPEG haute qualité, infos de la photo d'origine conservées."""
     import time
@@ -122,6 +122,8 @@ def enhance_photos(path, best=False, mode=None, out_dir=None, suffix="-amelioree
     files = [f for f in _targets(path) if not f.stem.endswith(suffix)] or _targets(path)
     if not files or not all(f.exists() for f in files):
         return f"ERREUR : aucune photo trouvée pour {path}"
+    if sharp and not ai_inpaint.pack_ready("sharp"):
+        ai_inpaint._download_pack("sharp")   # premier usage : télécharge le modèle de netteté (≈ 67 Mo)
     if mode and str(mode).lower() not in enhance_ai.ORIGINAL_SHARE:
         return f"ERREUR : mode inconnu. Choix : {', '.join(enhance_ai.ORIGINAL_SHARE)}"
     if any(f.suffix.lower() in (".avif", ".heic", ".heif") for f in files):
@@ -130,7 +132,7 @@ def enhance_photos(path, best=False, mode=None, out_dir=None, suffix="-amelioree
     for f in files[:limit]:
         try:
             img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
-            better, steps = enhance_ai.enhance(img, bool(best), str(mode).lower() if mode else None)
+            better, steps = enhance_ai.enhance(img, bool(best), str(mode).lower() if mode else None, bool(sharp))
             fmt = "png" if f.suffix.lower() == ".png" else "jpeg"
             raw, ext = photo_export.encode_image(better, fmt, 92, source_path=str(f), keep_meta=True, keep_gps=True)
             dest_dir = Path(out_dir) if out_dir else f.parent

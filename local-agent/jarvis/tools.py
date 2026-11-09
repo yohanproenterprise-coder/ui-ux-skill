@@ -294,9 +294,10 @@ class Tools:
         path.write_bytes(data)
         return f"Image créée : {path} (utilise open_item pour l'afficher)"
 
-    def enhance_photo(self, path, best=False, mode=None, out_dir=None):
+    def enhance_photo(self, path, best=False, mode=None, out_dir=None, sharp=False):
         self.ui.info("amélioration de la photo par l'IA…")
-        return photo.enhance_photos(str(self._path(path)), best, mode, str(self._path(out_dir)) if out_dir else None)
+        return photo.enhance_photos(str(self._path(path)), best, mode, str(self._path(out_dir)) if out_dir else None,
+                                    sharp=sharp)
 
     def photo_folder_status(self):
         from . import batch
@@ -316,9 +317,11 @@ class Tools:
             msg += " Dossiers en automatique (nouvelles photos traitées toutes seules) : " + ", ".join(auto) + "."
         return msg
 
-    def enhance_folder(self, path, best=False):
-        from . import batch
-        st = batch.start(str(self._path(path)), bool(best))
+    def enhance_folder(self, path, best=False, sharp=False):
+        from . import ai_inpaint, batch
+        if sharp and not ai_inpaint.pack_ready("sharp"):
+            ai_inpaint._download_pack("sharp")
+        st = batch.start(str(self._path(path)), bool(best), sharp=bool(sharp))
         return (f"Amélioration lancée en arrière-plan : {st['total']} photo(s). Résultats dans « {st['out']} » "
                 "(originaux intacts). Une notification s'affichera à la fin ; suivi dans le Studio.")
 
@@ -519,12 +522,14 @@ TOOL_SPECS = [
            "best": {"type": "boolean", "description": "qualité maximale (environ 3× plus lent)"},
            "mode": {"type": "string", "enum": ["produit", "portrait"],
                     "description": "produit : objets, matières fidèles (par défaut) ; portrait : personnes, visages"},
-           "out_dir": {"type": "string", "description": "dossier de sortie (par défaut celui de la photo)"}}, ["path"]),
+           "out_dir": {"type": "string", "description": "dossier de sortie (par défaut celui de la photo)"},
+           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, plus lent)"}}, ["path"]),
     _tool("photo_folder_status", "Indique où en est l'amélioration automatique d'un dossier de photos "
           "(en cours, terminée, photos restantes, dossiers en automatique).", {}, []),
     _tool("enhance_folder", "Améliore automatiquement TOUTES les photos d'un dossier (comme « Améliorer la photo » "
           "du Studio), en arrière-plan. Les copies vont dans un sous-dossier « Améliorées ».",
-          {"path": S, "best": {"type": "boolean", "description": "qualité maximale (beaucoup plus lent)"}}, ["path"]),
+          {"path": S, "best": {"type": "boolean", "description": "qualité maximale (beaucoup plus lent)"},
+           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, plus lent)"}}, ["path"]),
     _tool("edit_photo", "Retouche une photo, un dossier entier ou un motif (*.jpg). Réglages de -100 à +100. "
           "Crée une copie (suffixe -retouche), l'original reste intact. Pour EFFACER un objet ou une personne "
           "(le fond se reconstruit), dis à l'utilisateur d'utiliser la Gomme magique du Studio (bouton Studio).",

@@ -32,13 +32,14 @@ PACKS = {
     "faces": [([FF + "yoloface_8n.onnx"], MODELS / "yoloface_8n.onnx", 10_000_000),
               ([FF + "codeformer.onnx"], MODELS / "codeformer.onnx", 300_000_000)],
     "upmax": [([FF + "real_esrgan_x2.onnx"], MODELS / "real_esrgan_x2.onnx", 60_000_000)],
+    "sharp": [([FF + "nomos8k_sc_x4.onnx"], MODELS / "nomos8k_sc_x4.onnx", 60_000_000)],
 }
 # fichiers facultatifs (accélèrent, mais le paquet fonctionne sans) : téléchargés avec le paquet, ou en arrière-plan
 OPTIONAL = {"faces": [([FF + "gpen_bfr_256.onnx"], MODELS / "gpen_bfr_256.onnx", 70_000_000)]}
 PACKS["enhance"] = PACKS["faces"] + PACKS["upmax"]  # tout ce qu'utilise l'amélioration en un clic
 OPTIONAL["enhance"] = OPTIONAL["faces"]
 PACK_LABELS = {"enhance": "IA d'amélioration (≈ 530 Mo)","lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 460 Mo)",
-               "upmax": "agrandissement Qualité max (≈ 70 Mo)"}
+               "upmax": "agrandissement Qualité max (≈ 70 Mo)", "sharp": "IA netteté renforcée (≈ 67 Mo)"}
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
 upscale_state = {"busy": False, "progress": 0}               # opérations lancées depuis le Studio
@@ -100,7 +101,8 @@ def pack_ready(name):
 
 
 def status():
-    extra = {"deps": _deps_ok(), "upscale": dict(upscale_state),
+    from . import gpu
+    extra = {"deps": _deps_ok(), "upscale": dict(upscale_state), "gpu": gpu.info(),
              "packs": {k: pack_ready(k) for k in PACKS}}
     if state["state"] in ("installing", "error"):
         return {**state, **extra}
@@ -200,14 +202,51 @@ def install(deps_only=False, pack="lama"):
     return status()
 
 
+class _Session:
+    """Session d'IA sur la carte graphique si elle est active, sinon sur le processeur. Si la carte graphique
+    échoue sur un modèle, celui-ci repasse tout seul (et pour de bon) sur le processeur."""
+    def __init__(self, path):
+        from . import gpu
+        self.path, self.lock = str(path), threading.Lock()
+        prov = gpu.providers()
+        self.gpu = prov[0] != "CPUExecutionProvider"
+        try:
+            self.s = self._make(prov)
+        except Exception:
+            self.s, self.gpu = self._make(["CPUExecutionProvider"]), False
+
+    def _make(self, prov):
+        import onnxruntime as ort
+        o = ort.SessionOptions()
+        o.log_severity_level = 3
+        if prov[0] != "CPUExecutionProvider":   # exigé par DirectML
+            o.enable_mem_pattern = False
+            o.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        return ort.InferenceSession(self.path, sess_options=o, providers=prov)
+
+    def get_inputs(self):
+        return self.s.get_inputs()
+
+    def run(self, *a, **k):
+        if not self.gpu:
+            return self.s.run(*a, **k)
+        try:
+            with self.lock:   # une seule exécution à la fois sur la carte graphique
+                return self.s.run(*a, **k)
+        except Exception:
+            self.s, self.gpu = self._make(["CPUExecutionProvider"]), False
+            return self.s.run(*a, **k)
+
+
+def new_session(path):
+    return _Session(path)
+
+
 def _get_session():
     global _session, _last_use
     with _lock:
         if _session is None:
-            import onnxruntime as ort
-            opts = ort.SessionOptions()
-            opts.log_severity_level = 3
-            _session = ort.InferenceSession(str(MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
+            _session = new_session(MODEL)
             threading.Thread(target=_unload_when_idle, daemon=True).start()
         _last_use = time.time()
         return _session
@@ -350,15 +389,38 @@ def _max_x2(img, tile=320, pad=20, progress=(0, 100)):
     import numpy as np
     from PIL import Image
     if _max_session is None:
-        import onnxruntime as ort
-        opts = ort.SessionOptions()
-        opts.log_severity_level = 3
-        _max_session = ort.InferenceSession(str(MODELS / "real_esrgan_x2.onnx"), sess_options=opts,
-                                            providers=["CPUExecutionProvider"])
+        _max_session = new_session(MODELS / "real_esrgan_x2.onnx")
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
     run = lambda part: _max_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
     out = _tiled(src, run, 2, tile, pad, progress, even=True)
     return Image.fromarray((out.clip(0, 1) * 255).round().astype(np.uint8))
+
+
+SHARP_MODEL = MODELS / "nomos8k_sc_x4.onnx"
+_sharp_session = None
+
+
+def _sharp_x4(img, factor=2, tile=384, pad=16):
+    """« Netteté renforcée » (façon Upscayl) : modèle 4xNomos8kSC, détails nets et rendu photo réaliste."""
+    global _sharp_session
+    import numpy as np
+    from PIL import Image
+    if _sharp_session is None:
+        _sharp_session = new_session(SHARP_MODEL)
+    w, h = img.size
+    src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
+    name = _sharp_session.get_inputs()[0].name
+    ustate().update(busy=True, progress=0)
+    try:
+        run = lambda part: _sharp_session.run(None, {name: part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
+        out4 = _tiled(src, run, 4, tile, pad)
+    finally:
+        ustate()["busy"] = False
+    res = Image.fromarray((out4.clip(0, 1) * 255).round().astype(np.uint8))
+    if factor != 4:
+        res = res.resize((w * factor, h * factor), Image.LANCZOS)
+    # 12 % d'agrandissement classique seulement : on garde le piqué, avec un soupçon de grain réel
+    return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.12)
 
 
 def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
@@ -382,11 +444,10 @@ def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
             ustate()["busy"] = False
         # 25 % d'agrandissement classique : grain réel conservé
         return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.25)
+    if quality == "sharp" and pack_ready("sharp"):
+        return _sharp_x4(img, factor)
     if _up_session is None:
-        import onnxruntime as ort
-        opts = ort.SessionOptions()
-        opts.log_severity_level = 3
-        _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
+        _up_session = new_session(UPSCALE_MODEL)
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
     ustate().update(busy=True, progress=0)
     try:
@@ -433,11 +494,12 @@ def warmup():
         try:
             if not _deps_ok():
                 return
-            import onnxruntime as ort
-            opts = ort.SessionOptions()
-            opts.log_severity_level = 3
+            from . import gpu
+            gpu.selftest(UPSCALE_MODEL)   # une fois après l'installation : carte graphique vraiment plus rapide ?
             if _up_session is None:
-                _up_session = ort.InferenceSession(str(UPSCALE_MODEL), sess_options=opts, providers=["CPUExecutionProvider"])
+                _up_session = new_session(UPSCALE_MODEL)
+            if pack_ready("sharp") and _sharp_session is None:
+                globals()["_sharp_session"] = new_session(SHARP_MODEL)
             if pack_ready("lama"):
                 _get_session()
             if pack_ready("faces"):

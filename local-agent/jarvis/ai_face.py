@@ -39,11 +39,8 @@ def files_to_download(optional=True):
 def _session(name):
     with _lock:
         if name not in _sessions:
-            import onnxruntime as ort
-            opts = ort.SessionOptions()
-            opts.log_severity_level = 3
-            _sessions[name] = ort.InferenceSession(str(MODELS_DIR / name), sess_options=opts,
-                                                   providers=["CPUExecutionProvider"])
+            from .ai_inpaint import new_session
+            _sessions[name] = new_session(MODELS_DIR / name)
         return _sessions[name]
 
 

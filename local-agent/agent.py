@@ -22,6 +22,9 @@ try:
 except Exception as _e:
     print(f"Mise à jour en attente non appliquée : {_e}")
 
+from jarvis import gpu as _gpu  # noqa: E402
+_gpu.activate_path()  # moteur d'IA « carte graphique », s'il a été installé (avant tout chargement de l'IA)
+
 from jarvis import config, scheduler, system, updater  # noqa: E402
 from jarvis.config import MEMORY_FILE  # noqa: E402
 from jarvis.core import Agent, Brain  # noqa: E402

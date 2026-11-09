@@ -93,7 +93,7 @@ def light_and_color(img, product=False):
     return Image.fromarray((np.clip(a, 0, 1) * 255 + .5).astype(np.uint8))
 
 
-def enhance(img, best=False, mode=None):
+def enhance(img, best=False, mode=None, sharp=False):
     """Renvoie (image améliorée, liste des étapes réalisées). best=True : qualité maximale (plus lent).
     mode : « produit » (défaut, voir default_mode) ou « portrait »."""
     from PIL import Image
@@ -105,16 +105,22 @@ def enhance(img, best=False, mode=None):
     w, h = img.size
     done = []
     quality = "max" if best and ai_inpaint.pack_ready("upmax") else "fast"
+    if sharp and ai_inpaint.pack_ready("sharp"):
+        quality, keep = "sharp", keep * .5   # netteté renforcée : moins de photo d'origine remélangée
     try:
         # 1. nettoyage et netteté par IA
         if max(w, h) < SMALL:
             _progress(2, "Nettoyage de la photo par l'IA…")
             out = ai_inpaint.upscale_image(img, 2, quality=quality)
             done.append(f"agrandie ×2 ({out.width}×{out.height})")
-            done.append("compression et bruit nettoyés, netteté restaurée")
+            done.append("compression et bruit nettoyés, netteté " + ("renforcée" if quality == "sharp" else "restaurée"))
         elif max(w, h) <= LARGE:
             _progress(2, "Nettoyage de la photo par l'IA…")
-            if quality == "max":
+            if quality == "sharp":
+                half = img.resize((w // 2, h // 2), Image.LANCZOS)
+                clean = ai_inpaint.upscale_image(half, 4, quality="sharp").resize((w, h), Image.LANCZOS)
+                out = Image.blend(clean, img, keep)
+            elif quality == "max":
                 # qualité max : le grand modèle travaille sur la photo réduite de moitié et la ramène à sa taille
                 # (4× moins de calcul qu'un ×2 suivi d'une réduction, pour un rendu équivalent)
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)
@@ -125,7 +131,7 @@ def enhance(img, best=False, mode=None):
                 half = img.resize((w // 2, h // 2), Image.LANCZOS)
                 clean = ai_inpaint.upscale_image(half, 4, quality="fast").resize((w, h), Image.LANCZOS)
                 out = Image.blend(clean, img, keep)
-            done.append("compression et bruit nettoyés, netteté restaurée")
+            done.append("compression et bruit nettoyés, netteté " + ("renforcée" if quality == "sharp" else "restaurée"))
         else:
             out = img
             done.append("photo déjà en haute résolution : nettoyage IA non nécessaire")
@@ -144,12 +150,12 @@ def enhance(img, best=False, mode=None):
     return out, done
 
 
-def enhance_data_url(data_url, best=False):
+def enhance_data_url(data_url, best=False, sharp=False):
     import base64
     import io
     if not ai_inpaint._deps_ok():
         raise RuntimeError("L'IA d'amélioration n'est pas installée.")
-    img, done = enhance(ai_inpaint._decode(data_url, "RGB"), best)
+    img, done = enhance(ai_inpaint._decode(data_url, "RGB"), best, sharp=sharp)
     buf = io.BytesIO()
     img.save(buf, "PNG", compress_level=1)  # encodage rapide (le fichier final est encodé à l'export)
     return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(), "done": done}

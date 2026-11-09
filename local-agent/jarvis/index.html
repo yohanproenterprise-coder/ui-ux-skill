@@ -307,6 +307,12 @@ dialog input:focus { outline: none; border-color: var(--cyan); }
   <label class="check" style="margin-top:8px"><input type="checkbox" id="remote"> Autoriser l'accès depuis mon téléphone</label>
   <div id="remoteInfo" class="hint"></div>
 
+  <h3>Carte graphique</h3>
+  <p class="hint">Fait travailler la puce graphique du PC pour l'amélioration des photos (plus rapide qu'avec le processeur
+    seul). Jarvis mesure la vitesse sur ton PC et ne l'utilise que si elle est vraiment plus rapide.</p>
+  <div id="gpuState" class="hint">…</div>
+  <div class="line" id="gpuBtns"></div>
+
   <h3>Mise à jour</h3>
   <div class="line"><button class="pill" data-s="update">Installer la dernière version</button></div>
   <pre id="settingsMsg" hidden></pre>
@@ -501,6 +507,7 @@ function fillSettings() {
   $("emailAddr").value = state.email || "";
   $("startup").checked = !!state.startup; $("startup").disabled = !state.windows;
   $("remote").checked = !!state.remote;
+  loadGpu();
   $("pin").placeholder = state.has_pin ? "Nouveau code PIN (facultatif)" : "Code PIN (6 chiffres minimum)";
   $("remoteInfo").innerHTML = !state.remote_active ? "" :
     "Sur ton téléphone, connecté au même Wi-Fi, ouvre le navigateur et tape :<br>" +
@@ -508,6 +515,38 @@ function fillSettings() {
                             : "(adresse introuvable : vérifie que le PC est connecté au Wi-Fi)") +
     "<br>Puis, dans le menu du navigateur : « Ajouter à l'écran d'accueil ».<br>" +
     "Si la page ne s'ouvre pas : Windows a peut-être bloqué l'accès (voir le guide, section Téléphone).";
+}
+async function waitRestart() {
+  // Jarvis redémarre : on recharge la page dès qu'il répond de nouveau (sa version change)
+  let v0 = null; try { v0 = (await (await fetch("/version", {cache: "no-store"})).json()).pid; } catch (e) {}
+  for (let i = 0; i < 300; i++) {
+    await new Promise(ok => setTimeout(ok, 1500));
+    try { const v = await (await fetch("/version", {cache: "no-store"})).json(); if (v.pid !== v0) return location.reload(); } catch (e) {}
+  }
+}
+const GPU_TEXT = {
+  unsupported: "Disponible uniquement sous Windows.",
+  absent: "Non installée : l'amélioration utilise le processeur.",
+  installing: "Installation en cours…",
+  restart: "Installée : redémarre Jarvis pour l'utiliser.",
+  testing: "Mesure de la vitesse en cours (quelques secondes)…",
+  off: "Désactivée : l'amélioration utilise le processeur.",
+};
+async function loadGpu() {
+  let g; try { g = (await (await fetch("/ai_status")).json()).gpu; } catch (e) { return; }
+  if (!g) return;
+  let text = GPU_TEXT[g.state] || "";
+  if (g.state === "active") text = `⚡ Active : l'IA va environ ${g.speedup}× plus vite qu'avec le processeur.`;
+  if (g.state === "slower") text = `Pas utilisée : ${g.reason || "pas plus rapide que le processeur"}. Jarvis reste sur le processeur.`;
+  if (g.state === "error") text = "Échec de l'installation : " + (g.error || "");
+  if (g.state === "installing" && g.step) text = g.step;
+  $("gpuState").textContent = text;
+  const btn = (label, action) => `<button class="pill" data-s="gpu" data-a="${action}">${label}</button>`;
+  $("gpuBtns").innerHTML = g.state === "unsupported" || g.state === "installing" ? "" :
+    g.state === "absent" || g.state === "error" ? btn("⚡ Installer et activer", "install") :
+    g.state === "off" || g.state === "slower" ? btn("Réessayer la carte graphique", "on") :
+    g.state === "active" || g.state === "testing" ? btn("Désactiver", "off") : "";
+  if (g.state === "installing" || g.state === "testing") setTimeout(loadGpu, 2000);
 }
 function settingsMsg(text, isError) {
   const m = $("settingsMsg"); m.hidden = false; m.textContent = text;
@@ -532,18 +571,19 @@ $("settingsDlg").addEventListener("click", async e => {
     settingsMsg("Connexion en cours…");
     r = await post("/command", {cmd: "email_test"});
     if (!r.error) settingsMsg(r.message);
-    if (r.restarting) {  // Jarvis redémarre : on recharge la page dès qu'il répond de nouveau
-      await new Promise(ok => setTimeout(ok, 2500));
-      for (let i = 0; i < 60; i++) {
-        try { if ((await fetch("/version", {cache: "no-store"})).ok) break; } catch (e) {}
-        await new Promise(ok => setTimeout(ok, 1000));
-      }
-      return location.reload();
-    }
+    if (r.restarting) return waitRestart();
   } else if (s === "pin") {
     if (!$("pin").value.trim()) return;
     r = await post("/command", {cmd: "remote", arg: {enabled: state.remote, pin: $("pin").value}});
     $("pin").value = ""; if (!r.error) settingsMsg("Code PIN enregistré. Les téléphones déjà connectés devront le retaper.");
+  } else if (s === "gpu") {
+    const action = e.target.dataset.a;
+    if (action === "install" && !confirm("Installer le moteur carte graphique (≈ 20 Mo) ? Jarvis redémarrera ensuite tout seul.")) return;
+    r = await post("/command", {cmd: "gpu", arg: {action}});
+    if (!r.error && r.message) settingsMsg(r.message);
+    loadGpu();
+    if (r.restarting) await waitRestart();
+    return;
   } else if (s === "update") {
     if (!confirm("Télécharger et installer la dernière version de Jarvis ? (tes réglages sont conservés)")) return;
     settingsMsg("Téléchargement…");

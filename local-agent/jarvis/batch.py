@@ -112,7 +112,7 @@ def _target(folder, out, f):
 _failed = set()   # photos en échec (chemin, date) : la surveillance ne les réessaie pas en boucle
 
 
-def start(folder, best=False, only_new=False):
+def start(folder, best=False, only_new=False, sharp=False):
     """Lance l'amélioration du dossier. only_new : seulement les photos pas encore améliorées (surveillance)."""
     folder = clean_path(folder)
     if not folder.is_dir():
@@ -137,7 +137,7 @@ def start(folder, best=False, only_new=False):
                    errors=[], started=time.time(), finished=0.0, cancel=False, durations=[])
         try:
             import json
-            _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best)}), encoding="utf-8")
+            _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best), "sharp": bool(sharp)}), encoding="utf-8")
         except OSError:
             pass
 
@@ -157,7 +157,7 @@ def start(folder, best=False, only_new=False):
                 t0 = time.time()
                 try:
                     img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
-                    better, _ = enhance_ai.enhance(img, best)
+                    better, _ = enhance_ai.enhance(img, best, sharp=sharp)
                     fmt = "png" if f.suffix.lower() == ".png" else "jpeg"
                     raw, ext = photo_export.encode_image(better, fmt, 92, source_path=str(f), keep_meta=True, keep_gps=True)
                     target = _target(folder, out, f)
@@ -198,7 +198,7 @@ def watch_list(cfg):
     return list(cfg.get("photo_watch") or [])
 
 
-def set_watch(cfg, folder, on=True, best=False):
+def set_watch(cfg, folder, on=True, best=False, sharp=False):
     """Ajoute ou retire un dossier surveillé (les nouvelles photos y sont améliorées automatiquement)."""
     from . import config
     folder = clean_path(folder)
@@ -206,7 +206,7 @@ def set_watch(cfg, folder, on=True, best=False):
     if on:
         if not folder.is_dir():
             raise ValueError(f"Dossier introuvable : {folder}")
-        lst.append({"folder": str(folder), "best": bool(best)})
+        lst.append({"folder": str(folder), "best": bool(best), "sharp": bool(sharp)})
     cfg["photo_watch"] = lst
     config.save(cfg)
     return lst
@@ -222,7 +222,7 @@ def start_watcher(cfg, every=30):
             f = _resume_file()
             if f.exists() and not job["running"] and enhance_ai.ai_inpaint._deps_ok():
                 r = json.loads(f.read_text(encoding="utf-8"))
-                if start(r["folder"], r.get("best", False), only_new=True) is None:
+                if start(r["folder"], r.get("best", False), only_new=True, sharp=r.get("sharp", False)) is None:
                     f.unlink(missing_ok=True)
         except Exception:
             pass
@@ -232,7 +232,7 @@ def start_watcher(cfg, every=30):
                     break
                 try:
                     if Path(w["folder"]).is_dir() and enhance_ai.ai_inpaint._deps_ok():
-                        start(w["folder"], w.get("best", False), only_new=True)
+                        start(w["folder"], w.get("best", False), only_new=True, sharp=w.get("sharp", False))
                 except Exception:
                     pass
             time.sleep(every)
