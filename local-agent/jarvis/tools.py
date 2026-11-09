@@ -294,6 +294,10 @@ class Tools:
         path.write_bytes(data)
         return f"Image créée : {path} (utilise open_item pour l'afficher)"
 
+    def enhance_photo(self, path, best=False, mode=None, out_dir=None):
+        self.ui.info("amélioration de la photo par l'IA…")
+        return photo.enhance_photos(str(self._path(path)), best, mode, str(self._path(out_dir)) if out_dir else None)
+
     def photo_folder_status(self):
         from . import batch
         st = batch.status()
@@ -507,6 +511,15 @@ TOOL_SPECS = [
           "avec leur fichier source.", {"query": S, "k": I}, ["query"]),
     _tool("generate_image", "Crée une image à partir d'une description (en anglais de préférence).",
           {"prompt": S, "path": S, "width": I, "height": I}, ["prompt"]),
+    _tool("enhance_photo", "AMÉLIORE une ou quelques photos exactement comme le bouton « ✨ Améliorer la photo » du Studio : "
+          "nettoyage IA (compression, bruit, netteté), visages restaurés, lumière et couleurs naturelles, petites photos "
+          "agrandies ×2. Copie « -amelioree » à côté de l'original (intact), infos de la photo conservées. À utiliser dès "
+          "qu'on demande d'améliorer / rendre plus nette / plus belle une photo. Pour un dossier entier : enhance_folder.",
+          {"path": {"type": "string", "description": "photo, ou motif (ex: C:/photos/*.jpg)"},
+           "best": {"type": "boolean", "description": "qualité maximale (environ 3× plus lent)"},
+           "mode": {"type": "string", "enum": ["produit", "portrait"],
+                    "description": "produit : objets, matières fidèles (par défaut) ; portrait : personnes, visages"},
+           "out_dir": {"type": "string", "description": "dossier de sortie (par défaut celui de la photo)"}}, ["path"]),
     _tool("photo_folder_status", "Indique où en est l'amélioration automatique d'un dossier de photos "
           "(en cours, terminée, photos restantes, dossiers en automatique).", {}, []),
     _tool("enhance_folder", "Améliore automatiquement TOUTES les photos d'un dossier (comme « Améliorer la photo » "
@@ -523,7 +536,7 @@ TOOL_SPECS = [
            "upscale": {"type": "number", "description": "agrandissement, ex: 2 pour ×2"},
            "denoise": {"type": "boolean", "description": "réduction du bruit"},
            "faces": {"type": "boolean", "description": "restaurer les visages flous (IA, si installée)"},
-           "enhance": {"type": "boolean", "description": "amélioration en un clic façon Claid : nettoyage, netteté, visages, lumière (à privilégier quand on demande d'améliorer une photo)"},
+           "enhance": {"type": "boolean", "description": "amélioration IA avant les autres réglages (pour une simple amélioration, utilise plutôt enhance_photo)"},
            "text_position": {"type": "string", "enum": ["bas-droite", "bas-gauche", "haut-droite", "haut-gauche", "centre"]},
            "output_format": {"type": "string", "enum": ["jpeg", "png", "webp"]}, "quality": I, "out_dir": S},
           ["path"]),

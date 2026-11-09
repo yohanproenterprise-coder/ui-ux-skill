@@ -107,6 +107,45 @@ def _text(img, text, position="bas-droite", size=None, color="#ffffff"):
     return img
 
 
+def enhance_photos(path, best=False, mode=None, out_dir=None, suffix="-amelioree", limit=20):
+    """Exactement l'amélioration du bouton ✨ du Studio (nettoyage IA, visages, lumière et couleurs),
+    enregistrée comme dans le Studio : JPEG haute qualité, infos de la photo d'origine conservées."""
+    import time
+    err = ensure_pillow()
+    if err:
+        return "ERREUR : " + err
+    from PIL import Image, ImageOps
+    from . import ai_inpaint, batch, enhance_ai, photo_export
+    if not ai_inpaint._deps_ok():
+        return ("ERREUR : l'IA d'amélioration n'est pas encore installée. Dis à l'utilisateur d'ouvrir le Studio et de "
+                "cliquer une fois sur « ✨ Améliorer la photo » : Jarvis propose alors de l'installer (≈ 530 Mo).")
+    files = [f for f in _targets(path) if not f.stem.endswith(suffix)] or _targets(path)
+    if not files or not all(f.exists() for f in files):
+        return f"ERREUR : aucune photo trouvée pour {path}"
+    if mode and str(mode).lower() not in enhance_ai.ORIGINAL_SHARE:
+        return f"ERREUR : mode inconnu. Choix : {', '.join(enhance_ai.ORIGINAL_SHARE)}"
+    if any(f.suffix.lower() in (".avif", ".heic", ".heif") for f in files):
+        batch._register_formats()
+    lines, t0 = [], time.time()
+    for f in files[:limit]:
+        try:
+            img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
+            better, steps = enhance_ai.enhance(img, bool(best), str(mode).lower() if mode else None)
+            fmt = "png" if f.suffix.lower() == ".png" else "jpeg"
+            raw, ext = photo_export.encode_image(better, fmt, 92, source_path=str(f), keep_meta=True, keep_gps=True)
+            dest_dir = Path(out_dir) if out_dir else f.parent
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest = dest_dir / f"{f.stem}{suffix}.{ext}"
+            dest.write_bytes(raw)
+            lines.append(f"{dest} ({better.width}×{better.height}) : " + ", ".join(steps))
+        except Exception as e:
+            lines.append(f"{f.name} : échec ({e})")
+    more = (f"\n… {len(files) - limit} autres non traitées : pour un dossier entier, utilise enhance_folder "
+            "(en arrière-plan, avec reprise automatique)." if len(files) > limit else "")
+    return (f"{len(lines)} photo(s) améliorée(s) comme dans le Studio en {round(time.time() - t0)} s "
+            f"— les originaux sont intacts :\n" + "\n".join(lines) + more)
+
+
 def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, filter=None, crop_ratio=None,
          rotate=0, flip=None, max_size=None, blur=0, vignette=0, text=None, text_position="bas-droite",
          width=None, height=None, upscale=None, denoise=False, faces=False, enhance=False,
@@ -121,7 +160,7 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
     files = [f for f in _targets(path) if not (suffix and f.stem.endswith(suffix))] or _targets(path)
     if not files or not all(f.exists() for f in files):
         return f"ERREUR : aucune image trouvée pour {path}"
-    done = []
+    done, notes = [], []
     for f in files[:500]:
         img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
         if denoise:
@@ -130,8 +169,9 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
             try:  # amélioration en un clic (nettoyage IA, visages, lumière) comme dans le Studio
                 from . import enhance_ai
                 img, _ = enhance_ai.enhance(img)
-            except Exception:
+            except Exception as e:  # IA absente : simple correction automatique, et on le dit
                 img = ImageOps.autocontrast(img, cutoff=.5)
+                notes.append(f"amélioration IA indisponible ({e}) : simple correction automatique appliquée")
         if faces:
             try:  # IA des visages si installée (Studio > Réglages > Restaurer les visages)
                 from . import ai_face, ai_inpaint
@@ -186,4 +226,5 @@ def edit(path, brightness=0, contrast=0, saturation=0, sharpness=0, auto=False, 
         img.save(dest, fmt.upper(), quality=int(quality), optimize=True)
         done.append(f"{dest} ({img.size[0]}x{img.size[1]}, {os.path.getsize(dest) // 1024} Ko)")
     more = f"\n… et {len(files) - 500} autres non traitées" if len(files) > 500 else ""
-    return f"{len(done)} image(s) retouchée(s) — les originaux sont intacts :\n" + "\n".join(done[:30]) + more
+    note = ("\nATTENTION : " + notes[0]) if notes else ""
+    return f"{len(done)} image(s) retouchée(s) — les originaux sont intacts :\n" + "\n".join(done[:30]) + more + note
