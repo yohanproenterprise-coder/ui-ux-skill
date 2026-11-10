@@ -75,6 +75,24 @@ def token_ok(token):
     return bool(token) and hashlib.sha256(token.encode()).hexdigest() in _load_devices()
 
 
+def _tailscale_ips():
+    """Adresse Tailscale demandée directement à Tailscale (plus fiable que celle vue par Windows)."""
+    import os
+    import shutil
+    import subprocess
+    exe = shutil.which("tailscale") or next((p for p in (
+        os.path.join(os.environ.get("ProgramFiles", r"C:\Program Files"), "Tailscale", "tailscale.exe"),
+        "/Applications/Tailscale.app/Contents/MacOS/Tailscale") if os.path.exists(p)), None)
+    if not exe:
+        return set()
+    try:
+        r = subprocess.run([exe, "ip", "-4"], capture_output=True, text=True, timeout=5,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        return {line.strip() for line in r.stdout.splitlines() if line.strip().startswith("100.")}
+    except Exception:
+        return set()
+
+
 def addresses(port):
     """Adresses auxquelles le téléphone peut joindre le PC."""
     ips = set()
@@ -90,6 +108,7 @@ def addresses(port):
             ips.add(info[4][0])
     except OSError:
         pass
+    ips |= _tailscale_ips()
     out = []
     for ip in sorted(ips):
         if ip.startswith("127.") or ip.startswith("169.254."):
