@@ -509,7 +509,13 @@ function fillSettings() {
   $("remote").checked = !!state.remote;
   loadGpu();
   $("pin").placeholder = state.has_pin ? "Nouveau code PIN (facultatif)" : "Code PIN (6 chiffres minimum)";
-  $("remoteInfo").innerHTML = !state.remote_active ? "" :
+  renderRemote();
+  fetch("/state").then(r => r.json()).then(s => { state = s; renderRemote(); }).catch(() => {});  // état à jour
+}
+function renderRemote() {
+  $("remote").checked = !!state.remote;
+  $("remoteInfo").innerHTML = state.remote && !state.remote_active
+    ? "Ouverture de l'accès téléphone… (quelques secondes)" : !state.remote_active ? "" :
     "Sur ton téléphone, connecté au même Wi-Fi, ouvre le navigateur et tape :<br>" +
     (state.addresses.length ? state.addresses.map(a => `<span class="addr">${esc(a.url)}</span> <small>(${esc(a.kind)})</small>`).join("<br>")
                             : "(adresse introuvable : vérifie que le PC est connecté au Wi-Fi)") +
@@ -611,7 +617,14 @@ $("remote").onchange = async e => {
   const r = await post("/command", {cmd: "remote", arg: {enabled: e.target.checked}});
   if (r.error) { settingsMsg(r.error, true); e.target.checked = !e.target.checked; return; }
   settingsMsg(e.target.checked ? "Accès téléphone activé." : "Accès téléphone désactivé : Jarvis n'est plus visible sur le réseau.");
-  await new Promise(res => setTimeout(res, 900)); refresh(r); setTimeout(fillSettings, 50);
+  // Jarvis rouvre sa connexion réseau : on attend qu'il réponde avec le nouvel état (jusqu'à 20 s si le PC est occupé)
+  for (let i = 0; i < 20; i++) {
+    await new Promise(res => setTimeout(res, 1000));
+    try { const s = await (await fetch("/state")).json(); state = s; renderRemote();
+          if (!!s.remote_active === e.target.checked) break; } catch (x) {}
+  }
+  if (e.target.checked && !state.remote_active)
+    settingsMsg("L'accès téléphone n'a pas pu s'ouvrir. Ferme Jarvis complètement et relance-le, puis réessaie.", true);
 };
 $("startup").onchange = async e => {
   const r = await post("/command", {cmd: "startup", arg: e.target.checked});
