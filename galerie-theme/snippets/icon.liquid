@@ -1,0 +1,23 @@
+{%- comment -%}
+  Icônes SVG inline. Paramètre : name
+{%- endcomment -%}
+<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+  {%- case name -%}
+    {%- when 'cart' -%}<path d="M5 8h14l-1.2 11H6.2L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+    {%- when 'search' -%}<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>
+    {%- when 'user' -%}<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>
+    {%- when 'menu' -%}<path d="M4 7h16M4 12h16M4 17h16"/>
+    {%- when 'close' -%}<path d="M6 6l12 12M18 6 6 18"/>
+    {%- when 'arrow' -%}<path d="M5 12h14M13 6l6 6-6 6"/>
+    {%- when 'lock' -%}<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+    {%- when 'size' -%}<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><rect x="9" y="9" width="6" height="6"/>
+    {%- when 'bulb' -%}<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6h4c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>
+    {%- when 'sun' -%}<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>
+    {%- when 'truck' -%}<path d="M3 6h11v10H3zM14 9h4l3 3v4h-7"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>
+    {%- when 'return' -%}<path d="M4 9h11a5 5 0 0 1 0 10H8"/><path d="m8 5-4 4 4 4"/>
+    {%- when 'shield' -%}<path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6z"/><path d="m9 12 2 2 4-4"/>
+    {%- when 'chat' -%}<path d="M4 5h16v11H9l-5 4z"/>
+    {%- when 'star' -%}<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>
+    {%- else -%}<circle cx="12" cy="12" r="8"/>
+  {%- endcase -%}
+</svg>

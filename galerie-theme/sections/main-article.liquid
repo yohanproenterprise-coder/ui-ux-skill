@@ -1,0 +1,17 @@
+<article class="wrap">
+  <div class="page">
+    <p class="kicker">{{ article.published_at | date: '%d %B %Y' }}</p>
+    <h1>{{ article.title }}</h1>
+    {%- if article.image -%}
+      <div class="it-img" style="aspect-ratio:16/9;margin-bottom:34px">{{ article.image | image_url: width: 1200 | image_tag: loading: 'eager', alt: article.title }}</div>
+    {%- endif -%}
+    <div class="rte">{{ article.content }}</div>
+    <p style="margin-top:40px"><a class="link" href="{{ blog.url }}">← Retour au journal</a></p>
+  </div>
+</article>
+
+{% schema %}
+{
+  "name": "Article"
+}
+{% endschema %}

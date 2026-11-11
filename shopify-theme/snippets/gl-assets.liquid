@@ -1,0 +1,10 @@
+{%- comment -%}
+  Charge CSS + JS des sections "gl-*". Rendu par chaque section ;
+  le JS se protège contre les doubles initialisations.
+{%- endcomment -%}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap">
+{{ 'gl-motion.css' | asset_url | stylesheet_tag }}
+<script>document.documentElement.classList.add('gl-js');</script>
+<script src="{{ 'gl-motion.js' | asset_url }}" defer></script>

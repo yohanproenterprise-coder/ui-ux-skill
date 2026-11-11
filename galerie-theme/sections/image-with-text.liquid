@@ -1,0 +1,39 @@
+<section class="section{% if section.settings.alt_bg %} alt{% endif %}">
+  <div class="wrap">
+    <div class="it{% if section.settings.image_right %} rev-l{% endif %}">
+      <div class="it-img rv">
+        {%- if section.settings.image != blank -%}
+          {{ section.settings.image | image_url: width: 1000 | image_tag: loading: 'lazy', widths: '500, 750, 1000', sizes: '(min-width: 980px) 45vw, 100vw', alt: section.settings.heading }}
+        {%- else -%}
+          {{ 'lifestyle-1' | placeholder_svg_tag }}
+        {%- endif -%}
+      </div>
+      <div class="rv" style="--d:150ms">
+        {%- if section.settings.kicker != blank -%}<p class="kicker">{{ section.settings.kicker }}</p>{%- endif -%}
+        <h2 class="h2">{{ section.settings.heading }} <em>{{ section.settings.accent }}</em></h2>
+        <div class="rte">{{ section.settings.text }}</div>
+        {%- if section.settings.button_label != blank -%}
+          <a class="btn" href="{{ section.settings.button_link | default: routes.all_products_collection_url }}">{{ section.settings.button_label }}</a>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Image + texte",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "kicker", "label": "Sur-titre", "default": "Notre histoire" },
+    { "type": "text", "id": "heading", "label": "Titre", "default": "La lumière qui" },
+    { "type": "text", "id": "accent", "label": "Mot mis en lumière", "default": "change tout" },
+    { "type": "richtext", "id": "text", "label": "Texte", "default": "<p>Racontez ici votre histoire, votre sélection de pièces et ce qui rend votre boutique unique.</p>" },
+    { "type": "text", "id": "button_label", "label": "Bouton — texte", "default": "Découvrir" },
+    { "type": "url", "id": "button_link", "label": "Bouton — lien" },
+    { "type": "checkbox", "id": "image_right", "label": "Image à droite", "default": false },
+    { "type": "checkbox", "id": "alt_bg", "label": "Fond alterné", "default": true }
+  ],
+  "presets": [{ "name": "Image + texte" }]
+}
+{% endschema %}

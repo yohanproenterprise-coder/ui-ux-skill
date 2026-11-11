@@ -1,0 +1,38 @@
+{% render 'gl-assets' %}
+
+{%- if section.blocks.size > 0 -%}
+  <div class="gl gl-marquee" style="--gl-bg:{{ section.settings.bg }};--gl-text:{{ section.settings.text }};--gl-speed:{{ section.settings.speed }}s;" aria-hidden="true">
+    <div class="gl-track">
+      {%- for i in (1..2) -%}
+        {%- for block in section.blocks -%}
+          <span {{ block.shopify_attributes }}>{{ block.settings.text }}</span>
+        {%- endfor -%}
+      {%- endfor -%}
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "GL · Bandeau défilant",
+  "settings": [
+    { "type": "color", "id": "bg", "label": "Fond", "default": "#12100d" },
+    { "type": "color", "id": "text", "label": "Texte", "default": "#f4efe6" },
+    { "type": "range", "id": "speed", "label": "Durée d'un cycle (secondes)", "min": 10, "max": 80, "step": 5, "default": 38 }
+  ],
+  "blocks": [
+    { "type": "item", "name": "Mot", "settings": [{ "type": "text", "id": "text", "label": "Texte", "default": "Suspensions" }] }
+  ],
+  "max_blocks": 12,
+  "presets": [{
+    "name": "GL · Bandeau défilant",
+    "blocks": [
+      { "type": "item", "settings": { "text": "Suspensions" } },
+      { "type": "item", "settings": { "text": "Appliques" } },
+      { "type": "item", "settings": { "text": "Lustres" } },
+      { "type": "item", "settings": { "text": "Lampes de table" } },
+      { "type": "item", "settings": { "text": "Plafonniers" } }
+    ]
+  }]
+}
+{% endschema %}

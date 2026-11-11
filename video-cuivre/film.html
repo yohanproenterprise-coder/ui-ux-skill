@@ -1,0 +1,63 @@
+<!doctype html><meta charset="utf-8">
+<style>
+*{margin:0;box-sizing:border-box}html,body{width:1080px;height:1920px;background:#050403;overflow:hidden;font-family:Georgia,"Times New Roman",serif;color:#f4efe6}
+#st{position:relative;width:1080px;height:1920px;overflow:hidden;background:#050403}
+.ph{position:absolute;inset:0;overflow:hidden;opacity:0}
+.ph img{position:absolute;left:50%;top:50%;height:1920px;width:auto;max-width:none;transform:translate(-50%,-50%) scale(var(--z,1))}
+.ph .hl{opacity:var(--hl,0)}
+.ph .bl{mix-blend-mode:screen;filter:blur(40px) saturate(1.6);opacity:calc(var(--hl,0)*.45);-webkit-mask-image:radial-gradient(ellipse 45% 30% at var(--lx) var(--ly),#000 0,transparent 100%);mask-image:radial-gradient(ellipse 45% 30% at var(--lx) var(--ly),#000 0,transparent 100%)}
+.ph .base{filter:brightness(var(--b,.17)) saturate(.75)}
+#shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,4,3,.86) 0,rgba(5,4,3,.62) 26%,rgba(5,4,3,.2) 42%,transparent 54%),linear-gradient(0deg,rgba(5,4,3,.8) 0,rgba(5,4,3,.4) 12%,transparent 24%)}
+#dust{position:absolute;inset:0;mix-blend-mode:screen}
+.tx{position:absolute;left:84px;right:84px;opacity:0;text-shadow:0 4px 40px rgba(0,0,0,.65)}
+.k{font:600 30px/1 "DejaVu Sans",Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;color:#ffb35c;margin-bottom:34px}
+.h{font-size:118px;line-height:1.02;font-weight:400}.h em{color:#ffb35c;font-style:italic}
+.s{font:400 38px/1.5 "DejaVu Sans",Arial,sans-serif;color:#d8cbb8;margin-top:34px}
+#end{position:absolute;left:0;right:0;top:0;bottom:0;text-align:center;opacity:0}
+#end .top{position:absolute;left:0;right:0;top:230px}
+#end .bot{position:absolute;left:0;right:0;bottom:120px}
+#end .n{font-size:190px;letter-spacing:.06em;line-height:1}
+#end .p{font:500 44px "DejaVu Sans",Arial,sans-serif;color:#ffb35c;letter-spacing:.08em;margin-top:22px}
+#end .u{display:inline-block;padding:28px 56px;border-radius:80px;background:#ffb35c;color:#1a1208;font:600 34px "DejaVu Sans",Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+#fade{position:absolute;inset:0;background:#050403;opacity:0}
+</style>
+<div id="st">
+ <div class="ph" id="p6" style="--lx:44%;--ly:48%"><img class="base" src="img/6.jpg"><img class="hl" src="img/6.jpg"><img class="bl" src="img/6.jpg"></div>
+ <div class="ph" id="p4" style="--lx:54%;--ly:38%"><img class="base" src="img/4.jpg"><img class="hl" src="img/4.jpg"><img class="bl" src="img/4.jpg"></div>
+ <div class="ph" id="p5" style="--lx:50%;--ly:58%"><img class="base" src="img/5.jpg"><img class="hl" src="img/5.jpg"><img class="bl" src="img/5.jpg"></div>
+ <div id="shade"></div><canvas id="dust" width="1080" height="1920"></canvas>
+ <div class="tx" id="t1" style="top:250px"><div class="k">Chapitre 1</div><div class="h">Dans le noir, <em>rien.</em></div></div>
+ <div class="tx" id="t2" style="top:250px"><div class="h">Un geste, <em>et tout change.</em></div><div class="s">La lumière dessine l'espace et révèle les matières.</div></div>
+ <div class="tx" id="t3" style="top:250px"><div class="k">Cuivre &amp; marbre</div><div class="h">Le marbre <em>s'illumine.</em></div><div class="s">La lumière traverse la pierre et révèle toutes ses veines.</div></div>
+ <div id="end"><div class="top"><div class="n">CUIVRE</div><div class="p">dès 213 €</div></div><div class="bot"><div class="u">lagalerielumineuse.com</div></div></div>
+ <div id="fade"></div>
+</div>
+<script>
+const D=16,clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),sm=x=>{x=clamp(x);return x*x*(3-2*x)},win=(t,a,b,c,d)=>sm((t-a)/(b-a))*(1-sm((t-c)/(d-c)));
+const rnd=(i)=>{let x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+const motes=Array.from({length:130},(_,i)=>({x:rnd(i),y:rnd(i+300),s:2+rnd(i+600)*5,v:.012+rnd(i+900)*.03,a:.25+rnd(i+1200)*.7,ph:rnd(i+1500)*6.28}));
+const cv=document.getElementById('dust').getContext('2d');
+const $=id=>document.getElementById(id);
+function set(el,o,vars){el.style.opacity=o;for(const k in vars)el.style.setProperty(k,vars[k])}
+function seek(t){
+ // lumière : montée avec scintillement entre 2.4 s et 5.2 s
+ const raw=clamp((t-2.4)/2.8),e=sm(raw),fl=raw>0&&raw<.88?(.8+.2*Math.sin(t*61)*Math.sin(t*23+1)):1,L=clamp(e*fl);
+ const bright=.17+.05*sm((t-4)/3);
+ // photos
+ const a6=t<5.4?1:1-sm((t-5.4)/.7), a4=win(t,5.4,6.1,9.0,9.7), a5=sm((t-9.0)/.7);
+ const zoom=(s,a,b,z0,z1)=>z0+(z1-z0)*clamp((t-s)/(b-s));
+ set($('p6'),a6,{'--hl':L,'--b':bright,'--z':zoom(0,0,6.1,1.0,1.1)});
+ set($('p4'),a4,{'--hl':1,'--b':bright,'--z':zoom(5.4,0,9.7,1.12,1.0)});
+ set($('p5'),a5,{'--hl':1,'--b':bright,'--z':zoom(9.0,0,16,1.0,1.1)});
+ // textes
+ const tx=(id,a,b,c,d)=>{const w=win(t,a,b,c,d);const el=$(id);el.style.opacity=w;el.style.transform=`translateY(${(1-sm((t-a)/(b-a)))*28}px)`};
+ tx('t1',.5,1.3,2.5,2.9); tx('t2',3.5,4.3,5.0,5.4); tx('t3',6.6,7.4,8.6,9.0);
+ const we=sm((t-11.0)/.9);$('end').style.opacity=we;$('end').style.transform=`translateY(${(1-we)*40}px)`;
+ $('shade').style.opacity=t>10.5?1:1;
+ $('fade').style.opacity=Math.max(1-sm(t/.6),sm((t-(D-.6))/.6));
+ // poussière
+ cv.clearRect(0,0,1080,1920);const dl=sm((t-2.8)/2);
+ for(const m of motes){const y=((m.y-m.v*t)%1+1)%1,x=(m.x+Math.sin(t*.5+m.ph)*.015+1)%1;cv.fillStyle=`rgba(255,196,120,${(m.a*dl*.8).toFixed(3)})`;cv.beginPath();cv.arc(x*1080,y*1920,m.s,0,6.283);cv.fill()}
+}
+seek(0);
+</script>

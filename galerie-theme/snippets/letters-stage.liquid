@@ -1,0 +1,41 @@
+{%- comment -%}
+  Scène « lettres » (accueil et fiche produit).
+  Paramètres : id, word, img1, img2, img3 (objets image, facultatifs), tagline, length,
+  s1k s1h s1a s1t, s2k s2h s2a s2t, s3k s3h s3a, price (nombre entier), btn_label, btn_href, btn_buy (true = défile vers #buy)
+{%- endcomment -%}
+{%- liquid
+  assign w = word | upcase | replace: ' ', ' '
+  assign letters = w | split: ''
+  assign i2 = img2 | default: img1
+  assign i3 = img3 | default: img1
+-%}
+<section class="lt" data-letters style="--lt-len:{{ length | default: 6 }}" aria-label="{{ word | escape }}">
+  <div class="lt-stick">
+    <svg class="lt-svg" aria-hidden="true">
+      <defs>
+        <clipPath id="ltc-{{ id }}"><text class="lt-ct" text-anchor="middle" font-family="Anton, Impact, sans-serif">{{ w }}</text><circle class="lt-cr" r="0"/></clipPath>
+        <clipPath id="lta-{{ id }}"><circle class="lt-ia" r="0"/></clipPath>
+        <clipPath id="ltb-{{ id }}"><circle class="lt-ib" r="0"/></clipPath>
+      </defs>
+      <rect width="100%" height="100%" fill="#050403"/>
+      {%- if img1 -%}
+        <image class="lt-im lt-im1" href="{{ img1 | image_url: width: 1800 }}" preserveAspectRatio="xMidYMid slice" clip-path="url(#ltc-{{ id }})"/>
+        <g clip-path="url(#lta-{{ id }})"><image class="lt-im lt-im3" href="{{ i2 | image_url: width: 1800 }}" preserveAspectRatio="xMidYMid slice"/></g>
+        <g clip-path="url(#ltb-{{ id }})"><image class="lt-im lt-im2" href="{{ i3 | image_url: width: 1800 }}" preserveAspectRatio="xMidYMid slice"/></g>
+      {%- endif -%}
+      <text class="lt-ot" text-anchor="middle" font-family="Anton, Impact, sans-serif" fill="none" stroke-width="1.6">{% for l in letters %}<tspan>{{ l }}</tspan>{% endfor %}</text>
+    </svg>
+    <canvas class="lt-dust" aria-hidden="true"></canvas>
+    <div class="lt-shade"></div>
+    {%- if tagline != blank -%}<p class="lt-tag">{{ tagline }}</p>{%- else -%}<p class="lt-tag"></p>{%- endif -%}
+    <div class="lt-cap"><span>Défilez : entrez dans la lettre</span><i></i></div>
+    <div class="lt-rail" aria-hidden="true"><i></i></div>
+
+    <div class="lt-say lt-s1"><p class="k">{{ s1k }}</p><h2 data-split>{{ s1h }} <em>{{ s1a }}</em></h2>{% if s1t != blank %}<p>{{ s1t }}</p>{% endif %}</div>
+    <div class="lt-say lt-s2"><p class="k">{{ s2k }}</p><h2 data-split>{{ s2h }} <em>{{ s2a }}</em></h2>{% if s2t != blank %}<p>{{ s2t }}</p>{% endif %}</div>
+    <div class="lt-say lt-s3"><p class="k">{{ s3k }}</p><h2 data-split>{{ s3h }} <em>{{ s3a }}</em></h2>
+      {%- if price != blank -%}<p class="lt-price"><small>dès</small><span class="lt-pv" data-to="{{ price }}">{{ price }}</span> {{ cart.currency.symbol }}</p>{%- endif -%}
+      {%- if btn_label != blank -%}<a class="lt-cta" data-mag href="{{ btn_href | default: '#buy' }}"{% if btn_buy %} data-go-buy{% endif %}>{{ btn_label }}</a>{%- endif -%}
+    </div>
+  </div>
+</section>

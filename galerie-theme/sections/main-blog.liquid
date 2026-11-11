@@ -1,0 +1,31 @@
+{%- paginate blog.articles by 9 -%}
+  <div class="wrap">
+    <div class="chead"><p class="kicker">Journal</p><h1 class="h2">{{ blog.title }}</h1></div>
+    <div class="blog-grid">
+      {%- for article in blog.articles -%}
+        <a class="art-card" href="{{ article.url }}">
+          {%- if article.image -%}{{ article.image | image_url: width: 700 | image_tag: loading: 'lazy', alt: article.title }}{%- endif -%}
+          <div><small>{{ article.published_at | date: '%d %B %Y' }}</small><h3>{{ article.title }}</h3></div>
+        </a>
+      {%- endfor -%}
+    </div>
+    {%- if paginate.pages > 1 -%}
+      <nav class="pagination" aria-label="Pagination">
+        {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}">←</a>{%- endif -%}
+        {%- for part in paginate.parts -%}
+          {%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>
+          {%- elsif part.title == paginate.current_page -%}<span class="cur">{{ part.title }}</span>
+          {%- else -%}<span>{{ part.title }}</span>{%- endif -%}
+        {%- endfor -%}
+        {%- if paginate.next -%}<a href="{{ paginate.next.url }}">→</a>{%- endif -%}
+      </nav>
+    {%- endif -%}
+    <div style="height:90px"></div>
+  </div>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "Blog"
+}
+{% endschema %}

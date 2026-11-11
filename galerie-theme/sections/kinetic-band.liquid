@@ -1,0 +1,11 @@
+<div class="kb" aria-hidden="true"><div data-band>{% for i in (1..6) %}{% assign odd = forloop.index0 | modulo: 2 %}<span{% if odd == 1 %} class="f"{% endif %}>{{ section.settings.text }}</span>{% endfor %}</div></div>
+
+{% schema %}
+{
+  "name": "Bandeau cinétique",
+  "settings": [
+    { "type": "text", "id": "text", "label": "Mot répété", "default": "Allumez" }
+  ],
+  "presets": [{ "name": "Bandeau cinétique" }]
+}
+{% endschema %}

@@ -1,0 +1,55 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "form": {
+          "type": "form",
+          "settings": {}
+        },
+        "trust": {
+          "type": "trust",
+          "settings": {
+            "icon_1": "lock",
+            "title_1": "Paiement sécurisé",
+            "text_1": "Via le checkout Shopify",
+            "icon_2": "truck",
+            "icon_3": "return"
+          }
+        },
+        "ship": {
+          "type": "accordion",
+          "settings": {
+            "title": "Livraison & retours",
+            "content": "<p>Indiquez ici vos délais de livraison, frais d'expédition et conditions de retour.</p>",
+            "open": false
+          }
+        },
+        "desc": {
+          "type": "description",
+          "settings": {}
+        },
+        "share": {
+          "type": "share",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "form",
+        "trust",
+        "ship",
+        "desc",
+        "share"
+      ],
+      "settings": {}
+    },
+    "recs": {
+      "type": "product-recommendations",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main",
+    "recs"
+  ]
+}

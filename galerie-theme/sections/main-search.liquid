@@ -1,0 +1,44 @@
+{%- paginate search.results by 24 -%}
+  <div class="wrap">
+    <div class="chead">
+      <p class="kicker">Recherche</p>
+      <h1 class="h2">{% if search.performed %}{{ search.results_count }} résultat{% if search.results_count > 1 %}s{% endif %} pour « {{ search.terms | escape }} »{% else %}Rechercher{% endif %}</h1>
+      <form action="{{ routes.search_url }}" method="get" class="search-form" role="search" style="margin-top:26px;max-width:640px">
+        <input type="search" name="q" value="{{ search.terms | escape }}" placeholder="Rechercher un luminaire…" aria-label="Rechercher">
+        <button type="submit" class="icon-btn" aria-label="Lancer la recherche">{% render 'icon', name: 'search' %}</button>
+      </form>
+    </div>
+
+    {%- if search.performed and search.results_count > 0 -%}
+      <div class="grid" style="--cols:4">
+        {%- for item in search.results -%}
+          {%- if item.object_type == 'product' -%}
+            {% render 'product-card', product: item, index: forloop.index0, reveal: false %}
+          {%- else -%}
+            <a class="art-card" href="{{ item.url }}"><div><small>{{ item.object_type }}</small><h3>{{ item.title }}</h3></div></a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+      {%- if paginate.pages > 1 -%}
+        <nav class="pagination" aria-label="Pagination">
+          {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}">←</a>{%- endif -%}
+          {%- for part in paginate.parts -%}
+            {%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>
+            {%- elsif part.title == paginate.current_page -%}<span class="cur">{{ part.title }}</span>
+            {%- else -%}<span>{{ part.title }}</span>{%- endif -%}
+          {%- endfor -%}
+          {%- if paginate.next -%}<a href="{{ paginate.next.url }}">→</a>{%- endif -%}
+        </nav>
+      {%- endif -%}
+    {%- elsif search.performed -%}
+      <div class="empty"><p>Aucun résultat. Essayez « suspension », « applique » ou « lampe ».</p></div>
+    {%- endif -%}
+    <div style="height:80px"></div>
+  </div>
+{%- endpaginate -%}
+
+{% schema %}
+{
+  "name": "Recherche"
+}
+{% endschema %}

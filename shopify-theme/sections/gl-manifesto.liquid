@@ -1,0 +1,21 @@
+{% render 'gl-assets' %}
+
+<section class="gl gl-pad" style="--gl-bg:{{ section.settings.bg }};--gl-text:{{ section.settings.text }};">
+  <div class="gl-wrap">
+    {%- if section.settings.kicker != blank -%}<p class="gl-kicker">{{ section.settings.kicker }}</p>{%- endif -%}
+    <p class="gl-manifesto-t" data-gl-manifesto>{{ section.settings.text_manifesto }}</p>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "GL · Manifeste",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Sur-titre", "default": "Manifeste" },
+    { "type": "textarea", "id": "text_manifesto", "label": "Texte (les mots s'allument au scroll)", "default": "La lumière ne se contente pas d'éclairer une pièce, elle en dessine l'atmosphère. Chaque luminaire est choisi pour sa silhouette, sa matière et la chaleur qu'il apporte au quotidien." },
+    { "type": "color", "id": "bg", "label": "Fond", "default": "#080605" },
+    { "type": "color", "id": "text", "label": "Texte", "default": "#f4efe6" }
+  ],
+  "presets": [{ "name": "GL · Manifeste" }]
+}
+{% endschema %}

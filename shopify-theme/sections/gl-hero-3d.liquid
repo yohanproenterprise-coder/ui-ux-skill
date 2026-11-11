@@ -1,0 +1,69 @@
+{% render 'gl-assets' %}
+
+<header
+  class="gl gl-hero"
+  data-gl-hero
+  data-canvas="{{ section.settings.enable_3d }}"
+  data-halo="{{ section.settings.cursor_halo }}"
+  data-kelvin="{{ section.settings.default_kelvin }}"
+  style="--gl-bg:{{ section.settings.bg }};--gl-text:{{ section.settings.text }};--gl-h:{{ section.settings.min_height }}vh;--gl-h-svh:{{ section.settings.min_height }}svh;"
+>
+  {%- if section.settings.enable_3d -%}
+    <canvas class="gl-canvas" aria-hidden="true"></canvas>
+  {%- endif -%}
+
+  <div class="gl-wrap">
+    {%- if section.settings.eyebrow != blank -%}
+      <p class="gl-eyebrow gl-rv">{{ section.settings.eyebrow }}</p>
+    {%- endif -%}
+    <h1 class="gl-h1">
+      {%- if section.settings.line_1 != blank -%}<span class="gl-line" style="--gl-i:0"><span>{{ section.settings.line_1 }}</span></span>{%- endif -%}
+      <span class="gl-line" style="--gl-i:1"><span>{{ section.settings.line_2 }} <em>{{ section.settings.accent }}</em></span></span>
+    </h1>
+    {%- if section.settings.lead != blank -%}
+      <p class="gl-lead gl-rv" style="--gl-d:500ms">{{ section.settings.lead }}</p>
+    {%- endif -%}
+    <div class="gl-cta gl-rv" style="--gl-d:650ms">
+      {%- if section.settings.button_label != blank -%}
+        <a href="{{ section.settings.button_link | default: routes.all_products_collection_url }}" class="gl-btn">{{ section.settings.button_label }}</a>
+      {%- endif -%}
+      <span class="gl-hint">Défiler</span>
+    </div>
+  </div>
+
+  {%- if section.settings.show_temperature -%}
+    <div class="gl-temp gl-rv" style="--gl-d:800ms" role="group" aria-label="Température de lumière">
+      <div class="gl-temp-h"><span>Température</span><output>{{ section.settings.default_kelvin }} K</output></div>
+      <input type="range" min="2200" max="6500" step="50" value="{{ section.settings.default_kelvin }}" aria-label="Température de couleur en kelvins">
+      <div class="gl-temp-n"><span>Bougie</span><span>Chaud</span><span>Naturel</span><span>Froid</span></div>
+    </div>
+  {%- endif -%}
+</header>
+
+{% schema %}
+{
+  "name": "GL · Hero 3D",
+  "tag": "div",
+  "class": "gl-section",
+  "settings": [
+    { "type": "header", "content": "Texte" },
+    { "type": "text", "id": "eyebrow", "label": "Sur-titre", "default": "Luminaires design · Suspensions · Appliques" },
+    { "type": "text", "id": "line_1", "label": "Titre — ligne 1", "default": "Sculptez" },
+    { "type": "text", "id": "line_2", "label": "Titre — ligne 2", "default": "votre" },
+    { "type": "text", "id": "accent", "label": "Mot mis en lumière", "default": "lumière" },
+    { "type": "textarea", "id": "lead", "label": "Texte d'intro", "default": "Des pièces graphiques, minérales ou aériennes qui transforment un simple intérieur en galerie." },
+    { "type": "text", "id": "button_label", "label": "Bouton — texte", "default": "Découvrir la collection" },
+    { "type": "url", "id": "button_link", "label": "Bouton — lien" },
+    { "type": "header", "content": "Animation 3D" },
+    { "type": "checkbox", "id": "enable_3d", "label": "Activer la scène 3D (suspensions lumineuses)", "default": true },
+    { "type": "checkbox", "id": "show_temperature", "label": "Afficher le curseur de température de lumière", "default": true },
+    { "type": "range", "id": "default_kelvin", "label": "Température par défaut (K)", "min": 2200, "max": 6500, "step": 100, "default": 3000 },
+    { "type": "checkbox", "id": "cursor_halo", "label": "Halo lumineux qui suit la souris (ordinateur)", "default": true },
+    { "type": "header", "content": "Style" },
+    { "type": "color", "id": "bg", "label": "Fond", "default": "#080605" },
+    { "type": "color", "id": "text", "label": "Texte", "default": "#f4efe6" },
+    { "type": "range", "id": "min_height", "label": "Hauteur minimale (% de l'écran)", "min": 50, "max": 100, "step": 5, "default": 100 }
+  ],
+  "presets": [{ "name": "GL · Hero 3D" }]
+}
+{% endschema %}

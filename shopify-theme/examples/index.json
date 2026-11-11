@@ -1,0 +1,41 @@
+{
+  "sections": {
+    "gl_hero": { "type": "gl-hero-3d", "settings": {} },
+    "gl_marquee": {
+      "type": "gl-marquee",
+      "blocks": {
+        "a": { "type": "item", "settings": { "text": "Suspensions" } },
+        "b": { "type": "item", "settings": { "text": "Appliques" } },
+        "c": { "type": "item", "settings": { "text": "Lustres" } },
+        "d": { "type": "item", "settings": { "text": "Lampes de table" } },
+        "e": { "type": "item", "settings": { "text": "Plafonniers" } }
+      },
+      "block_order": ["a", "b", "c", "d", "e"],
+      "settings": {}
+    },
+    "gl_manifesto": { "type": "gl-manifesto", "settings": {} },
+    "gl_collection": { "type": "gl-collection", "settings": {} },
+    "gl_rooms": {
+      "type": "gl-rooms",
+      "blocks": {
+        "a": { "type": "room", "settings": { "title": "Salon", "text": "Suspensions minimalistes, ambiance wabi-sabi" } },
+        "b": { "type": "room", "settings": { "title": "Salle à manger", "text": "Lustres sculpturaux pour les grandes tables" } },
+        "c": { "type": "room", "settings": { "title": "Chambre", "text": "Appliques et lampes à la lumière douce" } }
+      },
+      "block_order": ["a", "b", "c"],
+      "settings": {}
+    },
+    "gl_stats": {
+      "type": "gl-stats",
+      "blocks": {
+        "a": { "type": "stat", "settings": { "number": 190, "suffix": "+", "label": "Luminaires" } },
+        "b": { "type": "stat", "settings": { "number": 3, "suffix": "", "label": "Températures de lumière" } },
+        "c": { "type": "stat", "settings": { "number": 100, "suffix": "%", "label": "Pensé pour la déco" } }
+      },
+      "block_order": ["a", "b", "c"],
+      "settings": {}
+    },
+    "gl_cta": { "type": "gl-cta", "settings": {} }
+  },
+  "order": ["gl_hero", "gl_marquee", "gl_manifesto", "gl_collection", "gl_rooms", "gl_stats", "gl_cta"]
+}

@@ -1,0 +1,43 @@
+{%- if section.blocks.size > 0 -%}
+  <div class="trust">
+    <div class="wrap">
+      <ul style="--cols:{{ section.blocks.size }}">
+        {%- for block in section.blocks -%}
+          <li {{ block.shopify_attributes }}>
+            {% render 'icon', name: block.settings.icon %}
+            <div><b>{{ block.settings.title }}</b><small>{{ block.settings.text }}</small></div>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Bande de réassurance",
+  "max_blocks": 4,
+  "blocks": [
+    {
+      "type": "item",
+      "name": "Argument",
+      "settings": [
+        { "type": "select", "id": "icon", "label": "Icône", "options": [{ "value": "lock", "label": "Cadenas" }, { "value": "truck", "label": "Livraison" }, { "value": "return", "label": "Retour" }, { "value": "shield", "label": "Bouclier" }, { "value": "chat", "label": "Message" }, { "value": "star", "label": "Étoile" }, { "value": "size", "label": "Dimensions" }, { "value": "bulb", "label": "Ampoule" }, { "value": "sun", "label": "Soleil" }], "default": "lock" },
+        { "type": "text", "id": "title", "label": "Titre", "default": "Paiement sécurisé" },
+        { "type": "text", "id": "text", "label": "Texte", "default": "Checkout Shopify" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bande de réassurance",
+      "blocks": [
+        { "type": "item", "settings": { "icon": "lock", "title": "Paiement sécurisé", "text": "Checkout Shopify" } },
+        { "type": "item", "settings": { "icon": "size", "title": "Tailles & finitions", "text": "Choisissez la vôtre" } },
+        { "type": "item", "settings": { "icon": "bulb", "title": "LED incluses", "text": "Selon les modèles" } },
+        { "type": "item", "settings": { "icon": "sun", "title": "3 températures", "text": "Chaud, naturel, froid" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
