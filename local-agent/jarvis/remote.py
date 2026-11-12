@@ -120,9 +120,10 @@ def addresses(port):
 
 
 def icon_png(size):
-    """Icône de l'application (carré bleu arrondi avec un anneau blanc), en PNG, sans dépendance."""
+    """Icône de l'application (carré sombre arrondi avec la pastille Jarvis), en PNG, sans dépendance."""
     rows = []
-    c, radius = size / 2, size * 0.22
+    c, radius, orb = size / 2, size * 0.22, size * 0.3
+    hx, hy = c - orb * .3, c - orb * .4          # reflet de la pastille, en haut à gauche
     for y in range(size):
         row = bytearray([0])
         for x in range(size):
@@ -131,11 +132,11 @@ def icon_png(size):
             d = ((x - c + .5) ** 2 + (y - c + .5) ** 2) ** .5
             if not inside:
                 row += bytes((0, 0, 0, 0))
-            elif size * 0.24 <= d <= size * 0.31 or d <= size * 0.09:
-                row += bytes((255, 255, 255, 255))
+            elif d <= orb:
+                t = min(1.0, ((x - hx) ** 2 + (y - hy) ** 2) ** .5 / (orb * 1.4))
+                row += bytes((int(199 + (91 - 199) * t), int(201 + (97 - 201) * t), int(255 + (240 - 255) * t), 255))
             else:
-                t = y / size
-                row += bytes((int(47 + 30 * t), int(111 - 40 * t), int(219 - 10 * t), 255))
+                row += bytes((12, 13, 16, 255))
         rows.append(bytes(row))
 
     def chunk(kind, data):

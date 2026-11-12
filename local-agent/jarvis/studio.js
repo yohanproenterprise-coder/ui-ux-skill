@@ -39,7 +39,7 @@
   const root = el("div", { id: "studio" });
   root.innerHTML = `
     <div class="st-top">
-      <h2><span class="reactor" style="--s:22px"><i></i><i></i><i></i></span>STUDIO<small id="st-name"></small></h2>
+      <h2><span class="reactor" style="--s:22px"><i></i><i></i><i></i></span>Studio<small id="st-name"></small></h2>
       <button class="pill" id="st-open" title="Ouvrir une autre photo"><svg><use href="#i-image"/></svg><span class="lbl">Ouvrir</span></button>
       <button class="pill" id="st-undo" title="Annuler (Ctrl+Z)">↶<span class="lbl">Annuler</span></button>
       <button class="pill" id="st-redo" title="Rétablir (Ctrl+Y)">↷<span class="lbl">Rétablir</span></button>

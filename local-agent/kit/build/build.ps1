@@ -66,6 +66,6 @@ if ($LASTEXITCODE) { throw "lanceur" }
 # 5. Installateur
 $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
 if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
-& $iscc "/DAppVersion=$ver" "/DSrc=$stage" "/DOut=$out" "/DIcon=$out\icon.ico" "$PSScriptRoot\installer.iss"
+& $iscc /Q "/DAppVersion=$ver" "/DSrc=$stage" "/DOut=$out" "/DIcon=$out\icon.ico" "$PSScriptRoot\installer.iss"
 if ($LASTEXITCODE) { throw "installateur" }
 Get-ChildItem "$out\*.exe" | ForEach-Object { Write-Host ("Installateur : {0} ({1:N0} Mo)" -f $_.Name, ($_.Length / 1MB)) }

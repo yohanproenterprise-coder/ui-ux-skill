@@ -1,4 +1,4 @@
-"""Icône de Photo Studio IA (dégradé bleu, objectif photo et étincelle), en .ico multi-tailles."""
+"""Icône de Photo Studio IA (dégradé indigo, objectif photo et étincelle), en .ico multi-tailles."""
 import sys
 from PIL import Image, ImageDraw
 
@@ -9,7 +9,7 @@ for y in range(S):
     t = y / S
     for x in range(0, S):
         u = (x + y) / (2 * S)
-        grad.putpixel((x, y), (int(30 + 20 * u), int(120 + 80 * u), int(255 - 20 * t), 255))
+        grad.putpixel((x, y), (int(79 + 60 * u), int(70 + 74 * u), int(229 + 26 * u), 255))   # indigo du design
 mask = Image.new("L", (S, S), 0)
 ImageDraw.Draw(mask).rounded_rectangle((16, 16, S - 16, S - 16), radius=110, fill=255)
 img.paste(grad, mask=mask)

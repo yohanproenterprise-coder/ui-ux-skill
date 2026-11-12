@@ -9,7 +9,7 @@
   new MutationObserver(() => { if (!root.classList.contains("open")) root.classList.add("open"); })
     .observe(root, { attributes: true, attributeFilter: ["class"] });
   $("#st-close").remove();
-  root.querySelector(".st-top h2").firstChild.nextSibling.textContent = K.name.toUpperCase();
+  root.querySelector(".st-top h2").firstChild.nextSibling.textContent = K.name;
 
   // fonctions de Jarvis absentes du kit (restauration des visages : licence non commerciale ; idées : assistant)
   for (const sel of ["#st-faces", "#st-fstr", "#st-face-msg", "#sc-ideas"]) {
