@@ -13,9 +13,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/studio.css">
 <title>Jarvis</title>
+<script>try { document.documentElement.dataset.theme = localStorage.getItem("jarvis-theme") || "aurore"; } catch (e) { document.documentElement.dataset.theme = "aurore"; }</script>
 <style>
 /* Design épuré : surfaces calmes, une seule couleur d'accent, Inter partout. Thème sombre ou clair selon Windows. */
 :root {
@@ -205,6 +206,115 @@ dialog input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
+<style>
+/* ===================== Thèmes vivants : Aurore (sombre) et Pastel (clair) ===================== */
+html[data-theme="aurore"], html[data-theme="pastel"] {
+  --display: "Instrument Serif", Georgia, serif;
+  --label: "Space Grotesk", Inter, system-ui, sans-serif;
+  --grad: linear-gradient(120deg, #7c5cff 0%, #c04cfd 38%, #ff5c9a 68%, #ffb547 100%);
+  --grad-soft: linear-gradient(120deg, rgba(124,92,255,.18), rgba(255,92,154,.14) 60%, rgba(255,181,71,.12));
+  --c1: #8b6cff; --c2: #ff5c9a; --c3: #ffb547; --c4: #38c6f4; --c5: #34d399; --c6: #f472b6;
+}
+html[data-theme="aurore"] {
+  --bg: #0a0918; --bg-2: #100e24; --surface: rgba(255,255,255,.045); --surface-2: rgba(255,255,255,.08); --surface-3: rgba(255,255,255,.12);
+  --line: rgba(255,255,255,.09); --line-2: rgba(255,255,255,.16);
+  --text: #f3f1ff; --muted: #b2abd3; --faint: #7d76a3;
+  --accent: #b69cff; --accent-strong: #8b6cff; --accent-soft: rgba(139,108,255,.18); --on-accent: #fff;
+  --ok: #4ade80; --warn: #fbbf24; --err: #fb7185;
+  --shadow: 0 10px 40px rgba(5,3,20,.55);
+  --glass: rgba(20,17,45,.55);
+  color-scheme: dark;
+}
+html[data-theme="pastel"] {
+  --bg: #fbf8ff; --bg-2: #ffffff; --surface: rgba(255,255,255,.72); --surface-2: rgba(124,92,255,.07); --surface-3: rgba(124,92,255,.14);
+  --line: rgba(80,50,140,.10); --line-2: rgba(80,50,140,.18);
+  --text: #1e1638; --muted: #625a80; --faint: #9890b4;
+  --accent: #6a46f0; --accent-strong: #6a46f0; --accent-soft: rgba(106,70,240,.10); --on-accent: #fff;
+  --ok: #15803d; --warn: #b45309; --err: #e11d48;
+  --shadow: 0 10px 40px rgba(90,60,160,.12);
+  --glass: rgba(255,255,255,.65);
+  color-scheme: light;
+}
+/* aurores qui dérivent lentement derrière l'interface */
+html[data-theme="aurore"] body::before, html[data-theme="pastel"] body::before {
+  content: ""; position: fixed; inset: -25%; z-index: 0; pointer-events: none; filter: blur(60px);
+  background:
+    radial-gradient(30% 28% at 18% 12%, rgba(124,92,255,.55), transparent 70%),
+    radial-gradient(26% 24% at 82% 18%, rgba(255,92,154,.40), transparent 70%),
+    radial-gradient(30% 30% at 70% 88%, rgba(56,198,244,.30), transparent 70%),
+    radial-gradient(24% 22% at 25% 85%, rgba(255,181,71,.25), transparent 70%);
+  animation: drift 28s ease-in-out infinite alternate;
+}
+html[data-theme="pastel"] body::before { opacity: .85; }
+@keyframes drift { 0% { transform: translate3d(0,0,0) rotate(0deg) scale(1); } 50% { transform: translate3d(3%,-2%,0) rotate(8deg) scale(1.05); }
+  100% { transform: translate3d(-3%,2%,0) rotate(-6deg) scale(1.02); } }
+html[data-theme="aurore"] body, html[data-theme="pastel"] body { background: var(--bg); }
+/* texte en dégradé */
+.grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="epure"] .grad { background: none; color: inherit; }
+/* sphère d'IA : dégradé qui tourne, plus vite quand Jarvis travaille */
+html[data-theme="aurore"] .reactor, html[data-theme="pastel"] .reactor {
+  background: conic-gradient(from 0deg, #7c5cff, #ff5c9a, #ffb547, #38c6f4, #7c5cff);
+  box-shadow: 0 0 calc(var(--s) * .55) rgba(192,76,253,.45), inset 0 0 calc(var(--s) * .25) rgba(255,255,255,.35);
+  animation: spin 9s linear infinite; }
+html[data-theme="aurore"] .reactor::after, html[data-theme="pastel"] .reactor::after {
+  content: ""; position: absolute; inset: 18%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.9), rgba(255,255,255,.15) 55%, transparent 70%); }
+html[data-theme="aurore"] .busy .reactor, html[data-theme="pastel"] .busy .reactor, html[data-theme="aurore"] .reactor.fast, html[data-theme="pastel"] .reactor.fast { animation-duration: 1.4s; }
+html[data-theme="aurore"] .reactor i, html[data-theme="pastel"] .reactor i { display: none !important; }
+/* en-tête en verre */
+html[data-theme="aurore"] header, html[data-theme="pastel"] header { background: var(--glass); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
+html[data-theme="aurore"] .brand h1, html[data-theme="pastel"] .brand h1 { font: 700 19px/1 var(--label); letter-spacing: -.02em;
+  background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+html[data-theme="aurore"] .pill svg, html[data-theme="pastel"] .pill svg { color: var(--accent); }
+html[data-theme="aurore"] .pill:hover, html[data-theme="pastel"] .pill:hover { background: var(--surface-2); transform: translateY(-1px); }
+html[data-theme="aurore"] .pill, html[data-theme="pastel"] .pill { transition: background .2s, color .2s, transform .2s; }
+html[data-theme="aurore"] .pill.on, html[data-theme="pastel"] .pill.on { background: var(--grad-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+html[data-theme="aurore"] .pill.primary, html[data-theme="pastel"] .pill.primary,
+html[data-theme="aurore"] .icon.send, html[data-theme="pastel"] .icon.send { background: var(--grad); color: #fff; box-shadow: 0 6px 22px rgba(192,76,253,.35); }
+html[data-theme="aurore"] .icon.send svg, html[data-theme="pastel"] .icon.send svg { color: #fff; }
+html[data-theme="aurore"] select, html[data-theme="pastel"] select { background-color: var(--glass); }
+/* accueil */
+html[data-theme="aurore"] .hello, html[data-theme="pastel"] .hello { margin-top: 7vh; }
+html[data-theme="aurore"] .hello .reactor, html[data-theme="pastel"] .hello .reactor { --s: 84px; margin-bottom: 28px; }
+html[data-theme="aurore"] .hello h2, html[data-theme="pastel"] .hello h2 { font: 400 clamp(34px, 5.4vw, 54px)/1.08 var(--display); letter-spacing: -.01em; }
+html[data-theme="aurore"] .hello h2 .grad, html[data-theme="pastel"] .hello h2 .grad { font-style: italic; padding-right: .08em; }
+html[data-theme="aurore"] .hello p, html[data-theme="pastel"] .hello p { font-size: 16px; }
+html[data-theme="aurore"] .chip, html[data-theme="pastel"] .chip { background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px; padding: 14px; font-weight: 500; transition: transform .2s, border-color .2s, box-shadow .2s; }
+html[data-theme="aurore"] .chip:hover, html[data-theme="pastel"] .chip:hover { transform: translateY(-3px); border-color: var(--line-2); box-shadow: var(--shadow); }
+html[data-theme="aurore"] .chip svg, html[data-theme="pastel"] .chip svg { width: 32px; height: 32px; padding: 7px; border-radius: 10px; margin: -4px 2px -4px 0;
+  color: #fff; background: var(--c1); stroke-width: 2; }
+.chip:nth-child(2) svg { --c1: var(--c2); } .chip:nth-child(3) svg { --c1: var(--c3); } .chip:nth-child(4) svg { --c1: var(--c4); }
+.chip:nth-child(5) svg { --c1: var(--c5); } .chip:nth-child(6) svg { --c1: var(--c6); }
+html[data-theme="aurore"] .chip:nth-child(n) svg, html[data-theme="pastel"] .chip:nth-child(n) svg { background: var(--c1); }
+/* messages */
+html[data-theme="aurore"] .user, html[data-theme="pastel"] .user { background: var(--grad); color: #fff; border: 0; box-shadow: 0 8px 26px rgba(192,76,253,.28); }
+html[data-theme="aurore"] .bot::before, html[data-theme="pastel"] .bot::before { background: conic-gradient(from 0deg, #7c5cff, #ff5c9a, #ffb547, #38c6f4, #7c5cff);
+  box-shadow: 0 0 14px rgba(192,76,253,.45); }
+html[data-theme="aurore"] .bot h1, html[data-theme="aurore"] .bot h2, html[data-theme="aurore"] .bot h3,
+html[data-theme="pastel"] .bot h1, html[data-theme="pastel"] .bot h2, html[data-theme="pastel"] .bot h3 { font-family: var(--display); font-weight: 400; font-size: 1.5em; line-height: 1.2; }
+html[data-theme="aurore"] details.tool, html[data-theme="pastel"] details.tool, html[data-theme="aurore"] .info, html[data-theme="pastel"] .info,
+html[data-theme="aurore"] #plan, html[data-theme="pastel"] #plan { background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+html[data-theme="aurore"] #plan .bar span, html[data-theme="pastel"] #plan .bar span { background: var(--grad); }
+html[data-theme="aurore"] .typing::after, html[data-theme="pastel"] .typing::after { background: var(--grad); }
+/* barre de saisie : bordure en dégradé qui s'illumine */
+html[data-theme="aurore"] .bar, html[data-theme="pastel"] .bar { border: 1px solid transparent; border-radius: 22px;
+  background: linear-gradient(var(--bg-2), var(--bg-2)) padding-box, var(--grad) border-box; box-shadow: 0 10px 40px rgba(124,92,255,.18); }
+html[data-theme="aurore"] .bar:focus-within, html[data-theme="pastel"] .bar:focus-within { box-shadow: 0 0 0 4px rgba(192,76,253,.18), 0 12px 50px rgba(255,92,154,.25); }
+/* fenêtres */
+html[data-theme="aurore"] dialog, html[data-theme="pastel"] dialog { background: var(--bg-2); border-color: var(--line-2); }
+html[data-theme="aurore"] dialog strong.title, html[data-theme="pastel"] dialog strong.title { font: 400 26px var(--display); }
+html[data-theme="aurore"] #settingsDlg h3, html[data-theme="pastel"] #settingsDlg h3 { font: 600 12px var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+/* choix du thème */
+.themes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+.theme-card { display: flex; flex-direction: column; gap: 2px; padding: 8px 8px 10px; border-radius: 14px; border: 1px solid var(--line-2);
+  background: var(--surface); color: var(--text); cursor: pointer; font-weight: 600; font-size: 13.5px; text-align: left; transition: transform .2s, border-color .2s; }
+.theme-card i { display: block; height: 48px; border-radius: 9px; margin-bottom: 6px; border: 1px solid var(--line); }
+.theme-card small { color: var(--muted); font-weight: 400; font-size: 12px; }
+.theme-card:hover { transform: translateY(-2px); }
+.theme-card.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+@media (prefers-reduced-motion: reduce) { html body::before { animation: none !important; } }
+</style>
 </head>
 <body>
 <svg style="display:none">
@@ -246,7 +356,7 @@ dialog input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0
   <div id="plan"></div>
   <div class="hello" id="hello">
     <div class="reactor"><i></i><i></i><i></i></div>
-    <h2>Bonjour. Que puis-je faire pour toi ?</h2>
+    <h2><span class="grad">Bonjour.</span> Que puis-je faire pour toi&nbsp;?</h2>
     <p>Je peux agir sur ton PC, chercher sur le web, lire tes documents, voir ton écran…</p>
     <div class="chips">
       <button class="chip" data-q="Fais un bilan de santé du PC"><svg><use href="#i-pulse"/></svg>Bilan de santé du PC</button>
@@ -318,6 +428,13 @@ dialog input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0
     seul). Jarvis mesure la vitesse sur ton PC et ne l'utilise que si elle est vraiment plus rapide.</p>
   <div id="gpuState" class="hint">…</div>
   <div class="line" id="gpuBtns"></div>
+
+  <h3>Apparence</h3>
+  <div class="themes" id="themes">
+    <button class="theme-card" data-theme-pick="aurore"><i style="background:linear-gradient(135deg,#120f2e,#3b1d6e 45%,#a0306e 80%,#d9822b)"></i>Aurore<small>sombre, coloré</small></button>
+    <button class="theme-card" data-theme-pick="pastel"><i style="background:linear-gradient(135deg,#fdf6ff,#e7dcff 40%,#ffd9e8 75%,#ffe9c7)"></i>Pastel<small>clair, doux</small></button>
+    <button class="theme-card" data-theme-pick="epure"><i style="background:linear-gradient(135deg,#0c0d10 50%,#f6f6f8 50%)"></i>Épuré<small>sobre</small></button>
+  </div>
 
   <h3>Mise à jour</h3>
   <div class="line"><button class="pill" data-s="update">Installer la dernière version</button></div>
@@ -566,6 +683,17 @@ async function loadGpu() {
     g.state === "active" || g.state === "testing" ? btn("Désactiver", "off") : "";
   if (g.state === "installing" || g.state === "testing") setTimeout(loadGpu, 2000);
 }
+function markTheme() {
+  const t = document.documentElement.dataset.theme;
+  document.querySelectorAll("[data-theme-pick]").forEach(b => b.classList.toggle("on", b.dataset.themePick === t));
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-theme-pick]"); if (!b) return;
+  document.documentElement.dataset.theme = b.dataset.themePick;
+  try { localStorage.setItem("jarvis-theme", b.dataset.themePick); } catch (x) {}
+  markTheme();
+});
+markTheme();
 function settingsMsg(text, isError) {
   const m = $("settingsMsg"); m.hidden = false; m.textContent = text;
   m.style.color = isError ? "var(--err)" : "var(--text)";

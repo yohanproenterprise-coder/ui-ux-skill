@@ -36,6 +36,12 @@
     <div class="row" style="display:flex;justify-content:space-between;align-items:center">
       <strong class="title">${K.name} <small style="color:var(--muted)">${K.version}</small></strong>
       <button class="pill" id="kit-close">Fermer</button></div>
+    <div class="st-label">Apparence</div>
+    <div class="themes">
+      <button class="theme-card" data-theme-pick="aurore"><i style="background:linear-gradient(135deg,#120f2e,#3b1d6e 45%,#a0306e 80%,#d9822b)"></i>Aurore<small>sombre, coloré</small></button>
+      <button class="theme-card" data-theme-pick="pastel"><i style="background:linear-gradient(135deg,#fdf6ff,#e7dcff 40%,#ffd9e8 75%,#ffe9c7)"></i>Pastel<small>clair, doux</small></button>
+      <button class="theme-card" data-theme-pick="epure"><i style="background:linear-gradient(135deg,#0c0d10 50%,#f6f6f8 50%)"></i>Épuré<small>sobre</small></button>
+    </div>
     <div class="st-label">Carte graphique</div>
     <p class="st-note" style="margin-top:0">Fait travailler la puce graphique du PC pour aller plus vite. L'application mesure la
       vitesse et ne l'utilise que si elle est vraiment plus rapide ; au moindre souci, elle revient au processeur.</p>
@@ -49,7 +55,15 @@
     <pre id="kit-lic-text" class="st-note" hidden style="white-space:pre-wrap;max-height:30vh;overflow:auto"></pre>
   </div>`;
   root.appendChild(dlg);
-  gear.onclick = () => { dlg.hidden = false; loadGpu(); };
+  const markTheme = () => dlg.querySelectorAll("[data-theme-pick]").forEach(b =>
+    b.classList.toggle("on", b.dataset.themePick === document.documentElement.dataset.theme));
+  dlg.addEventListener("click", e => {
+    const b = e.target.closest("[data-theme-pick]"); if (!b) return;
+    document.documentElement.dataset.theme = b.dataset.themePick;
+    try { localStorage.setItem("jarvis-theme", b.dataset.themePick); } catch (x) {}
+    markTheme();
+  });
+  gear.onclick = () => { dlg.hidden = false; markTheme(); loadGpu(); };
   dlg.querySelector("#kit-close").onclick = () => { dlg.hidden = true; };
   dlg.querySelector("#kit-folder").onclick = () =>
     fetch("/open_folder", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });

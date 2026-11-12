@@ -116,3 +116,30 @@
 .sc-swatch:hover { transform: scale(1.08); border-color: var(--accent); }
 .sc-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
 .sc-chips .st-btn { font-size: 12.5px; padding: 7px 8px; min-height: 34px; }
+
+/* ===================== Thèmes vivants (Aurore, Pastel) ===================== */
+html[data-theme="aurore"] #studio, html[data-theme="pastel"] #studio {
+  background:
+    radial-gradient(40% 35% at 15% 0%, rgba(124,92,255,.22), transparent 70%),
+    radial-gradient(35% 30% at 95% 10%, rgba(255,92,154,.16), transparent 70%),
+    radial-gradient(40% 40% at 60% 110%, rgba(56,198,244,.12), transparent 70%), var(--bg); }
+html[data-theme="aurore"] .st-top, html[data-theme="pastel"] .st-top,
+html[data-theme="aurore"] .st-panel, html[data-theme="pastel"] .st-panel { background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+html[data-theme="aurore"] .st-stage, html[data-theme="pastel"] .st-stage { background: transparent; }
+html[data-theme="aurore"] .st-top h2, html[data-theme="pastel"] .st-top h2 { font: 700 17px var(--label); letter-spacing: -.02em; }
+html[data-theme="aurore"] .st-top .pill svg, html[data-theme="pastel"] .st-top .pill svg { color: var(--accent); }
+html[data-theme="aurore"] .st-tabs button.on, html[data-theme="pastel"] .st-tabs button.on { background: var(--grad); color: #fff; box-shadow: 0 4px 16px rgba(192,76,253,.3); }
+html[data-theme="aurore"] .st-label, html[data-theme="pastel"] .st-label { font: 600 11.5px var(--label); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+html[data-theme="aurore"] .st-btn, html[data-theme="pastel"] .st-btn { background: var(--glass); transition: transform .15s, border-color .15s, background .15s; }
+html[data-theme="aurore"] .st-btn:hover:not(:disabled), html[data-theme="pastel"] .st-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent); }
+html[data-theme="aurore"] .st-btn.primary, html[data-theme="pastel"] .st-btn.primary { background: var(--grad); color: #fff; border: 0; box-shadow: 0 8px 24px rgba(192,76,253,.32); }
+html[data-theme="aurore"] .st-big, html[data-theme="pastel"] .st-big { font: 600 16px var(--label); letter-spacing: -.01em; border-radius: 14px; }
+html[data-theme="aurore"] .st-drop, html[data-theme="pastel"] .st-drop { background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, transparent); }
+html[data-theme="aurore"] .st-drop .reactor, html[data-theme="pastel"] .st-drop .reactor { display: block; margin: 0 auto 16px; --s: 54px !important; }
+html[data-theme="aurore"] .st-drop h3, html[data-theme="pastel"] .st-drop h3 { font: 400 34px/1.1 var(--display); }
+html[data-theme="aurore"] .st-prog span, html[data-theme="pastel"] .st-prog span { background: var(--grad); }
+html[data-theme="aurore"] .st-busy .reactor, html[data-theme="pastel"] .st-busy .reactor { --s: 64px !important; }
+html[data-theme="aurore"] .st-modal-box, html[data-theme="pastel"] .st-modal-box { background: var(--bg-2); }
+html[data-theme="aurore"] .st-modal-box strong.title, html[data-theme="pastel"] .st-modal-box strong.title { font: 400 24px var(--display); }
+html[data-theme="aurore"] .st-row input[type=range], html[data-theme="pastel"] .st-row input[type=range] { accent-color: #c04cfd; }
