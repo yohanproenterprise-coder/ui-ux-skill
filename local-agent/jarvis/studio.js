@@ -135,6 +135,9 @@
           <button class="st-btn wide" id="sc-png" hidden>⬇ Enregistrer le produit détouré (PNG transparent)</button>
           <div id="sc-step2" hidden>
             <div class="st-label">2. Décor</div>
+            <div class="st-row"><label>Le produit est…</label>
+              <select id="sc-mount"><option value="pose">Posé (table, meuble, sol)</option><option value="suspendu">Suspendu (plafond)</option>
+                <option value="mural">Fixé au mur (applique)</option></select></div>
             <div class="st-row"><label>Format</label>
               <select id="sc-fmt"><option value="1:1">Carré (1:1)</option><option value="4:5">Portrait (4:5)</option>
                 <option value="16:9">Paysage (16:9)</option><option value="photo">Comme la photo</option></select></div>
@@ -143,6 +146,8 @@
             <div class="st-note" style="margin:10px 0 6px">Décor créé par l'IA :</div>
             <button class="st-btn wide" id="sc-ideas">💡 Idées de décor adaptées à ce produit</button>
             <div class="sc-chips" id="sc-chips"></div>
+            <div class="st-note" style="margin:4px 0 6px">Luminaires :</div>
+            <div class="sc-chips" id="sc-lamps"></div>
             <input type="text" id="sc-prompt" placeholder="Ou décris le décor : table en marbre dans une cuisine lumineuse…">
             <div class="st-grid two" style="margin-top:8px">
               <button class="st-btn primary" id="sc-gen">Créer ce décor</button><button class="st-btn" id="sc-again" disabled>↻ Autre version</button></div>
@@ -156,6 +161,7 @@
             <div class="st-row"><label>Taille <span id="v-sc-size">60</span></label><input type="range" min="5" max="100" value="60" id="sc-size"></div>
             <div class="st-row"><label>Ombre au sol <span id="v-sc-shadow">60</span></label><input type="range" min="0" max="100" value="60" id="sc-shadow"></div>
             <div class="st-row"><label>Accorder la lumière au décor <span id="v-sc-light">35</span></label><input type="range" min="0" max="100" value="35" id="sc-light"></div>
+            <div class="st-row"><label>Lampe allumée (halo de lumière) <span id="v-sc-glow">0</span></label><input type="range" min="0" max="100" value="0" id="sc-glow"></div>
             <label class="check"><input type="checkbox" id="sc-flip"> Retourner le produit (miroir)</label>
             <button class="st-btn primary wide" id="sc-apply">✓ Valider la mise en scène</button>
             <p class="st-note">Ensuite tu peux l'améliorer (✨ dans Réglages) ou l'exporter. Ton produit détouré reste prêt :
@@ -1096,7 +1102,7 @@
   }
 
   // ---------------------------------------------------------- mise en scène --
-  const SC = { cut: null, bg: null, x: .5, y: .88, size: .6, shadow: 60, light: 35, flip: false, seed: 1,
+  const SC = { cut: null, bg: null, x: .5, y: .88, size: .6, shadow: 60, light: 35, flip: false, seed: 1, glow: 0, mount: "pose",
                tinted: null, tintKey: "", lightDx: 0, bgMean: [128, 128, 128], drag: null, solid: null };
   const SCENES = [
     ["Marbre blanc", "white marble countertop in a bright minimalist kitchen, soft daylight from a window, softly blurred background"],
@@ -1107,6 +1113,15 @@
     ["Salle de bain", "elegant bathroom vanity countertop, white tiles, soft diffuse light, softly blurred background"],
     ["Bureau moderne", "modern minimalist office desk, plant and window softly blurred in background, natural light"],
     ["Luxe sombre", "dark slate stone surface, deep dark background, dramatic soft spotlight from above, luxury mood"],
+  ];
+  // décors pour luminaires : [titre, description, pose]
+  const LAMPS = [
+    ["Salle à manger", "elegant dining room with a wooden dining table, warm evening ambiance, softly blurred background", "suspendu"],
+    ["Îlot de cuisine", "modern kitchen with a kitchen island, warm evening light, softly blurred background", "suspendu"],
+    ["Salon cosy", "cozy living room corner with a sofa and a side table, warm evening light, softly blurred background", "pose"],
+    ["Chevet", "calm bedroom with a wooden bedside table next to the bed, soft warm evening light, softly blurred", "pose"],
+    ["Bureau", "modern home office with a clean desk, evening ambiance, softly blurred background", "pose"],
+    ["Couloir (applique)", "elegant hallway with a plain warm textured wall, evening ambiance, softly blurred floor", "mural"],
   ];
   const SOLIDS = [["Blanc", "#ffffff"], ["Gris clair", "#eceef0"], ["Beige", "#efe6da"], ["Rose poudré", "#f3e1e1"],
                   ["Bleu doux", "#e3ecf4"], ["Vert sauge", "#dfe7dc"], ["Anthracite", "#2b2e33"], ["Noir", "#0d0d0f"]];
@@ -1174,7 +1189,10 @@
   function autoPlace() {
     if (!SC.cut || !SC.bg) return;
     const ar = SC.cut.width / SC.cut.height, bgAr = SC.bg.width / SC.bg.height;
-    SC.size = Math.min(.62, .7 * bgAr / ar); SC.x = .5; SC.y = .86;
+    SC.x = .5;
+    if (SC.mount === "suspendu") { SC.size = Math.min(.5, .55 * bgAr / ar); SC.y = SC.size; }           // accrochée en haut
+    else if (SC.mount === "mural") { SC.size = Math.min(.32, .4 * bgAr / ar); SC.y = .42 + SC.size / 2; }  // à hauteur d'œil
+    else { SC.size = Math.min(.62, .7 * bgAr / ar); SC.y = .86; }
     q("#sc-size").value = Math.round(SC.size * 100); q("#v-sc-size").textContent = Math.round(SC.size * 100);
   }
   function setSolid(color) {
@@ -1192,14 +1210,20 @@
     const b = el("button", { className: "sc-swatch", title: label }); b.style.background = color;
     b.onclick = () => setSolid(color); q("#sc-swatches").appendChild(b);
   });
-  function chips(list) {
-    const box = q("#sc-chips"); box.innerHTML = "";
-    list.forEach(([label, prompt]) => {
+  function chips(list, id = "#sc-chips") {
+    const box = q(id); box.innerHTML = "";
+    list.forEach(([label, prompt, mount]) => {
       const b = el("button", { className: "st-btn", textContent: label, title: prompt });
-      b.onclick = () => { q("#sc-prompt").value = prompt; newBg(); }; box.appendChild(b);
+      b.onclick = () => { q("#sc-prompt").value = prompt; if (mount) setMount(mount); newBg(); }; box.appendChild(b);
     });
   }
-  chips(SCENES);
+  chips(SCENES); chips(LAMPS, "#sc-lamps");
+  function setMount(m) {
+    const changed = m !== SC.mount; SC.mount = m; q("#sc-mount").value = m;
+    if (m !== "pose" && !+q("#sc-glow").value) { SC.glow = 40; q("#sc-glow").value = 40; q("#v-sc-glow").textContent = 40; }
+    if (changed) { autoPlace(); schedule(); }
+  }
+  q("#sc-mount").onchange = e => setMount(e.target.value);
   q("#sc-fmt").onchange = () => { SC.autoSize = true; if (SC.solid) setSolid(SC.solid); SC.autoSize = false; };
   async function newBg() {
     const box = q("#sc-bg-msg"), prompt = q("#sc-prompt").value.trim();
@@ -1207,7 +1231,7 @@
     SC.seed = 1 + Math.floor(Math.random() * 1e6); box.textContent = "";
     const [width, height] = bgSize();
     try {
-      const r = await busyRun("Création du décor (jusqu'à 1 minute)…", () => post("/scene_background", { prompt, width, height, seed: SC.seed }));
+      const r = await busyRun("Création du décor (jusqu'à 1 minute)…", () => post("/scene_background", { prompt, width, height, seed: SC.seed, mount: SC.mount }));
       setBg(await loadImg(r.image)); q("#sc-again").disabled = false;
       box.textContent = "Décor prêt ✓ Place le produit, ou « Autre version » pour une variante.";
     } catch (e) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(e.message)}</span>`; }
@@ -1219,7 +1243,7 @@
       const small = toCanvas(SC.cut, Math.round(SC.cut.width * Math.min(1, 512 / Math.max(SC.cut.width, SC.cut.height))),
                                      Math.round(SC.cut.height * Math.min(1, 512 / Math.max(SC.cut.width, SC.cut.height))));
       const r = await busyRun("Jarvis regarde ton produit…", () => post("/scene_ideas", { image: small.toDataURL("image/png") }));
-      chips(r.ideas.map(i => [i.titre, i.prompt]));
+      chips(r.ideas.map(i => [i.titre, i.prompt, i.pose]));
       box.textContent = "Idées adaptées à ton produit ✓ Clique sur l'une d'elles.";
     } catch (e) { box.innerHTML = `<span style="color:var(--err)">${esc2(e.message)}</span> Les idées générales restent disponibles.`; }
   };
@@ -1233,7 +1257,7 @@
   };
 
   // 3. placement, ombres, lumière
-  for (const [id, key] of [["sc-size", "size"], ["sc-shadow", "shadow"], ["sc-light", "light"]])
+  for (const [id, key] of [["sc-size", "size"], ["sc-shadow", "shadow"], ["sc-light", "light"], ["sc-glow", "glow"]])
     q("#" + id).oninput = e => { SC[key] = key === "size" ? e.target.value / 100 : +e.target.value; q("#v-" + id).textContent = e.target.value; schedule(); };
   q("#sc-flip").onchange = e => { SC.flip = e.target.checked; schedule(); };
   function product() {
@@ -1267,7 +1291,12 @@
     const c = out.getContext("2d"); c.imageSmoothingQuality = "high";
     c.drawImage(SC.bg, 0, 0, W, H);
     const { pw, ph, px, py } = layout(W, H), prod = product(), s = SC.shadow / 100;
-    if (s > 0) {
+    if (s > 0 && SC.mount === "mural") {
+      // applique : ombre douce projetée sur le mur, légèrement décalée à l'opposé de la lumière
+      c.save(); c.globalAlpha = .3 * s; c.filter = `brightness(0) blur(${Math.max(3, ph * .04)}px)`;
+      c.drawImage(prod, px - SC.lightDx * pw * .06, py + ph * .04, pw, ph); c.restore();
+    }
+    if (s > 0 && SC.mount === "pose") {
       const sil = document.createElement("canvas"); sil.width = Math.max(1, Math.round(pw)); sil.height = Math.max(1, Math.round(ph));
       const g = sil.getContext("2d"); g.drawImage(prod, 0, 0, sil.width, sil.height);
       g.globalCompositeOperation = "source-in"; g.fillStyle = "#000"; g.fillRect(0, 0, sil.width, sil.height);
@@ -1284,6 +1313,24 @@
       c.fillStyle = grd; c.beginPath(); c.arc(cx, cy, rx, 0, Math.PI * 2); c.fill(); c.restore();
     }
     c.drawImage(prod, px, py, pw, ph);
+    const gl = SC.glow / 100;
+    if (gl > 0) {
+      // lampe allumée : halo chaud autour de la source, et flaque de lumière sous une suspension
+      const lx = px + pw / 2, ly = py + ph * (SC.mount === "suspendu" ? .85 : SC.mount === "mural" ? .5 : .3);
+      const R = Math.max(pw, ph) * 1.3;
+      c.save(); c.globalCompositeOperation = "screen";
+      let grd = c.createRadialGradient(lx, ly, 0, lx, ly, R);
+      grd.addColorStop(0, `rgba(255,214,150,${.55 * gl})`); grd.addColorStop(.35, `rgba(255,190,120,${.22 * gl})`); grd.addColorStop(1, "rgba(255,170,90,0)");
+      c.fillStyle = grd; c.fillRect(0, 0, W, H);
+      if (SC.mount === "suspendu") {
+        const fy = Math.min(H * .97, ly + H * .45), fr = pw * 1.6;
+        c.setTransform(1, 0, 0, .35, 0, fy - fy * .35);
+        grd = c.createRadialGradient(lx, fy, 0, lx, fy, fr);
+        grd.addColorStop(0, `rgba(255,205,140,${.35 * gl})`); grd.addColorStop(1, "rgba(255,190,120,0)");
+        c.fillStyle = grd; c.beginPath(); c.arc(lx, fy, fr, 0, Math.PI * 2); c.fill();
+      }
+      c.restore();
+    }
     return out;
   }
   canvas.addEventListener("pointerdown", e => {

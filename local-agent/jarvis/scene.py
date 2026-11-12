@@ -19,8 +19,13 @@ from . import ai_inpaint
 MODEL = ai_inpaint.MODELS / "birefnet-lite.onnx"
 _session = None
 
-SUFFIX = (", empty surface in the foreground center with nothing on it, professional product photography background, "
-          "photorealistic, natural soft light, high detail, no text, no people, no product")
+COMMON = ", professional interior and product photography, photorealistic, high detail, no text, no people, no product"
+SUFFIX = {  # la place laissée libre dépend de la façon dont le produit est installé
+    "pose": ", empty surface in the foreground center with nothing on it" + COMMON,
+    "suspendu": (", empty space in the upper center below the ceiling with no lamp and nothing hanging there, "
+                 "no light fixture" + COMMON),
+    "mural": ", plain empty wall area in the center with no lamp, no frame and no decoration on it" + COMMON,
+}
 
 
 # ------------------------------------------------------------------ détourage --
@@ -128,14 +133,14 @@ def cutout_data_url(data_url):
 
 
 # --------------------------------------------------------------------- décor --
-def background(prompt, width=1024, height=1024, seed=1):
+def background(prompt, width=1024, height=1024, seed=1, mount="pose"):
     """Génère un décor vide (sans le produit) à partir d'une description. Seul le texte part sur internet."""
     prompt = re.sub(r"\s+", " ", str(prompt or "")).strip()[:400]
     if not prompt:
         raise ValueError("Décris le décor souhaité, ou choisis une idée.")
     w = max(256, min(2048, int(width) // 16 * 16))
     h = max(256, min(2048, int(height) // 16 * 16))
-    url = (f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt + SUFFIX)}"
+    url = (f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt + SUFFIX.get(mount, SUFFIX['pose']))}"
            f"?width={w}&height={h}&seed={int(seed)}&nologo=true&model=flux&enhance=false")
     req = urllib.request.Request(url, headers={"User-Agent": "Jarvis"})
     try:
@@ -154,8 +159,11 @@ def background(prompt, width=1024, height=1024, seed=1):
 IDEAS_PROMPT = (
     "Tu es directeur artistique pour une boutique en ligne. Voici un produit détouré. Propose 4 décors réalistes "
     "et vendeurs, adaptés à ce produit (lieu, surface où le poser, lumière, ambiance), cohérents avec son usage et "
-    "sa taille réelle. Réponds UNIQUEMENT avec du JSON : une liste de 4 objets {\"titre\": \"2 à 4 mots en "
-    "français\", \"prompt\": \"description du décor VIDE (sans le produit), en anglais, 15 à 30 mots\"}.")
+    "sa taille réelle. Si c'est un luminaire, tiens compte de son type (suspension, lampe à poser, lampadaire, "
+    "applique) et propose des pièces où il est mis en valeur, plutôt en soirée. Réponds UNIQUEMENT avec du JSON : "
+    "une liste de 4 objets {\"titre\": \"2 à 4 mots en français\", \"prompt\": \"description du décor VIDE "
+    "(sans le produit), en anglais, 15 à 30 mots\", \"pose\": \"pose\" (posé sur une table ou au sol) ou "
+    "\"suspendu\" (accroché au plafond) ou \"mural\" (fixé au mur)}.")
 
 
 def ideas(brain, data_url):
@@ -171,7 +179,8 @@ def ideas(brain, data_url):
     m = re.search(r"\[.*\]", answer or "", re.S)
     try:
         items = json.loads(m.group(0)) if m else []
-        out = [{"titre": str(i["titre"])[:40], "prompt": str(i["prompt"])[:300]} for i in items
+        out = [{"titre": str(i["titre"])[:40], "prompt": str(i["prompt"])[:300],
+                "pose": i.get("pose") if i.get("pose") in SUFFIX else "pose"} for i in items
                if isinstance(i, dict) and i.get("titre") and i.get("prompt")][:6]
     except (ValueError, KeyError, TypeError):
         out = []

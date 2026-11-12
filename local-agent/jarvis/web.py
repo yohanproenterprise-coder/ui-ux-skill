@@ -447,7 +447,7 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 elif self.path == "/scene_background":
                     from . import scene
                     self._json(scene.background(data.get("prompt", ""), data.get("width", 1024),
-                                                data.get("height", 1024), data.get("seed", 1)))
+                                                data.get("height", 1024), data.get("seed", 1), data.get("mount", "pose")))
                 elif self.path == "/scene_ideas":
                     from . import scene
                     self._json(scene.ideas(app.brain, data.get("image", "")))
