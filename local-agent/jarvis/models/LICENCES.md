@@ -23,3 +23,9 @@ LaMa (Carve / OpenCV Zoo), licence Apache 2.0 — https://github.com/advimman/la
 
 ## Moteur carte graphique (facultatif, dossier .jarvis/gpu-runtime)
 onnxruntime-directml (Microsoft, licence MIT), installé à la demande depuis les Réglages.
+
+## Mise en scène
+- birefnet-lite.onnx — détourage : BiRefNet (licence MIT, https://github.com/ZhengPeng7/BiRefNet), version
+  « swin tiny » convertie en ONNX par le projet rembg (https://github.com/danielgatis/rembg). Téléchargé à la demande.
+- Décors créés par l'IA : modèle Flux (Black Forest Labs) via le service gratuit Pollinations (projet open source,
+  https://github.com/pollinations/pollinations). Seule la description du décor est envoyée, jamais la photo du produit.

@@ -441,6 +441,16 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                     with ai_inpaint.user_priority():
                         res = {"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))}
                     self._json(res)
+                elif self.path == "/scene_cutout":
+                    from . import scene
+                    self._json(scene.cutout_data_url(data.get("image", "")))
+                elif self.path == "/scene_background":
+                    from . import scene
+                    self._json(scene.background(data.get("prompt", ""), data.get("width", 1024),
+                                                data.get("height", 1024), data.get("seed", 1)))
+                elif self.path == "/scene_ideas":
+                    from . import scene
+                    self._json(scene.ideas(app.brain, data.get("image", "")))
                 elif self.path == "/save_image":
                     self._json(app.save_image(data.get("name"), data.get("data"), data.get("fmt"), data.get("quality", 92),
                                               data.get("source_path"), data.get("source_data"),

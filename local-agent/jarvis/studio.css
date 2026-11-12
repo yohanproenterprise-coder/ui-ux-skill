@@ -24,7 +24,7 @@
 .st-label { font: 600 11px var(--display); letter-spacing: .2em; color: var(--cyan); text-transform: uppercase; margin: 18px 0 8px; text-align: left; }
 
 .st-panel { border-left: 1px solid var(--line); background: rgba(8, 14, 26, .7); display: flex; flex-direction: column; min-height: 0; }
-.st-tabs { display: flex; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.st-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; border-bottom: 1px solid var(--line); }
 .st-tabs button { flex: 1; padding: 8px 6px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--muted);
   cursor: pointer; font-size: 12.5px; white-space: nowrap; }
 .st-tabs button.on { background: rgba(61,220,255,.12); color: #fff; border-color: rgba(61,220,255,.4); }
@@ -95,3 +95,10 @@
   border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 0 12px rgba(255,61,110,.6); background: rgba(255,61,110,.18); }
 #st-cursor.erase { background: transparent; border-style: dashed; }
 #st-stage #st-mask { cursor: none; }
+
+/* mise en scène */
+.sc-swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.sc-swatch { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line-2); cursor: pointer; }
+.sc-swatch:hover { border-color: var(--cyan); box-shadow: 0 0 8px rgba(61,220,255,.4); }
+.sc-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+.sc-chips .st-btn { font-size: 12px; padding: 7px 6px; }

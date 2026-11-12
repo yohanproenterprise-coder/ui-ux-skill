@@ -69,7 +69,7 @@
       <div class="st-panel">
         <div class="st-tabs">
           <button data-tab="adjust" class="on">Réglages</button><button data-tab="filters">Filtres</button>
-          <button data-tab="heal">Gomme magique</button><button data-tab="crop">Recadrer</button><button data-tab="text">Texte</button><button data-tab="export">Exporter</button>
+          <button data-tab="heal">Gomme magique</button><button data-tab="scene">Mise en scène</button><button data-tab="crop">Recadrer</button><button data-tab="text">Texte</button><button data-tab="export">Exporter</button>
         </div>
         <div class="st-pane on" data-pane="adjust">
           <button class="st-btn primary wide st-big" id="st-magic">✨ Améliorer la photo</button>
@@ -125,6 +125,42 @@
           <div class="st-msg" id="st-heal-msg"></div>
           <p class="st-note">Astuce : couvre bien tout l'objet, avec son ombre, en débordant un peu. Pour une grande zone,
             efface en plusieurs fois. Plus le fond est régulier (ciel, mur, sable, herbe), plus le résultat est naturel.</p>
+        </div>
+        <div class="st-pane" data-pane="scene">
+          <p class="st-note" style="margin-top:0">Détoure ton produit et pose-le dans le décor de ton choix. Le produit n'est jamais
+            redessiné : forme, proportions et détails restent exactement ceux de ta photo.</p>
+          <div class="st-label">1. Produit</div>
+          <button class="st-btn primary wide" id="sc-cut">✂ Détourer le produit</button>
+          <div class="st-msg" id="sc-cut-msg"></div>
+          <button class="st-btn wide" id="sc-png" hidden>⬇ Enregistrer le produit détouré (PNG transparent)</button>
+          <div id="sc-step2" hidden>
+            <div class="st-label">2. Décor</div>
+            <div class="st-row"><label>Format</label>
+              <select id="sc-fmt"><option value="1:1">Carré (1:1)</option><option value="4:5">Portrait (4:5)</option>
+                <option value="16:9">Paysage (16:9)</option><option value="photo">Comme la photo</option></select></div>
+            <div class="st-note" style="margin:0 0 6px">Fond uni (instantané) :</div>
+            <div class="sc-swatches" id="sc-swatches"></div>
+            <div class="st-note" style="margin:10px 0 6px">Décor créé par l'IA :</div>
+            <button class="st-btn wide" id="sc-ideas">💡 Idées de décor adaptées à ce produit</button>
+            <div class="sc-chips" id="sc-chips"></div>
+            <input type="text" id="sc-prompt" placeholder="Ou décris le décor : table en marbre dans une cuisine lumineuse…">
+            <div class="st-grid two" style="margin-top:8px">
+              <button class="st-btn primary" id="sc-gen">Créer ce décor</button><button class="st-btn" id="sc-again" disabled>↻ Autre version</button></div>
+            <button class="st-btn wide" id="sc-own">🖼 Utiliser ma propre photo de décor</button>
+            <input type="file" id="sc-file" accept="image/*" hidden>
+            <div class="st-msg" id="sc-bg-msg"></div>
+          </div>
+          <div id="sc-step3" hidden>
+            <div class="st-label">3. Placement</div>
+            <p class="st-note" style="margin-top:0">Fais glisser le produit sur l'image pour le placer (molette : taille).</p>
+            <div class="st-row"><label>Taille <span id="v-sc-size">60</span></label><input type="range" min="5" max="100" value="60" id="sc-size"></div>
+            <div class="st-row"><label>Ombre au sol <span id="v-sc-shadow">60</span></label><input type="range" min="0" max="100" value="60" id="sc-shadow"></div>
+            <div class="st-row"><label>Accorder la lumière au décor <span id="v-sc-light">35</span></label><input type="range" min="0" max="100" value="35" id="sc-light"></div>
+            <label class="check"><input type="checkbox" id="sc-flip"> Retourner le produit (miroir)</label>
+            <button class="st-btn primary wide" id="sc-apply">✓ Valider la mise en scène</button>
+            <p class="st-note">Ensuite tu peux l'améliorer (✨ dans Réglages) ou l'exporter. Ton produit détouré reste prêt :
+              reviens ici pour essayer un autre décor.</p>
+          </div>
         </div>
         <div class="st-pane" data-pane="crop">
           <div class="st-label" style="margin-top:0">Format</div>
@@ -502,6 +538,14 @@
   function schedule() { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; render(); }); } }
   function render() {
     if (!S.prev) return;
+    canvas.style.cursor = S.tab === "scene" && SC.bg && SC.cut ? "move" : "";
+    if (S.tab === "scene" && SC.bg && SC.cut && !S.compare) {
+      cropEl.style.display = "none"; q("#st-badge").style.display = "none";
+      const k = Math.min(1, 1400 / Math.max(SC.bg.width, SC.bg.height));
+      const out = compose(Math.round(SC.bg.width * k), Math.round(SC.bg.height * k));
+      canvas.width = out.width; canvas.height = out.height; ctx.drawImage(out, 0, 0);
+      placeMask(); return;
+    }
     const cropping = S.tab === "crop";
     let out;
     if (S.compare) out = geometry(S.prev, { ...DEFAULTS, rot: S.p.rot, flipH: S.p.flipH, flipV: S.p.flipV, crop: S.p.crop }, true);
@@ -1051,6 +1095,229 @@
     return out;
   }
 
+  // ---------------------------------------------------------- mise en scène --
+  const SC = { cut: null, bg: null, x: .5, y: .88, size: .6, shadow: 60, light: 35, flip: false, seed: 1,
+               tinted: null, tintKey: "", lightDx: 0, bgMean: [128, 128, 128], drag: null, solid: null };
+  const SCENES = [
+    ["Marbre blanc", "white marble countertop in a bright minimalist kitchen, soft daylight from a window, softly blurred background"],
+    ["Bois clair", "light oak wooden table in a scandinavian living room, soft morning light, softly blurred background"],
+    ["Salon chaleureux", "cozy modern living room, wooden side table, warm ambient lamp light, shallow depth of field"],
+    ["Studio photo", "seamless light beige paper studio backdrop and floor, soft studio lighting, subtle gradient"],
+    ["Extérieur nature", "flat natural stone surface outdoors in a garden, warm sunlight, green bokeh background"],
+    ["Salle de bain", "elegant bathroom vanity countertop, white tiles, soft diffuse light, softly blurred background"],
+    ["Bureau moderne", "modern minimalist office desk, plant and window softly blurred in background, natural light"],
+    ["Luxe sombre", "dark slate stone surface, deep dark background, dramatic soft spotlight from above, luxury mood"],
+  ];
+  const SOLIDS = [["Blanc", "#ffffff"], ["Gris clair", "#eceef0"], ["Beige", "#efe6da"], ["Rose poudré", "#f3e1e1"],
+                  ["Bleu doux", "#e3ecf4"], ["Vert sauge", "#dfe7dc"], ["Anthracite", "#2b2e33"], ["Noir", "#0d0d0f"]];
+  const post = async (url, body) => {
+    const r = await (await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json();
+    if (r.error) throw new Error(r.error === "introuvable" ? "Jarvis doit être redémarré pour utiliser la mise à jour." : r.error);
+    return r;
+  };
+  function toCanvas(im, w, h) {
+    const c = document.createElement("canvas"); c.width = w || im.naturalWidth || im.width; c.height = h || im.naturalHeight || im.height;
+    const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(im, 0, 0, c.width, c.height); return c;
+  }
+  async function loadImg(src) { const im = new Image(); im.src = src; await im.decode(); return toCanvas(im); }
+  function sceneSteps() {
+    q("#sc-step2").hidden = !SC.cut; q("#sc-step3").hidden = !(SC.cut && SC.bg); q("#sc-png").hidden = !SC.cut;
+  }
+  async function busyRun(label, fn) {
+    const busy = q("#st-busy"), lab = q("#st-busy span"); busy.style.display = "flex"; lab.textContent = label;
+    try { return await fn(); } finally { busy.style.display = "none"; }
+  }
+  function bgSize() {
+    const f = q("#sc-fmt").value;
+    if (f === "4:5") return [1024, 1280];
+    if (f === "16:9") return [1344, 768];
+    if (f === "photo" && S.full) { const k = 1280 / Math.max(S.full.width, S.full.height); return [Math.round(S.full.width * k), Math.round(S.full.height * k)]; }
+    return [1024, 1024];
+  }
+
+  // 1. détourage
+  q("#sc-cut").onclick = async function cutProduct() {
+    const box = q("#sc-cut-msg"); if (!S.full) return;
+    if (!await ensurePack("cutout", box, "L'IA de détourage (≈ 225 Mo)", cutProduct)) return;
+    box.textContent = "";
+    try {
+      const src = process(S.full, S.p, true), big = src.width * src.height > 4e6;
+      const r = await busyRun("Détourage du produit…", () => post("/scene_cutout", { image: src.toDataURL(big ? "image/jpeg" : "image/png", .97) }));
+      SC.cut = await loadImg(r.image); SC.tintKey = "";
+      box.textContent = `Produit détouré ✓ (${r.width}×${r.height}). Choisis maintenant un décor.`;
+      if (!SC.bg) setSolid("#ffffff");   // aperçu immédiat sur fond blanc
+      else { autoPlace(); render(); }
+      sceneSteps();
+    } catch (e) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(e.message)}</span>`; }
+  };
+  q("#sc-png").onclick = () => {
+    if (!SC.cut) return;
+    SC.cut.toBlob(b => { const a = el("a", { href: URL.createObjectURL(b), download: `${S.name}-detoure.png` }); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }, "image/png");
+  };
+
+  // 2. décor
+  function setBg(c, solid) {
+    const first = !SC.bg; SC.bg = c; SC.solid = solid || null; SC.tintKey = "";
+    const t = toCanvas(c, 48, 48).getContext("2d").getImageData(0, 0, 48, 48).data;
+    let r = 0, g = 0, b = 0, left = 0, right = 0;
+    for (let i = 0; i < t.length; i += 4) {
+      r += t[i]; g += t[i + 1]; b += t[i + 2];
+      const x = (i / 4) % 48, l = luma(t[i], t[i + 1], t[i + 2]);
+      if (x < 16) left += l; else if (x >= 32) right += l;
+    }
+    const n = t.length / 4; SC.bgMean = [r / n, g / n, b / n];
+    const avg = (left + right) / (n * 2 / 3) || 1;
+    SC.lightDx = Math.max(-1, Math.min(1, (left - right) / (n / 3) / Math.max(25, avg) * 2.5));   // lumière venant de gauche > 0
+    if (first || SC.autoSize) autoPlace();
+    sceneSteps(); render();
+  }
+  function autoPlace() {
+    if (!SC.cut || !SC.bg) return;
+    const ar = SC.cut.width / SC.cut.height, bgAr = SC.bg.width / SC.bg.height;
+    SC.size = Math.min(.62, .7 * bgAr / ar); SC.x = .5; SC.y = .86;
+    q("#sc-size").value = Math.round(SC.size * 100); q("#v-sc-size").textContent = Math.round(SC.size * 100);
+  }
+  function setSolid(color) {
+    const [w, h] = bgSize(), c = document.createElement("canvas"); c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    // fond uni de studio : très léger dégradé, plus clair en haut, comme un fond papier éclairé
+    const grd = g.createLinearGradient(0, 0, 0, h); grd.addColorStop(0, shade(color, 1.04)); grd.addColorStop(1, shade(color, .93));
+    g.fillStyle = grd; g.fillRect(0, 0, w, h); setBg(c, color);
+  }
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16), f = v => Math.max(0, Math.min(255, Math.round(v * k + (k > 1 ? 4 : 0))));
+    return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`;
+  }
+  SOLIDS.forEach(([label, color]) => {
+    const b = el("button", { className: "sc-swatch", title: label }); b.style.background = color;
+    b.onclick = () => setSolid(color); q("#sc-swatches").appendChild(b);
+  });
+  function chips(list) {
+    const box = q("#sc-chips"); box.innerHTML = "";
+    list.forEach(([label, prompt]) => {
+      const b = el("button", { className: "st-btn", textContent: label, title: prompt });
+      b.onclick = () => { q("#sc-prompt").value = prompt; newBg(); }; box.appendChild(b);
+    });
+  }
+  chips(SCENES);
+  q("#sc-fmt").onchange = () => { SC.autoSize = true; if (SC.solid) setSolid(SC.solid); SC.autoSize = false; };
+  async function newBg() {
+    const box = q("#sc-bg-msg"), prompt = q("#sc-prompt").value.trim();
+    if (!prompt) return box.textContent = "Choisis une idée ou décris le décor.";
+    SC.seed = 1 + Math.floor(Math.random() * 1e6); box.textContent = "";
+    const [width, height] = bgSize();
+    try {
+      const r = await busyRun("Création du décor (jusqu'à 1 minute)…", () => post("/scene_background", { prompt, width, height, seed: SC.seed }));
+      setBg(await loadImg(r.image)); q("#sc-again").disabled = false;
+      box.textContent = "Décor prêt ✓ Place le produit, ou « Autre version » pour une variante.";
+    } catch (e) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(e.message)}</span>`; }
+  }
+  q("#sc-gen").onclick = q("#sc-again").onclick = newBg;
+  q("#sc-ideas").onclick = async () => {
+    const box = q("#sc-bg-msg"); if (!SC.cut) return;
+    try {
+      const small = toCanvas(SC.cut, Math.round(SC.cut.width * Math.min(1, 512 / Math.max(SC.cut.width, SC.cut.height))),
+                                     Math.round(SC.cut.height * Math.min(1, 512 / Math.max(SC.cut.width, SC.cut.height))));
+      const r = await busyRun("Jarvis regarde ton produit…", () => post("/scene_ideas", { image: small.toDataURL("image/png") }));
+      chips(r.ideas.map(i => [i.titre, i.prompt]));
+      box.textContent = "Idées adaptées à ton produit ✓ Clique sur l'une d'elles.";
+    } catch (e) { box.innerHTML = `<span style="color:var(--err)">${esc2(e.message)}</span> Les idées générales restent disponibles.`; }
+  };
+  q("#sc-own").onclick = () => q("#sc-file").click();
+  q("#sc-file").onchange = e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    const r = new FileReader(); r.onload = async () => {
+      try { setBg(await loadImg(r.result)); q("#sc-bg-msg").textContent = "Ton décor est chargé ✓ Place le produit."; }
+      catch (x) { q("#sc-bg-msg").textContent = "Impossible d'ouvrir cette image."; }
+    }; r.readAsDataURL(f);
+  };
+
+  // 3. placement, ombres, lumière
+  for (const [id, key] of [["sc-size", "size"], ["sc-shadow", "shadow"], ["sc-light", "light"]])
+    q("#" + id).oninput = e => { SC[key] = key === "size" ? e.target.value / 100 : +e.target.value; q("#v-" + id).textContent = e.target.value; schedule(); };
+  q("#sc-flip").onchange = e => { SC.flip = e.target.checked; schedule(); };
+  function product() {
+    // produit (éventuellement retourné) dont la lumière est accordée en douceur à celle du décor
+    const key = SC.light + "|" + SC.flip + "|" + SC.bgMean.join(",");
+    if (SC.tinted && SC.tintKey === key) return SC.tinted;
+    const c = document.createElement("canvas"); c.width = SC.cut.width; c.height = SC.cut.height;
+    const g = c.getContext("2d");
+    if (SC.flip) { g.translate(c.width, 0); g.scale(-1, 1); }
+    g.drawImage(SC.cut, 0, 0); g.setTransform(1, 0, 0, 1, 0, 0);
+    const l = SC.light / 100;
+    if (l > 0) {
+      const im = g.getImageData(0, 0, c.width, c.height), d = im.data;
+      let pr = 0, pg = 0, pb = 0, pa = 0;
+      for (let i = 0; i < d.length; i += 16) { const a = d[i + 3]; pr += d[i] * a; pg += d[i + 1] * a; pb += d[i + 2] * a; pa += a; }
+      const pl = luma(pr / pa, pg / pa, pb / pa) || 1, bl = luma(...SC.bgMean) || 1;
+      const gain = 1 + l * (Math.sqrt(Math.max(.8, Math.min(1.2, bl / pl))) - 1);
+      const f = SC.bgMean.map(v => gain * (1 + l * .3 * (Math.max(.85, Math.min(1.15, v / bl)) - 1)));
+      for (let i = 0; i < d.length; i += 4) { d[i] *= f[0]; d[i + 1] *= f[1]; d[i + 2] *= f[2]; }
+      g.putImageData(im, 0, 0);
+    }
+    SC.tinted = c; SC.tintKey = key; return c;
+  }
+  function layout(W, H) {
+    let ph = SC.size * H, pw = ph * SC.cut.width / SC.cut.height;
+    if (pw > W * .98) { pw = W * .98; ph = pw * SC.cut.height / SC.cut.width; }   // jamais déformé : on réduit
+    return { pw, ph, px: SC.x * W - pw / 2, py: SC.y * H - ph };
+  }
+  function compose(W, H) {
+    const out = document.createElement("canvas"); out.width = W; out.height = H;
+    const c = out.getContext("2d"); c.imageSmoothingQuality = "high";
+    c.drawImage(SC.bg, 0, 0, W, H);
+    const { pw, ph, px, py } = layout(W, H), prod = product(), s = SC.shadow / 100;
+    if (s > 0) {
+      const sil = document.createElement("canvas"); sil.width = Math.max(1, Math.round(pw)); sil.height = Math.max(1, Math.round(ph));
+      const g = sil.getContext("2d"); g.drawImage(prod, 0, 0, sil.width, sil.height);
+      g.globalCompositeOperation = "source-in"; g.fillStyle = "#000"; g.fillRect(0, 0, sil.width, sil.height);
+      // ombre portée, couchée sur le sol, du côté opposé à la lumière du décor
+      c.save(); c.globalAlpha = .32 * s; c.filter = `blur(${Math.max(2, ph * .03)}px)`;
+      c.setTransform(1, 0, -SC.lightDx * .8, .2, px + pw / 2, py + ph);
+      c.drawImage(sil, -pw / 2, -ph, pw, ph); c.restore();
+      // ombre de contact, juste sous le produit
+      const cx = px + pw / 2, cy = py + ph, rx = pw * .45, ry = Math.max(2, Math.min(pw * .05, ph * .06));
+      c.save(); c.globalAlpha = .6 * s; c.filter = `blur(${Math.max(1.5, ry * .5)}px)`;
+      c.setTransform(1, 0, 0, ry / rx, 0, cy - cy * ry / rx);
+      const grd = c.createRadialGradient(cx, cy, 0, cx, cy, rx);
+      grd.addColorStop(0, "rgba(0,0,0,.85)"); grd.addColorStop(.6, "rgba(0,0,0,.35)"); grd.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = grd; c.beginPath(); c.arc(cx, cy, rx, 0, Math.PI * 2); c.fill(); c.restore();
+    }
+    c.drawImage(prod, px, py, pw, ph);
+    return out;
+  }
+  canvas.addEventListener("pointerdown", e => {
+    if (S.tab !== "scene" || !SC.bg || !SC.cut) return;
+    const r = canvas.getBoundingClientRect();
+    SC.drag = { fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height, x: SC.x, y: SC.y };
+    canvas.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!SC.drag) return;
+    const r = canvas.getBoundingClientRect();
+    SC.x = Math.max(0, Math.min(1, SC.drag.x + (e.clientX - r.left) / r.width - SC.drag.fx));
+    SC.y = Math.max(.05, Math.min(1.15, SC.drag.y + (e.clientY - r.top) / r.height - SC.drag.fy));
+    schedule();
+  });
+  ["pointerup", "pointercancel"].forEach(ev => canvas.addEventListener(ev, () => { SC.drag = null; }));
+  canvas.addEventListener("wheel", e => {
+    if (S.tab !== "scene" || !SC.bg || !SC.cut) return;
+    e.preventDefault(); SC.size = Math.max(.05, Math.min(1, SC.size * (e.deltaY < 0 ? 1.05 : .95)));
+    q("#sc-size").value = Math.round(SC.size * 100); q("#v-sc-size").textContent = Math.round(SC.size * 100); schedule();
+  }, { passive: false });
+  q("#sc-apply").onclick = () => {
+    if (!SC.bg || !SC.cut) return;
+    const out = compose(SC.bg.width, SC.bg.height);
+    S.baseHist.push(S.full); if (S.baseHist.length > 6) S.baseHist.shift();
+    S.full = out; makePrev();
+    // les réglages déjà faits sont intégrés au produit : on repart de zéro pour ne pas les appliquer deux fois
+    S.p = clone(DEFAULTS); lastCommitted = JSON.stringify(S.p); S.hist = []; S.fut = []; sync();
+    buildFilterThumbs(); q("#st-name").textContent = `${S.name} · ${out.width}×${out.height}`;
+    q("#st-heal-undo").disabled = false; q("#st-up-undo").hidden = false;
+    SC.bg = null; SC.solid = null; sceneSteps(); setTab("adjust");
+    q("#st-magic-msg").textContent = "Mise en scène appliquée ✓ Tu peux l'améliorer (✨) puis l'exporter. « Annuler » pour revenir.";
+  };
+
   // ------------------------------------------------------------- navigation --
   function setTab(t) {
     S.tab = t;
@@ -1059,6 +1326,7 @@
     if (t !== "crop") { cropEl.style.display = "none"; S.cropBox = null; }
     if (t === "export" && q("#st-size").value !== "custom") sizeFromPreset();
     if (t === "heal") refreshAI();
+    if (t === "scene") sceneSteps();
     render();
   }
   root.querySelector(".st-tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setTab(b.dataset.tab); });

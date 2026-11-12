@@ -33,13 +33,17 @@ PACKS = {
               ([FF + "codeformer.onnx"], MODELS / "codeformer.onnx", 300_000_000)],
     "upmax": [([FF + "real_esrgan_x2.onnx"], MODELS / "real_esrgan_x2.onnx", 60_000_000)],
     "sharp": [([FF + "nomos8k_sc_x4.onnx"], MODELS / "nomos8k_sc_x4.onnx", 60_000_000)],
+    # détourage (BiRefNet lite, licence MIT, conversion ONNX du projet rembg)
+    "cutout": [(["https://github.com/danielgatis/rembg/releases/download/v0.0.0/"
+                 "BiRefNet-general-bb_swin_v1_tiny-epoch_232.onnx"], MODELS / "birefnet-lite.onnx", 200_000_000)],
 }
 # fichiers facultatifs (accélèrent, mais le paquet fonctionne sans) : téléchargés avec le paquet, ou en arrière-plan
 OPTIONAL = {"faces": [([FF + "gpen_bfr_256.onnx"], MODELS / "gpen_bfr_256.onnx", 70_000_000)]}
 PACKS["enhance"] = PACKS["faces"] + PACKS["upmax"]  # tout ce qu'utilise l'amélioration en un clic
 OPTIONAL["enhance"] = OPTIONAL["faces"]
 PACK_LABELS = {"enhance": "IA d'amélioration (≈ 530 Mo)","lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 460 Mo)",
-               "upmax": "agrandissement Qualité max (≈ 70 Mo)", "sharp": "IA netteté renforcée (≈ 67 Mo)"}
+               "upmax": "agrandissement Qualité max (≈ 70 Mo)", "sharp": "IA netteté renforcée (≈ 67 Mo)",
+               "cutout": "IA de détourage (≈ 225 Mo)"}
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
 upscale_state = {"busy": False, "progress": 0}               # opérations lancées depuis le Studio
