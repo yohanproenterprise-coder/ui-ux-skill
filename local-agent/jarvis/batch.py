@@ -8,6 +8,7 @@ from . import enhance_ai, photo_export, system
 
 IMG_EXT = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".bmp", ".tif", ".tiff", ".avif", ".heic", ".heif"}
 OUT_NAME = "Améliorées"
+APP_NAME = "Jarvis"   # nom affiché dans les notifications (changé par Photo Studio IA)
 job = {"running": False, "folder": "", "out": "", "total": 0, "done": 0, "current": "", "errors": [],
        "started": 0.0, "finished": 0.0, "cancel": False}
 _lock = threading.Lock()
@@ -233,7 +234,7 @@ def start(folder, best=False, only_new=False, sharp=False):
             except OSError:
                 pass
             try:
-                system.notify("Jarvis — photos améliorées", msg)
+                system.notify(f"{APP_NAME} — photos améliorées", msg)
             except Exception:
                 pass
             while queue:   # dossier suivant de la file (les redémarrages en attente patientent encore)

@@ -44,6 +44,7 @@ OPTIONAL["enhance"] = OPTIONAL["faces"]
 PACK_LABELS = {"enhance": "IA d'amélioration (≈ 530 Mo)","lama": "IA de retouche (≈ 92 Mo)", "faces": "IA des visages (≈ 460 Mo)",
                "upmax": "agrandissement Qualité max (≈ 70 Mo)", "sharp": "IA netteté renforcée (≈ 67 Mo)",
                "cutout": "IA de détourage (≈ 225 Mo)"}
+UI_LABELS = {}   # textes d'installation propres à une application (Photo Studio IA), sinon ceux du Studio
 SIZE = 512
 state = {"state": "absent", "step": "", "progress": 0, "error": ""}
 upscale_state = {"busy": False, "progress": 0}               # opérations lancées depuis le Studio
@@ -107,7 +108,7 @@ def pack_ready(name):
 def status():
     from . import gpu
     extra = {"deps": _deps_ok(), "upscale": dict(upscale_state), "gpu": gpu.info(),
-             "packs": {k: pack_ready(k) for k in PACKS}}
+             "packs": {k: pack_ready(k) for k in PACKS}, "labels": UI_LABELS}
     if state["state"] in ("installing", "error"):
         return {**state, **extra}
     ready = MODEL.exists() and MODEL.stat().st_size > 50_000_000 and extra["deps"]

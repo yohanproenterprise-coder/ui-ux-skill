@@ -871,6 +871,7 @@
     // vrai si le composant est prêt ; sinon propose l'installation dans « box »
     let st; try { st = await (await fetch("/ai_status")).json(); } catch (e) { box.textContent = "Jarvis ne répond pas."; return false; }
     if (st.deps && (!pack || st.packs[pack])) return true;
+    if (st.labels && st.labels[pack]) label = st.labels[pack];   // taille exacte selon l'application
     box.innerHTML = `${label} s'installe une seule fois, puis fonctionne sans internet.` +
       '<button class="st-btn primary wide">Installer</button>';
     box.querySelector("button").onclick = async () => {

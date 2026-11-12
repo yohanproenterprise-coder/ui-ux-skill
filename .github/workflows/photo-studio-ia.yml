@@ -1,0 +1,45 @@
+# Fabrique l'installateur Windows de Photo Studio IA à chaque modification du Studio ou du kit.
+name: Photo Studio IA (installateur Windows)
+
+on:
+  push:
+    branches: [claude/quirky-euler-dtsd45]
+    paths:
+      - "local-agent/kit/**"
+      - "local-agent/jarvis/**"
+      - ".github/workflows/photo-studio-ia.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construire et tester l'installateur
+        shell: pwsh
+        run: ./local-agent/kit/build/build.ps1
+
+      - name: Garder l'installateur (onglet Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhotoStudioIA-Windows
+          path: local-agent/kit/build/out/*.exe
+          retention-days: 30
+
+      - name: Mettre à jour la version brouillon (visible seulement par le propriétaire)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $exe = Get-ChildItem local-agent/kit/build/out/PhotoStudioIA-Setup-*.exe | Select-Object -First 1
+          # les brouillons n'ont pas encore d'étiquette : on retrouve l'ancien par son titre pour le remplacer
+          $old = gh api "repos/$env:GITHUB_REPOSITORY/releases" --jq '.[] | select(.draft and .name == "Photo Studio IA (dernière version)") | .id'
+          foreach ($id in $old) { if ($id) { gh api -X DELETE "repos/$env:GITHUB_REPOSITORY/releases/$id" } }
+          gh release create photo-studio-ia $exe.FullName --draft --target $env:GITHUB_SHA `
+            --title "Photo Studio IA (dernière version)" `
+            --notes "Installateur Windows de Photo Studio IA. Brouillon privé : seul le propriétaire du dépôt le voit."

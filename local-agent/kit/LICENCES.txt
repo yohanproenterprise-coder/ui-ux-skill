@@ -1,0 +1,39 @@
+Photo Studio IA — composants tiers et licences
+================================================
+
+Toutes les intelligences artificielles proposées par l'application sont open source et autorisées en
+usage commercial. Les fichiers marqués « téléchargé » ne sont pas fournis avec l'application : ils sont
+récupérés depuis leur source officielle à la première utilisation.
+
+INTELLIGENCES ARTIFICIELLES
+---------------------------
+Nettoyage et agrandissement — Real-ESRGAN « realesr-general-x4v3 » (mélange avec la variante wdn)
+  © 2021 Xintao Wang — licence BSD 3-Clause — https://github.com/xinntao/Real-ESRGAN (fourni)
+
+Qualité maximale — Real-ESRGAN x2plus
+  © Xintao Wang — licence BSD 3-Clause ; conversion ONNX : FaceFusion (téléchargé)
+
+Netteté renforcée — 4xLSDIRCompact (fourni) et 4xNomos8kSC (téléchargé)
+  © Philip Hofmann — licence Creative Commons Attribution 4.0 (CC BY 4.0) — https://github.com/Phhofm/models
+  4xLSDIRCompact converti au format ONNX pour cette application.
+
+Gomme magique (IA) — LaMa
+  © Samsung Research / advimman — licence Apache 2.0 — https://github.com/advimman/lama
+  Export ONNX : OpenCV Zoo (téléchargé)
+
+Détourage — BiRefNet (version « swin tiny »)
+  © Peng Zheng et al. — licence MIT — https://github.com/ZhengPeng7/BiRefNet
+  Export ONNX : projet rembg, © Daniel Gatis, licence MIT — https://github.com/danielgatis/rembg (téléchargé)
+
+Décors créés par l'IA — modèle Flux via le service Pollinations (https://pollinations.ai)
+  Service en ligne gratuit et open source. Seule la description du décor est envoyée, jamais vos photos.
+  Vérifiez les conditions d'utilisation de Pollinations pour un usage commercial des décors générés.
+
+LOGICIELS
+---------
+Python — Python Software Foundation License — https://www.python.org
+ONNX Runtime et ONNX Runtime DirectML (carte graphique, facultatif) — © Microsoft — licence MIT
+NumPy — licence BSD 3-Clause — https://numpy.org
+Pillow — licence MIT-CMU (HPND) — https://python-pillow.org
+
+Les textes complets des licences sont disponibles sur les sites indiqués.
