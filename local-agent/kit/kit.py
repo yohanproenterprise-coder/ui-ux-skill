@@ -36,6 +36,7 @@ from jarvis import gpu  # noqa: E402
 gpu.activate_path()   # moteur carte graphique, s'il a été installé (avant tout chargement de l'IA)
 
 from jarvis import ai_inpaint, batch, config, photo_export, system  # noqa: E402
+import licence  # noqa: E402  (essai gratuit puis clé Lemon Squeezy)
 
 # --- uniquement des modèles autorisés en usage commercial ---
 for name in ("faces",):
@@ -169,6 +170,8 @@ class Handler(BaseHTTPRequestHandler):
             elif path in ("/studio.css", "/inpaint.js"):
                 self._send((CODE / "jarvis" / path[1:]).read_bytes(),
                            "text/css; charset=utf-8" if path.endswith(".css") else "text/javascript; charset=utf-8")
+            elif path == "/licence":
+                self._json(licence.status())
             elif path == "/ping":
                 self._json({"ok": True, "version": VERSION, "pid": os.getpid()})
             elif path == "/photo_folders":
@@ -202,6 +205,12 @@ class Handler(BaseHTTPRequestHandler):
         try:
             d = self._body()
             p = self.path
+            if p == "/licence/activate":
+                return self._json(licence.activate(d.get("key", "")))
+            if p == "/licence/deactivate":
+                return self._json(licence.deactivate())
+            if p not in ("/gpu", "/open_folder") and not licence.status()["allowed"]:
+                return self._json({"error": "L'essai gratuit est terminé : active ta licence (bouton Options) pour continuer."}, 402)
             if p == "/ai_install":
                 self._json(ai_inpaint.install(deps_only=bool(d.get("deps_only")), pack=d.get("pack", "lama")))
             elif p == "/ai_upscale":
@@ -296,6 +305,7 @@ def main():
     threading.Thread(target=lambda: gpu.available() and ai_inpaint._deps_ok() and gpu.selftest(ai_inpaint.UPSCALE_MODEL),
                      daemon=True).start()
     threading.Thread(target=idle_watch, daemon=True).start()
+    threading.Thread(target=licence.recheck, daemon=True).start()
     if "--no-window" not in sys.argv:
         threading.Timer(0.6, lambda: open_window(url)).start()
     print(f"{APP_NAME} {VERSION} : {url}")

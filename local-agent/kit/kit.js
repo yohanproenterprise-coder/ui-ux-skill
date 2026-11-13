@@ -42,6 +42,17 @@
       <button class="theme-card" data-theme-pick="pastel"><i style="background:linear-gradient(135deg,#fdf6ff,#e7dcff 40%,#ffd9e8 75%,#ffe9c7)"></i>Pastel<small>clair, doux</small></button>
       <button class="theme-card" data-theme-pick="epure"><i style="background:linear-gradient(135deg,#0c0d10 50%,#f6f6f8 50%)"></i>Épuré<small>sobre</small></button>
     </div>
+    <div id="kit-lic-box" hidden>
+      <div class="st-label">Licence</div>
+      <div class="st-note" id="kit-lic-state" style="margin-top:0"></div>
+      <div id="kit-lic-form" style="display:flex;gap:8px;margin-top:8px">
+        <input type="text" id="kit-key" placeholder="Clé de licence reçue par e-mail" autocomplete="off" style="flex:1">
+        <button class="st-btn primary" id="kit-activate">Activer</button>
+      </div>
+      <div class="st-msg" id="kit-lic-msg"></div>
+      <a class="st-btn wide" id="kit-buy" target="_blank" rel="noopener" style="text-decoration:none">Acheter une licence</a>
+      <button class="st-btn wide" id="kit-deact" hidden>Libérer la licence de ce PC</button>
+    </div>
     <div class="st-label">Carte graphique</div>
     <p class="st-note" style="margin-top:0">Fait travailler la puce graphique du PC pour aller plus vite. L'application mesure la
       vitesse et ne l'utilise que si elle est vraiment plus rapide ; au moindre souci, elle revient au processeur.</p>
@@ -108,4 +119,54 @@
       try { const v = await (await fetch("/ping")).json(); if (v.pid !== pid0) return location.reload(); } catch (x) {}
     }
   });
+  // ------------------------------------------------------ licence (Lemon Squeezy) --
+  const banner = document.createElement("div");
+  banner.style.cssText = "display:none;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:7px 16px;font-size:13px;" +
+    "background:var(--grad-soft, var(--accent-soft));border-bottom:1px solid var(--line);color:var(--text)";
+  root.insertBefore(banner, root.querySelector(".st-body"));
+  const wall = document.createElement("div");
+  wall.className = "st-modal"; wall.hidden = true; wall.style.zIndex = 9;
+  wall.innerHTML = `<div class="st-modal-box" style="text-align:center">
+    <strong class="title">L'essai gratuit est terminé</strong>
+    <p class="st-note">Merci d'avoir essayé ${K.name}. Pour continuer à l'utiliser, active ta licence. Elle s'achète une seule fois,
+      et les mises à jour sont incluses.</p>
+    <div style="display:flex;gap:8px;margin-top:14px"><input type="text" id="wall-key" placeholder="Clé de licence" style="flex:1">
+      <button class="st-btn primary" id="wall-activate">Activer</button></div>
+    <div class="st-msg" id="wall-msg"></div>
+    <a class="st-btn primary wide" id="wall-buy" target="_blank" rel="noopener" style="text-decoration:none">Acheter une licence</a></div>`;
+  root.appendChild(wall);
+  async function activateKey(key, msgBox) {
+    msgBox.style.color = "var(--muted)"; msgBox.textContent = "Vérification de la clé…";
+    try {
+      const r = await (await fetch("/licence/activate", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }) })).json();
+      if (r.error) throw new Error(r.error);
+      msgBox.style.color = "var(--ok)"; msgBox.textContent = "Licence activée ✓ Merci pour ton achat !";
+      refreshLicence();
+    } catch (e) { msgBox.style.color = "var(--err)"; msgBox.textContent = e.message; }
+  }
+  async function refreshLicence() {
+    let L; try { L = await (await fetch("/licence")).json(); } catch (e) { return; }
+    $("#kit-lic-box").hidden = !L.enabled;
+    if (!L.enabled) return;
+    for (const a of [$("#kit-buy"), $("#wall-buy")]) { a.href = L.buy_url || "#"; a.hidden = !L.buy_url || L.licensed; }
+    $("#kit-lic-form").style.display = L.licensed ? "none" : "flex";
+    $("#kit-deact").hidden = !L.licensed;
+    $("#kit-lic-state").textContent = L.licensed ? `Licence active sur ce PC (clé …${L.key_hint}).`
+      : L.trial_left > 0 ? `Essai gratuit : encore ${L.trial_left} jour${L.trial_left > 1 ? "s" : ""}.` : "Essai gratuit terminé.";
+    banner.style.display = !L.licensed && L.trial_left > 0 ? "flex" : "none";
+    banner.innerHTML = `Essai gratuit : encore <strong>${L.trial_left} jour${L.trial_left > 1 ? "s" : ""}</strong>` +
+      (L.buy_url ? ` · <a href="${L.buy_url}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Acheter (29 €)</a>` : "") +
+      ` · <a href="#" id="banner-act" style="color:var(--accent)">J'ai une clé</a>`;
+    const ba = banner.querySelector("#banner-act"); if (ba) ba.onclick = e => { e.preventDefault(); gear.click(); };
+    wall.hidden = L.allowed;
+  }
+  $("#kit-activate").onclick = () => activateKey($("#kit-key").value, $("#kit-lic-msg"));
+  $("#wall-activate").onclick = () => activateKey($("#wall-key").value, $("#wall-msg"));
+  $("#kit-deact").onclick = async () => {
+    await fetch("/licence/deactivate", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    $("#kit-lic-msg").textContent = "Licence libérée : tu peux l'activer sur un autre PC."; refreshLicence();
+  };
+  refreshLicence();
+
 })();

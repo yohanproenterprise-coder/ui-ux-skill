@@ -29,7 +29,7 @@ foreach ($m in "__init__", "config", "ai_inpaint", "ai_face", "enhance_ai", "bat
 }
 Copy-Item "$root\jarvis\index.html", "$root\jarvis\studio.js", "$root\jarvis\studio.css", "$root\jarvis\inpaint.js" "$stage\app\jarvis\"
 Copy-Item "$root\jarvis\models\upscale-x4.onnx", "$root\jarvis\models\sharp-x4.onnx" "$stage\app\jarvis\models\"
-Copy-Item "$root\kit\kit.py", "$root\kit\kit.js", "$root\kit\LICENCES.txt" "$stage\app\kit\"
+Copy-Item "$root\kit\kit.py", "$root\kit\kit.js", "$root\kit\LICENCES.txt", "$root\kit\licence.py", "$root\kit\licence-config.json" "$stage\app\kit\"
 
 # 3. Vérification : l'application démarre et améliore une vraie image
 $env:JARVIS_HOME = "$out\test-home"
