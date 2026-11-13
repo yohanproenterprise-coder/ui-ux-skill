@@ -59,7 +59,7 @@
     b.classList.toggle("on", b.dataset.themePick === document.documentElement.dataset.theme));
   dlg.addEventListener("click", e => {
     const b = e.target.closest("[data-theme-pick]"); if (!b) return;
-    document.documentElement.dataset.theme = b.dataset.themePick;
+    window.applyTheme(b.dataset.themePick);
     try { localStorage.setItem("jarvis-theme", b.dataset.themePick); } catch (x) {}
     markTheme();
   });

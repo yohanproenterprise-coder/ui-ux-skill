@@ -244,6 +244,8 @@ def main():
     ap.add_argument("--web", action="store_true", help="ouvrir l'interface web")
     ap.add_argument("--port", type=int, default=7860)
     ap.add_argument("--no-browser", action="store_true", help="ne pas ouvrir le navigateur (démarrage auto)")
+    ap.add_argument("--outil", choices=["ameliorer", "dossier", "gomme", "scene"],
+                    help="ouvrir un seul outil photo dans sa propre fenêtre")
     ap.add_argument("--demarrage", choices=["on", "off"], help="lancer Jarvis au démarrage de Windows")
     ap.add_argument("-c", "--cerveau", help="fournisseur : local, gemini, groq, openrouter")
     ap.add_argument("-m", "--model", help="modèle à utiliser pour ce fournisseur")
@@ -285,7 +287,8 @@ def main():
         if cfg["provider"] == "local" and check_local(cfg):
             print("Attention : " + check_local(cfg))
         try:
-            serve(cfg, cfg["workdir"], a.port, open_browser=not a.no_browser)
+            serve(cfg, cfg["workdir"], a.port, open_browser=not a.no_browser,
+                  open_path=f"/outil?t={a.outil}" if a.outil else None)
         except ValueError as e:
             sys.exit(str(e))
     else:

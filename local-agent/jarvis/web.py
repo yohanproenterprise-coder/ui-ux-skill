@@ -261,6 +261,11 @@ class App:
                     " : Jarvis redémarre…" if not batch.job["running"] else " : appliqué à la fin du dossier en cours.")
                 return {**self.state(), "gpu": gpu.info(), "message": msg, "restarting": not batch.job["running"]}
             return {**self.state(), "gpu": gpu.info()}
+        elif cmd == "shortcuts":
+            err = system.create_tool_shortcuts(updater.APP_DIR, config.HOME / "icons")
+            if err:
+                raise ValueError(err)
+            return {**self.state(), "message": "Icônes créées sur le Bureau : " + ", ".join(system.TOOLS.values()) + "."}
         elif cmd == "update":
             from . import batch
             if batch.job["running"] and self.relaunch:
@@ -283,7 +288,27 @@ class App:
         return self.state()
 
 
-def serve(cfg, workdir, port=7860, open_browser=True):
+TOOLS = {  # outil : (onglets du Studio affichés, onglet de départ)
+    "ameliorer": (["adjust", "filters", "crop", "text", "export"], "adjust"),
+    "dossier": ([], "batch"),
+    "gomme": (["heal", "crop", "export"], "heal"),
+    "scene": (["scene", "export"], "scene"),
+}
+
+
+def tool_page(tool):
+    """Page d'un seul outil photo : le design de Jarvis et le Studio réduit aux onglets de l'outil."""
+    tabs, start = TOOLS[tool]
+    title = system.TOOLS[tool]
+    index = INDEX.read_text(encoding="utf-8")
+    head = index[:index.index("</svg>") + len("</svg>")]
+    head = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", head, flags=re.S)
+    conf = json.dumps({"id": tool, "title": title, "tabs": tabs, "start": start}, ensure_ascii=False)
+    return (head + f"\n<script>window.TOOL = {conf};</script>\n<script src=\"/studio.js\"></script>"
+            "\n<script src=\"/outil.js\"></script>\n</body>\n</html>\n")
+
+
+def serve(cfg, workdir, port=7860, open_browser=True, open_path=None):
     app = None
     state = {"server": None, "again": True}
 
@@ -341,7 +366,27 @@ def serve(cfg, workdir, port=7860, open_browser=True):
                 return self._json({"error": "non autorisé"}, 401)
             if path == "/":
                 self._send(INDEX.read_bytes(), "text/html; charset=utf-8")
-            elif path in ("/studio.js", "/studio.css", "/inpaint.js"):
+            elif path == "/outil":
+                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                tool = q.get("t", [""])[0]
+                if tool not in TOOLS:
+                    return self._json({"error": "outil inconnu"}, 404)
+                self._send(tool_page(tool).encode(), "text/html; charset=utf-8")
+            elif path.startswith("/tool-icon/") and path[11:] in TOOLS:
+                import io as _io
+                from . import tool_icons
+                from PIL import Image
+                ico = config.HOME / "icons" / f"{path[11:]}.ico"
+                if not ico.exists():
+                    tool_icons.make(path[11:], ico)
+                buf = _io.BytesIO()
+                im = Image.open(ico)
+                im.size = (64, 64)
+                im.convert("RGBA").save(buf, "PNG")
+                self._send(buf.getvalue(), "image/png")
+            elif path == "/ping":
+                self._json({"ok": True})
+            elif path in ("/studio.js", "/studio.css", "/inpaint.js", "/outil.js"):
                 self._send((Path(__file__).parent / path[1:]).read_bytes(),
                            "text/javascript; charset=utf-8" if path.endswith(".js") else "text/css; charset=utf-8")
             elif path == "/photo_folders":
@@ -479,7 +524,10 @@ def serve(cfg, workdir, port=7860, open_browser=True):
         state["server"] = _replace_old(port, open_server)
         if not state["server"]:
             print(f"Jarvis tourne déjà : j'ouvre {url}")
-            webbrowser.open(url)
+            if open_path:
+                system.open_app_window(url + open_path)
+            else:
+                webbrowser.open(url)
             return
     token = secrets.token_hex(16)
     try:
@@ -512,7 +560,14 @@ def serve(cfg, workdir, port=7860, open_browser=True):
     if app.bound_remote:
         print("Accès téléphone activé : " + ", ".join(a["url"] for a in remote.addresses(port)))
     if open_browser:
-        threading.Timer(1, lambda: webbrowser.open(url)).start()
+        threading.Timer(1, lambda: system.open_app_window(url + open_path) if open_path else webbrowser.open(url)).start()
+
+    def tool_shortcuts():   # une fois : une icône par outil photo sur le Bureau
+        if system.WINDOWS and app.cfg.get("tool_shortcuts") != 1:
+            if not system.create_tool_shortcuts(updater.APP_DIR, config.HOME / "icons"):
+                app.cfg["tool_shortcuts"] = 1
+                config.save(app.cfg)
+    threading.Thread(target=tool_shortcuts, daemon=True).start()
     try:
         while True:
             state["server"].serve_forever()

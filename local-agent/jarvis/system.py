@@ -207,6 +207,51 @@ def _startup_link():
     return Path(os.environ.get("APPDATA", "")) / "Microsoft/Windows/Start Menu/Programs/Startup/Jarvis.lnk"
 
 
+TOOLS = {  # outils photo ouverts chacun dans leur propre fenêtre
+    "ameliorer": "Améliorer une photo", "dossier": "Améliorer un dossier",
+    "gomme": "Gomme magique", "scene": "Mise en scène",
+}
+
+
+def open_app_window(url):
+    """Ouvre une page dans sa propre fenêtre d'application (Edge ou Chrome sans barre d'adresse), sinon le navigateur."""
+    if WINDOWS:
+        for exe in (os.path.expandvars(p) for p in (
+                r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe", r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe",
+                r"%ProgramFiles%\Google\Chrome\Application\chrome.exe", r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")):
+            if os.path.exists(exe):
+                subprocess.Popen([exe, f"--app={url}", "--window-size=1400,900"])
+                return
+    webbrowser.open(url)
+
+
+def create_tool_shortcuts(app_dir, icons_dir):
+    """Une icône par outil photo sur le Bureau et dans le menu Démarrer (dossier « Jarvis »)."""
+    if not WINDOWS:
+        return "Disponible uniquement sous Windows."
+    from . import tool_icons
+    exe = Path(sys.executable)
+    pythonw = exe.with_name("pythonw.exe")
+    target = str(pythonw if pythonw.exists() else exe)
+    desktop = Path(os.environ.get("USERPROFILE", str(Path.home()))) / "Desktop"
+    menu = Path(os.environ.get("APPDATA", "")) / "Microsoft/Windows/Start Menu/Programs/Jarvis"
+    menu.mkdir(parents=True, exist_ok=True)
+    errors = []
+    for key, title in TOOLS.items():
+        icon = tool_icons.make(key, Path(icons_dir) / f"{key}.ico")
+        for folder in (desktop, menu):
+            code, out = powershell(
+                "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:J_LINK);"
+                "$s.TargetPath=$env:J_EXE;$s.Arguments=$env:J_ARGS;$s.WorkingDirectory=$env:J_DIR;"
+                "$s.IconLocation=$env:J_ICON;$s.Description=$env:J_DESC;$s.Save()",
+                env={"J_LINK": str(folder / f"{title}.lnk"), "J_EXE": target,
+                     "J_ARGS": f'"{Path(app_dir) / "agent.py"}" --web --outil {key}', "J_DIR": str(app_dir),
+                     "J_ICON": str(icon), "J_DESC": f"{title} (Jarvis)"})
+            if code != 0:
+                errors.append(out)
+    return "; ".join(errors)[:300] or None
+
+
 def startup_enabled():
     return WINDOWS and _startup_link().exists()
 
