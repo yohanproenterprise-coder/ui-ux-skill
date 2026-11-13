@@ -3,6 +3,7 @@
 from pathlib import Path
 
 COLORS = {  # dégradé (haut-gauche → bas-droite) par outil
+    "studio": ((56, 198, 244), (192, 76, 253)),
     "ameliorer": ((124, 92, 255), (255, 92, 154)),
     "dossier": ((255, 181, 71), (255, 112, 67)),
     "gomme": ((255, 92, 154), (192, 76, 253)),
@@ -13,7 +14,11 @@ COLORS = {  # dégradé (haut-gauche → bas-droite) par outil
 def _glyph(d, tool, S):
     W = (255, 255, 255, 255)
     k = S / 256
-    if tool == "ameliorer":   # grande étincelle et petite étoile
+    if tool == "studio":      # photo : cadre, montagne et soleil
+        d.rounded_rectangle((44 * k, 60 * k, 212 * k, 196 * k), radius=22 * k, outline=W, width=int(14 * k))
+        d.polygon([(64 * k, 180 * k), (112 * k, 120 * k), (146 * k, 160 * k), (166 * k, 138 * k), (196 * k, 180 * k)], fill=W)
+        d.ellipse((150 * k, 82 * k, 182 * k, 114 * k), fill=W)
+    elif tool == "ameliorer":   # grande étincelle et petite étoile
         cx, cy, r, t = 116 * k, 140 * k, 74 * k, 18 * k
         d.polygon([(cx, cy - r), (cx + t, cy - t), (cx + r, cy), (cx + t, cy + t), (cx, cy + r), (cx - t, cy + t),
                    (cx - r, cy), (cx - t, cy - t)], fill=W)

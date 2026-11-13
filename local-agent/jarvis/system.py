@@ -208,7 +208,7 @@ def _startup_link():
 
 
 TOOLS = {  # outils photo ouverts chacun dans leur propre fenêtre
-    "ameliorer": "Améliorer une photo", "dossier": "Améliorer un dossier",
+    "studio": "Studio photo", "ameliorer": "Améliorer une photo", "dossier": "Améliorer un dossier",
     "gomme": "Gomme magique", "scene": "Mise en scène",
 }
 

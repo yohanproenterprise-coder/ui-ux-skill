@@ -477,6 +477,7 @@ html.vivid #settingsDlg h3 { font: 600 12px var(--label); letter-spacing: .1em; 
   <h3>Outils photo</h3>
   <p class="hint">Chaque outil s'ouvre dans sa propre fenêtre. Ils ont aussi leur icône sur le Bureau.</p>
   <div class="tools-grid">
+    <button class="tool-open" data-tool="studio"><img src="/tool-icon/studio" alt="">Studio photo (tout)</button>
     <button class="tool-open" data-tool="ameliorer"><img src="/tool-icon/ameliorer" alt="">Améliorer une photo</button>
     <button class="tool-open" data-tool="dossier"><img src="/tool-icon/dossier" alt="">Améliorer un dossier</button>
     <button class="tool-open" data-tool="gomme"><img src="/tool-icon/gomme" alt="">Gomme magique</button>
@@ -850,6 +851,10 @@ $("mic").onclick = async () => {
 if (innerWidth < 640) $("input").placeholder = "Demande à Jarvis…";
 refresh(); poll();
 </script>
-<script src="/studio.js"></script>
+<script>
+// le Studio photo est une application à part : il s'ouvre dans sa propre fenêtre, jamais dans le chat
+window.openStudio = path => window.open("/outil?t=studio" + (path ? "&path=" + encodeURIComponent(path) : ""),
+                                        "jarvis-studio", "popup,width=1400,height=900");
+</script>
 </body>
 </html>

@@ -6,7 +6,9 @@
   const root = $("#studio");
   document.title = T.title;
 
-  window.openStudio();
+  // photo à ouvrir directement (lien « Ouvrir dans le Studio » du chat)
+  const path = new URLSearchParams(location.search).get("path");
+  window.openStudio(path || undefined);
   new MutationObserver(() => { if (!root.classList.contains("open")) root.classList.add("open"); })
     .observe(root, { attributes: true, attributeFilter: ["class"] });
   $("#st-close").remove();

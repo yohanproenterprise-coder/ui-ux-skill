@@ -289,6 +289,7 @@ class App:
 
 
 TOOLS = {  # outil : (onglets du Studio affichés, onglet de départ)
+    "studio": (["adjust", "filters", "heal", "scene", "crop", "text", "export"], "adjust"),
     "ameliorer": (["adjust", "filters", "crop", "text", "export"], "adjust"),
     "dossier": ([], "batch"),
     "gomme": (["heal", "crop", "export"], "heal"),
@@ -563,9 +564,9 @@ def serve(cfg, workdir, port=7860, open_browser=True, open_path=None):
         threading.Timer(1, lambda: system.open_app_window(url + open_path) if open_path else webbrowser.open(url)).start()
 
     def tool_shortcuts():   # une fois : une icône par outil photo sur le Bureau
-        if system.WINDOWS and app.cfg.get("tool_shortcuts") != 1:
+        if system.WINDOWS and app.cfg.get("tool_shortcuts") != 2:
             if not system.create_tool_shortcuts(updater.APP_DIR, config.HOME / "icons"):
-                app.cfg["tool_shortcuts"] = 1
+                app.cfg["tool_shortcuts"] = 2
                 config.save(app.cfg)
     threading.Thread(target=tool_shortcuts, daemon=True).start()
     try:
