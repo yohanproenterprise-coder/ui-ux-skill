@@ -1,0 +1,226 @@
+<title>Suspension galet en 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;1,500&family=Montserrat:wght@400;500&display=swap">
+<style>
+/* Mur d'enduit chaulé comme sur les photos produit ; la suspension au centre, réglages en verre dépoli en bas. Un seul thème, clair et chaud. */
+:root {
+  --plaster: #E7DED2; --plaster-deep: #CFC3B4; --ink: #2B241E; --muted: #6E6257; --line: rgba(43, 36, 30, .14);
+  --accent: #A16207; --glass: rgba(250, 246, 240, .62);
+  --display: Cormorant, Georgia, serif; --sans: Montserrat, "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body { margin: 0; background: radial-gradient(120% 90% at 50% 30%, #F1EBE2 0%, var(--plaster) 45%, var(--plaster-deep) 100%);
+  color: var(--ink); font: 15px/1.5 var(--sans); overflow: hidden; -webkit-font-smoothing: antialiased; }
+#stage { position: fixed; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#stage canvas:active { cursor: grabbing; }
+.top { position: fixed; top: 0; left: 0; right: 0; pointer-events: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 22px) max(20px, env(safe-area-inset-right, 0px)) 0 max(20px, env(safe-area-inset-left, 0px)); }
+.eyebrow { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 500 clamp(40px, 6vw, 76px)/.95 var(--display); margin: 8px 0 8px; letter-spacing: -.01em; }
+h1 em { color: var(--accent); }
+.sub { margin: 0; color: var(--muted); max-width: 28em; }
+.panel { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  width: min(720px, calc(100% - 32px)); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px;
+  padding: 10px 12px; border-radius: 20px; background: var(--glass); border: 1px solid var(--line);
+  backdrop-filter: blur(14px) saturate(1.1); -webkit-backdrop-filter: blur(14px) saturate(1.1); box-shadow: 0 10px 30px rgba(60, 45, 30, .12); }
+.group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; }
+button { font: 500 13px var(--sans); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 14px; min-height: 40px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .2s, border-color .2s, color .2s; }
+button:hover { border-color: rgba(43, 36, 30, .35); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button[aria-pressed="true"] { background: var(--ink); color: #FAF6F0; border-color: var(--ink); }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.hint { position: fixed; right: max(20px, env(safe-area-inset-right, 0px)); top: calc(env(safe-area-inset-top, 0px) + 26px);
+  font-size: 12px; color: var(--muted); pointer-events: none; text-align: right; }
+.err { position: fixed; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
+@media (max-width: 640px) {
+  .hint, .sub { display: none; }
+  .panel { gap: 6px; padding: 8px; }
+  button { min-height: 36px; padding: 6px 11px; font-size: 12.5px; }
+}
+</style>
+
+<div id="stage" aria-label="Suspension en travertin en 3D : faites glisser pour la tourner, molette ou pincement pour zoomer"></div>
+
+<div class="top">
+  <div class="eyebrow">La Galerie Lumineuse · Suspension</div>
+  <h1>Galet de <em>travertin</em></h1>
+  <p class="sub">Abat-jour en pierre de travertin, tige en bois clair, cordon textile brique. Modèle 3D reconstruit d'après vos photos.</p>
+</div>
+<div class="hint">Glissez pour tourner<br>Molette ou pincement pour zoomer</div>
+
+<div class="panel" role="toolbar" aria-label="Réglages">
+  <div class="group"><button id="power" aria-pressed="true">Allumée</button></div>
+  <div class="group" role="group" aria-label="Teinte">
+    <button data-k="3000" aria-pressed="true"><i class="dot" style="background:#ffb46b"></i>Chaude</button>
+    <button data-k="4000" aria-pressed="false"><i class="dot" style="background:#ffd9a8"></i>Neutre</button>
+    <button data-k="6000" aria-pressed="false"><i class="dot" style="background:#eef2ff"></i>Froide</button>
+  </div>
+  <div class="group" role="group" aria-label="Nombre de suspensions">
+    <button data-n="1" aria-pressed="true">Une</button>
+    <button data-n="3" aria-pressed="false" aria-label="Trois suspensions au-dessus d'une table">Trois</button>
+  </div>
+  <div class="group"><button id="below">Vue de dessous</button></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+  const stage = document.getElementById("stage");
+  if (!window.THREE || !THREE.OrbitControls) { stage.innerHTML = '<div class="err">La 3D n\'a pas pu se charger. Rechargez la page.</div>'; return; }
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, .1, 800);
+
+  // ---------------------------------------------- matières : pierre tirée de la photo, bois clair, cordon textile
+  const stoneImg = new Image();
+  stoneImg.src = "data:image/jpeg;base64,{{TEXTURE}}";
+  const stoneMap = new THREE.Texture(stoneImg); stoneMap.encoding = THREE.sRGBEncoding;
+  const stoneBump = new THREE.Texture(stoneImg);
+  stoneImg.onload = () => { stoneMap.needsUpdate = stoneBump.needsUpdate = true; };
+  for (const t of [stoneMap, stoneBump]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 1.5); t.anisotropy = renderer.capabilities.getMaxAnisotropy(); }
+  const stone = new THREE.MeshStandardMaterial({ map: stoneMap, bumpMap: stoneBump, bumpScale: .12, roughness: .88, side: THREE.DoubleSide });
+
+  const woodTex = (() => {   // chêne clair : fibres verticales fines
+    const c = document.createElement("canvas"); c.width = 256; c.height = 512; const g = c.getContext("2d");
+    g.fillStyle = "#C99A63"; g.fillRect(0, 0, 256, 512);
+    let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 90; i++) {
+      const x = r() * 256, w = .6 + r() * 2.4;
+      g.strokeStyle = r() > .5 ? `rgba(150,100,55,${.15 + r() * .25})` : `rgba(235,200,150,${.12 + r() * .2})`;
+      g.lineWidth = w; g.beginPath(); g.moveTo(x, 0);
+      for (let y = 0; y <= 512; y += 32) g.lineTo(x + Math.sin(y / 90 + i) * 3, y);
+      g.stroke();
+    }
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  })();
+  const wood = new THREE.MeshStandardMaterial({ map: woodTex, roughness: .55 });
+  const cordMat = new THREE.MeshStandardMaterial({ color: 0x7B3A2C, roughness: .9 });
+
+  // ---------------------------------------------- géométrie, d'après la photo de face (proportions mesurées)
+  // diamètre de l'abat-jour = 20 cm (à confirmer) ; hauteur = 0,43 × diamètre ; tige : Ø 0,14 × diamètre, longueur 0,65 × diamètre
+  const D = 20, R = D / 2, Hs = .43 * D, stemR = .07 * D, stemL = .65 * D, open = .36 * D;
+  const v = (x, y) => new THREE.Vector2(x, y);
+  function makeLamp() {
+    const g = new THREE.Group();
+    // abat-jour « galet » : lèvre intérieure, dessous arrondi, flanc bombé, dessus presque plat
+    const prof = [v(open - .35, 1.3), v(open - .15, .55), v(open + .4, .12), v(open + 1.4, 0), v(R - 1.4, .3), v(R - .45, 1.1),
+      v(R - .05, 2.3), v(R, 3.5), v(R - .2, 4.9), v(R - .75, 6.3), v(R - 1.7, 7.5), v(R - 3.1, 8.25), v(R - 5.2, Hs - .02), v(0, Hs)];   // dessus large et plat, comme sur la photo
+    const shade = new THREE.Mesh(new THREE.LatheGeometry(prof, 128), stone);
+    shade.castShadow = true; shade.receiveShadow = true; g.add(shade);
+    // diffuseur opalin, en retrait dans l'ouverture
+    const diffMat = new THREE.MeshBasicMaterial({ color: 0xfff1dc, toneMapped: false });
+    const diff = new THREE.Mesh(new THREE.CircleGeometry(open - .3, 64), diffMat);
+    diff.rotation.x = Math.PI / 2; diff.position.y = 1.32; g.add(diff);
+    // tige en bois au sommet arrondi
+    const stem = new THREE.Mesh(new THREE.LatheGeometry([v(0, Hs - .2), v(stemR, Hs - .2), v(stemR, Hs + stemL - .9), v(stemR * .8, Hs + stemL - .25), v(stemR * .35, Hs + stemL), v(0, Hs + stemL)], 48), wood);
+    stem.castShadow = true; g.add(stem);
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, 140, 12), cordMat);
+    cord.position.y = Hs + stemL + 70; g.add(cord);
+    // lumière : vers le bas, avec ombres
+    const spot = new THREE.SpotLight(0xffb46b, 5, 220, Math.PI / 2.8, .8, 1);
+    spot.position.set(0, 1.1, 0); spot.target.position.set(0, -50, 0);
+    spot.castShadow = true; spot.shadow.mapSize.set(1024, 1024); spot.shadow.bias = -.0006;
+    g.add(spot, spot.target);
+    const glow = new THREE.PointLight(0xffb46b, .6, 40, 2); glow.position.set(0, -2, 0); g.add(glow);
+    g.userData = { diffMat, spot, glow };
+    return g;
+  }
+
+  const lamps = [makeLamp(), makeLamp(), makeLamp()];
+  lamps.forEach((l, i) => { l.position.set((i - 1) * 46, 0, 0); scene.add(l); });
+
+  // table sous les suspensions (visible en mode « trois ») et halo au sol
+  const table = new THREE.Group();
+  const top = new THREE.Mesh(new THREE.BoxGeometry(150, 3, 70), new THREE.MeshStandardMaterial({ map: woodTex, color: 0xd8c2a8, roughness: .65 }));
+  top.position.y = -72; top.receiveShadow = top.castShadow = true; table.add(top);
+  scene.add(table);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: .18 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -74; floor.receiveShadow = true; scene.add(floor);
+
+  scene.add(new THREE.HemisphereLight(0xfff6ea, 0xb8a894, .75));
+  const sun = new THREE.DirectionalLight(0xfff1e0, .55); sun.position.set(-60, 90, 80); scene.add(sun);
+
+  // ---------------------------------------------- caméra
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = .06; controls.enablePan = false;
+  controls.minPolarAngle = .3; controls.maxPolarAngle = 2.5;    // jusque sous la lampe, pour voir le diffuseur
+  controls.autoRotate = !reduce; controls.autoRotateSpeed = .7;
+  controls.addEventListener("start", () => { controls.autoRotate = false; });
+
+  let count = 1;
+  const views = {
+    1: { target: new THREE.Vector3(0, 9, 0), pos: new THREE.Vector3(34, 18, 52), min: 28, max: 140 },
+    3: { target: new THREE.Vector3(0, -14, 0), pos: new THREE.Vector3(50, 4, 205), min: 80, max: 320 }
+  };
+  let fly = null;
+  function goTo(pos, target, dur = 1.6) {
+    if (reduce) { camera.position.copy(pos); controls.target.copy(target); return; }
+    fly = { start: performance.now(), dur, p0: camera.position.clone(), p1: pos.clone(), t0: controls.target.clone(), t1: target.clone() };
+  }
+  function setCount(n) {
+    count = n;
+    lamps.forEach((l, i) => { l.visible = n === 3 || i === 1; });
+    table.visible = n === 3;
+    const vw = views[n]; controls.minDistance = vw.min; controls.maxDistance = vw.max;
+    goTo(vw.pos, vw.target);
+    document.querySelectorAll("[data-n]").forEach(b => b.setAttribute("aria-pressed", b.dataset.n === String(n)));
+  }
+  camera.position.set(14, 4, 24); controls.target.copy(views[1].target);
+  setCount(1);
+
+  // ---------------------------------------------- réglages
+  const KELVIN = { 3000: 0xffb46b, 4000: 0xffd9a8, 6000: 0xeef2ff };
+  let level = 1, target = 1;
+  document.querySelectorAll("[data-k]").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("[data-k]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    const c = new THREE.Color(KELVIN[b.dataset.k]);
+    lamps.forEach(l => { l.userData.spot.color.copy(c); l.userData.glow.color.copy(c); });
+  }));
+  const power = document.getElementById("power");
+  power.addEventListener("click", () => {
+    target = target ? 0 : 1; power.setAttribute("aria-pressed", !!target); power.textContent = target ? "Allumée" : "Éteinte";
+  });
+  document.querySelectorAll("[data-n]").forEach(b => b.addEventListener("click", () => setCount(+b.dataset.n)));
+  document.getElementById("below").addEventListener("click", () => {
+    controls.autoRotate = false;
+    const vw = views[count], d = count === 1 ? 40 : 150;
+    goTo(new THREE.Vector3(d * .35, vw.target.y - d * .75, d * .55), vw.target);
+  });
+
+  // ---------------------------------------------- rendu
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < 640 ? 44 : 32; camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize); resize();
+  const clock = new THREE.Clock();
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  renderer.setAnimationLoop(() => {
+    const dt = Math.min(clock.getDelta(), .05);
+    if (fly) {
+      fly.t = Math.min(1, (performance.now() - fly.start) / 1000 / fly.dur); const k = ease(fly.t);   // en temps réel, quelle que soit la fluidité
+      camera.position.lerpVectors(fly.p0, fly.p1, k); controls.target.lerpVectors(fly.t0, fly.t1, k);
+      if (fly.t === 1) fly = null;
+    }
+    level += (target - level) * Math.min(1, dt * 6);
+    lamps.forEach(l => {
+      const u = l.userData;
+      u.spot.intensity = 5 * level; u.glow.intensity = .6 * level;
+      u.diffMat.color.setRGB(.62 + .53 * level, .58 + .44 * level, .52 + .28 * level);   // diffuseur : blanc chaud lumineux une fois allumé
+    });
+    controls.update(); renderer.render(scene, camera);
+  });
+})();
+</script>

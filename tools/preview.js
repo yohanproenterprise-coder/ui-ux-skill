@@ -1,5 +1,6 @@
 // Aperçu hors ligne d'une page 3D / animée : les bibliothèques des CDN sont servies depuis vendor/ (utile quand
 // les CDN sont inaccessibles, par exemple dans une session cloud). Usage : node tools/preview.js page.html [sortie]
+// Options : WAIT=ms (attente avant capture), CLICK="sel1,sel2" (clics avant capture).
 // Produit <sortie>-bureau.png, <sortie>-telephone.png et affiche les erreurs de la page.
 const path = require("path");
 const { chromium, devices } = require("playwright");
@@ -28,7 +29,8 @@ const MAP = [
     p.on("pageerror", e => console.log(`[${label}] erreur :`, e.message));
     p.on("console", m => m.type() === "error" && !/net::ERR_FAILED|ERR_BLOCKED/.test(m.text()) && console.log(`[${label}] console :`, m.text()));
     await p.goto("file://" + page);
-    await p.waitForTimeout(3500);
+    await p.waitForTimeout(+process.env.WAIT || 3500);
+    if (process.env.CLICK) for (const sel of process.env.CLICK.split(",")) { await p.click(sel); await p.waitForTimeout(+process.env.WAIT || 3500); }
     const wide = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     if (wide) console.log(`[${label}] attention : la page déborde en largeur`);
     await p.screenshot({ path: `${out}-${label}.png` });
