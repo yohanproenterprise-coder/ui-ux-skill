@@ -13,14 +13,131 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap">
-<script src="https://cdn.tailwindcss.com/3.4.17"></script>
-<script>
-tailwind.config = { theme: { extend: {
-  fontFamily: { display: ["Cormorant", "Georgia", "serif"], sans: ["Montserrat", "Segoe UI", "system-ui", "sans-serif"] },
-  colors: { stone: { 50: "#FAFAF9", 300: "#D6D3D1", 700: "#44403C", 900: "#1C1917", 950: "#0C0A09" }, gold: "#A16207", sand: "#D8C4A3" }
-} } };
-</script>
 <style>
+/* utilitaires de mise en page (remplacent Tailwind, aucune dépendance externe) */
+*,::before,::after{box-sizing:border-box;border:0 solid #D6D3D1}html{line-height:1.5}body{margin:0;line-height:inherit}h1,h2,h3,p,dl,dd,ul,figure{margin:0}ul{list-style:none;padding:0}a{color:inherit;text-decoration:inherit}button{font:inherit;color:inherit;background:transparent;padding:0;margin:0;cursor:pointer}img,svg,canvas{display:block;max-width:100%}b{font-weight:600}
+.\!min-h-\[40px\]{min-height:40px !important}
+.\!px-5{padding-left:1.25rem !important;padding-right:1.25rem !important}
+.\!py-2{padding-top:0.5rem !important;padding-bottom:0.5rem !important}
+.absolute{position:absolute}
+.bg-stone-950{background:#0C0A09}
+.bg-white{background:#fff}
+.border-stone-300{border-color:#D6D3D1}
+.border-y{border-top-width:1px;border-bottom-width:1px}
+.bottom-3{bottom:0.75rem}
+.flex{display:flex}
+.flex-wrap{flex-wrap:wrap}
+.font-display{font-family:Cormorant,Georgia,serif}
+.font-medium{font-weight:500}
+.gap-10{gap:2.5rem}
+.gap-12{gap:3.0rem}
+.gap-14{gap:3.5rem}
+.gap-2{gap:0.5rem}
+.gap-3{gap:0.75rem}
+.gap-4{gap:1.0rem}
+.gap-5{gap:1.25rem}
+.gap-6{gap:1.5rem}
+.gap-7{gap:1.75rem}
+.gap-8{gap:2.0rem}
+.gap-x-8{column-gap:2.0rem}
+.gap-y-3{row-gap:0.75rem}
+.grid{display:grid}
+.h-40{height:10rem}
+.h-auto{height:auto}
+.hidden{display:none}
+.inset-0{inset:0}
+.italic{font-style:italic}
+.items-baseline{align-items:baseline}
+.items-center{align-items:center}
+.justify-between{justify-content:space-between}
+.justify-center{justify-content:center}
+.leading-\[\.95\]{line-height:.95}
+.leading-\[1\.02\]{line-height:1.02}
+.leading-\[1\]{line-height:1}
+.leading-none{line-height:1}
+.leading-relaxed{line-height:1.625}
+.left-3{left:0.75rem}
+.max-w-2xl{max-width:42rem}
+.max-w-5xl{max-width:64rem}
+.max-w-6xl{max-width:72rem}
+.max-w-7xl{max-width:80rem}
+.max-w-\[30em\]{max-width:30em}
+.max-w-\[34em\]{max-width:34em}
+.mb-4{margin-bottom:1.0rem}
+.mb-5{margin-bottom:1.25rem}
+.mb-6{margin-bottom:1.5rem}
+.min-w-0{min-width:0}
+.mr-auto{margin-right:auto}
+.mt-1{margin-top:0.25rem}
+.mt-10{margin-top:2.5rem}
+.mt-12{margin-top:3.0rem}
+.mt-14{margin-top:3.5rem}
+.mt-2{margin-top:0.5rem}
+.mt-3{margin-top:0.75rem}
+.mt-4{margin-top:1.0rem}
+.mt-5{margin-top:1.25rem}
+.mt-6{margin-top:1.5rem}
+.mt-8{margin-top:2.0rem}
+.mx-auto{margin-left:auto;margin-right:auto}
+.overflow-hidden{overflow:hidden}
+.p-0{padding:0.0rem}
+.p-2{padding:0.5rem}
+.p-5{padding:1.25rem}
+.p-6{padding:1.5rem}
+.pb-16{padding-bottom:4.0rem}
+.place-items-center{place-items:center}
+.pointer-events-none{pointer-events:none}
+.pt-28{padding-top:7.0rem}
+.py-10{padding-top:2.5rem;padding-bottom:2.5rem}
+.py-24{padding-top:6.0rem;padding-bottom:6.0rem}
+.py-4{padding-top:1.0rem;padding-bottom:1.0rem}
+.relative{position:relative}
+.right-3{right:0.75rem}
+.right-5{right:1.25rem}
+.rounded-2xl{border-radius:1rem}
+.rounded-3xl{border-radius:1.5rem}
+.text-2xl{font-size:1.5rem;line-height:2rem}
+.text-3xl{font-size:1.875rem;line-height:2.25rem}
+.text-4xl{font-size:2.25rem;line-height:2.5rem}
+.text-6xl{font-size:3.75rem;line-height:1}
+.text-\[\#8E847A\]{color:#8E847A}
+.text-\[\#BDB3A6\]{color:#BDB3A6}
+.text-\[\#D6CEC3\]{color:#D6CEC3}
+.text-\[\#E7B56A\]{color:#E7B56A}
+.text-\[\#F5EFE6\]{color:#F5EFE6}
+.text-\[10px\]{font-size:10px}
+.text-\[17px\]{font-size:17px}
+.text-\[clamp\(38px\,5vw\,60px\)\]{font-size:clamp(38px,5vw,60px)}
+.text-\[clamp\(42px\,6vw\,72px\)\]{font-size:clamp(42px,6vw,72px)}
+.text-\[clamp\(48px\,7vw\,92px\)\]{font-size:clamp(48px,7vw,92px)}
+.text-center{text-align:center}
+.text-gold{color:#A16207}
+.text-left{text-align:left}
+.text-lg{font-size:1.125rem;line-height:1.75rem}
+.text-sand\/80{color:rgba(216,196,163,.8)}
+.text-sm{font-size:.875rem;line-height:1.25rem}
+.text-stone-700{color:#44403C}
+.text-xl{font-size:1.25rem;line-height:1.75rem}
+.text-xs{font-size:.75rem;line-height:1rem}
+.top-4{top:1.0rem}
+.tracking-wide{letter-spacing:.025em}
+.w-full{width:100%}
+.z-10{z-index:10}
+@media (min-width:640px){.sm\:p-10{padding:2.5rem}}
+@media (min-width:640px){.sm\:p-8{padding:2.0rem}}
+@media (min-width:768px){.md\:flex{display:flex}}
+@media (min-width:768px){.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:768px){.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:768px){.md\:grid-cols-\[1\.1fr_1fr\]{grid-template-columns:1.1fr 1fr}}
+@media (min-width:768px){.md\:grid-cols-\[1fr_1fr\]{grid-template-columns:1fr 1fr}}
+@media (min-width:768px){.md\:order-1{order:1}}
+@media (min-width:768px){.md\:order-2{order:2}}
+@media (min-width:1024px){.lg\:gap-14{gap:3.5rem}}
+@media (min-width:1024px){.lg\:gap-20{gap:5.0rem}}
+@media (min-width:1024px){.lg\:grid-cols-\[1fr_1\.15fr\]{grid-template-columns:1fr 1.15fr}}
+@media (min-width:1024px){.lg\:pb-24{padding-bottom:6.0rem}}
+@media (min-width:1024px){.lg\:pt-32{padding-top:8.0rem}}
+@media (min-width:1024px){.lg\:py-32{padding-top:8.0rem;padding-bottom:8.0rem}}
 /* Design system (ui-ux-pro-max, « ROKA ») : palette pierre + accent or, Cormorant / Montserrat, verre dépoli, mouvements fluides 400–600 ms.
    Mise en page : ouverture sombre où la lampe 3D éclaire la page, puis sections claires couleur pierre, et retour au sombre pour l'achat. */
 :root {
@@ -31,6 +148,7 @@ tailwind.config = { theme: { extend: {
   color-scheme: light;
 }
 html { scroll-behavior: smooth; }
+main, footer { overflow-x: clip; }
 body { background: var(--bg); color: var(--fg); font-family: Montserrat, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--primary); }
 .gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
@@ -66,7 +184,7 @@ h1, h2, h3 { text-wrap: balance; }
   animation: drift 18s ease-in-out infinite alternate; }
 @keyframes drift { to { transform: translate3d(-4%, 3%, 0) scale(1.08); } }
 .hero .word { display: inline-block; }
-#lamp { position: relative; height: clamp(360px, 62vw, 640px); border-radius: 28px; overflow: hidden; touch-action: pan-y; }
+#lamp { position: relative; height: clamp(440px, 62vw, 640px); border-radius: 28px; overflow: hidden; touch-action: pan-y; }
 #lamp canvas { display: block; width: 100%; height: 100%; cursor: grab; }
 #lamp canvas:active { cursor: grabbing; }
 .glass { background: rgba(28, 25, 23, .55); border: 1px solid rgba(245, 239, 230, .14); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
@@ -99,6 +217,10 @@ h1, h2, h3 { text-wrap: balance; }
 .variant[aria-pressed="true"] { border-color: var(--accent-soft); background: rgba(217, 164, 65, .1); }
 .variant:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
 
+@media (max-width: 520px) {
+  #nav .font-display { font-size: 1.05rem; }
+  #nav .btn { padding: .45rem .95rem !important; font-size: .8rem; min-height: 38px !important; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
@@ -431,7 +553,9 @@ h1, h2, h3 { text-wrap: balance; }
     lampApi.setOn = on => { target = on ? 1 : 0; };
 
     const resize = () => { const w = box.clientWidth, h = box.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
-      camera.fov = w < 520 ? 38 : 30; camera.updateProjectionMatrix(); };
+      camera.fov = w < 520 ? 38 : 30; camera.updateProjectionMatrix();
+      controls.target.y = w < 520 ? 4.2 : 7.5; };   // sur téléphone, la lampe remonte au-dessus des boutons
+
     new ResizeObserver(resize).observe(box); resize();
 
     let visible = true;
