@@ -1,0 +1,14 @@
+{
+  "name": "ui-ux-skill",
+  "owner": { "name": "ui-ux-skill" },
+  "metadata": { "description": "Plugins de design, 3D et animation.", "version": "1.0.0" },
+  "plugins": [
+    {
+      "name": "design-studio",
+      "source": "./plugins/design-studio",
+      "description": "Design, 3D et animation gratuits : ui-ux-pro-max, Magic UI, guide 3D et animation, commande /animated-website.",
+      "version": "1.0.0",
+      "category": "design"
+    }
+  ]
+}
