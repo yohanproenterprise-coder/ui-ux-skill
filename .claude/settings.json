@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "animatedwebs": {
+      "source": { "source": "github", "repo": "iboss21/animatedwebs-claude" }
+    }
+  },
+  "enabledPlugins": {
+    "animatedwebs@animatedwebs": true
+  }
+}
