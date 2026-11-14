@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ROKA, lampe en travertin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="ROKA, lampe de table taillée dans une pierre de travertin véritable. Lumière brute et apaisante, LED 10 W incluse, 3 teintes. 77 € chez La Galerie Lumineuse.">
+<meta property="og:title" content="ROKA, la lampe en travertin véritable">
+<meta property="og:description" content="Une lumière brute et apaisante, dans l'esprit du wabi-sabi. D15 × H16 cm, LED 10 W incluse.">
+<meta property="og:type" content="product">
+<meta property="og:url" content="https://lagalerielumineuse.fr/products/roka">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { display: ["Cormorant", "Georgia", "serif"], sans: ["Montserrat", "Segoe UI", "system-ui", "sans-serif"] },
+  colors: { stone: { 50: "#FAFAF9", 300: "#D6D3D1", 700: "#44403C", 900: "#1C1917", 950: "#0C0A09" }, gold: "#A16207", sand: "#D8C4A3" }
+} } };
+</script>
+<style>
+/* Design system (ui-ux-pro-max, « ROKA ») : palette pierre + accent or, Cormorant / Montserrat, verre dépoli, mouvements fluides 400–600 ms.
+   Mise en page : ouverture sombre où la lampe 3D éclaire la page, puis sections claires couleur pierre, et retour au sombre pour l'achat. */
+:root {
+  --primary: #1C1917; --on-primary: #FFFFFF; --secondary: #44403C; --accent: #A16207; --accent-soft: #D9A441;
+  --bg: #FAFAF9; --fg: #0C0A09; --muted: #78716C; --border: #D6D3D1; --sand: #D8C4A3; --glow: #FFB46B;
+  --ease-out: cubic-bezier(.22, 1, .36, 1); --dur-s: 200ms; --dur-m: 450ms; --dur-l: 600ms;
+  --radius: 18px;
+  color-scheme: light;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--fg); font-family: Montserrat, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--primary); }
+.gutter { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { text-wrap: balance; }
+.eyebrow { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; font-weight: 500; }
+
+/* barre de navigation : transparente sur l'ouverture, verre dépoli ensuite */
+#nav { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 50;
+  transition: background var(--dur-m) var(--ease-out), backdrop-filter var(--dur-m), border-color var(--dur-m), color var(--dur-m); border-bottom: 1px solid transparent; color: #F5EFE6; }
+#nav.scrolled { background: rgba(28, 25, 23, .62); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-color: rgba(245, 239, 230, .1); }
+#nav a.link { opacity: .78; transition: opacity var(--dur-s); }
+#nav a.link:hover { opacity: 1; }
+
+/* boutons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 12px 26px; border-radius: 999px;
+  font-weight: 500; font-size: 15px; cursor: pointer; transition: transform var(--dur-m) var(--ease-out), box-shadow var(--dur-m) var(--ease-out), background var(--dur-s); }
+.btn:hover { transform: translateY(-3px); }
+.btn:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 3px; }
+.btn-buy { position: relative; background: var(--accent); color: var(--on-primary); box-shadow: 0 10px 30px rgba(161, 98, 7, .35); }
+.btn-buy:hover { box-shadow: 0 16px 40px rgba(161, 98, 7, .45); }
+.btn-buy.pulse::after { content: ""; position: absolute; inset: 0; border-radius: inherit; border: 2px solid var(--accent-soft);
+  animation: ring 2.6s var(--ease-out) infinite; pointer-events: none; }
+@keyframes ring { 0% { transform: scale(1); opacity: .8; } 70%, 100% { transform: scale(1.35); opacity: 0; } }
+.btn-ghost { border: 1px solid rgba(245, 239, 230, .28); color: #F5EFE6; }
+.btn-ghost:hover { background: rgba(245, 239, 230, .08); }
+
+/* ouverture */
+.hero { position: relative; overflow: hidden; background: var(--primary); color: #F5EFE6; }
+.hero::before { content: ""; position: absolute; inset: -20%; pointer-events: none;
+  background: radial-gradient(40% 45% at 68% 52%, rgba(255, 180, 107, .22), transparent 70%),
+              radial-gradient(35% 40% at 20% 20%, rgba(161, 98, 7, .16), transparent 70%);
+  animation: drift 18s ease-in-out infinite alternate; }
+@keyframes drift { to { transform: translate3d(-4%, 3%, 0) scale(1.08); } }
+.hero .word { display: inline-block; }
+#lamp { position: relative; height: clamp(360px, 62vw, 640px); border-radius: 28px; overflow: hidden; touch-action: pan-y; }
+#lamp canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+#lamp canvas:active { cursor: grabbing; }
+.glass { background: rgba(28, 25, 23, .55); border: 1px solid rgba(245, 239, 230, .14); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.k-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 500;
+  border: 1px solid rgba(245, 239, 230, .2); color: #F5EFE6; cursor: pointer; transition: background var(--dur-s), color var(--dur-s), border-color var(--dur-s); }
+.k-btn:hover { border-color: rgba(245, 239, 230, .45); }
+.k-btn[aria-pressed="true"] { background: #F5EFE6; color: var(--primary); border-color: #F5EFE6; }
+.k-btn:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+/* sections claires */
+.card { background: #FFFFFF; border: 1px solid var(--border); border-radius: var(--radius); transition: transform var(--dur-m) var(--ease-out), box-shadow var(--dur-m) var(--ease-out); }
+.card:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(28, 25, 23, .08); }
+.slab { border-radius: 22px; overflow: hidden; aspect-ratio: 4 / 5; max-width: 100%; background: var(--sand); box-shadow: 0 30px 60px rgba(28, 25, 23, .18); }
+.slab img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.spec { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.spec:last-child { border-bottom: 0; }
+.spec dt { color: var(--muted); }
+.spec dd { font-weight: 500; text-align: right; }
+
+/* ambiances : une pièce, une lumière */
+.room { position: relative; aspect-ratio: 4 / 3; max-width: 100%; border-radius: 16px; overflow: hidden; background: #1F1A16; }
+.room .light { position: absolute; inset: 0; transition: background var(--dur-l) var(--ease-out); }
+.room svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* teintes d'achat */
+.variant { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 14px 16px; border-radius: 14px; cursor: pointer;
+  border: 1px solid rgba(245, 239, 230, .18); color: #F5EFE6; transition: border-color var(--dur-s), background var(--dur-s); text-align: left; }
+.variant:hover { border-color: rgba(245, 239, 230, .4); }
+.variant[aria-pressed="true"] { border-color: var(--accent-soft); background: rgba(217, 164, 65, .1); }
+.variant:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<header id="nav">
+  <div class="gutter mx-auto max-w-7xl flex items-center gap-6 py-4">
+    <a href="#haut" class="font-display text-xl tracking-wide mr-auto">La Galerie Lumineuse</a>
+    <nav class="hidden md:flex items-center gap-7 text-sm" aria-label="Sections">
+      <a class="link" href="#matiere">Matière</a><a class="link" href="#lumiere">Lumière</a>
+      <a class="link" href="#format">Format</a><a class="link" href="#ambiances">Ambiances</a>
+    </nav>
+    <a href="#acheter" class="btn btn-buy !min-h-[40px] !py-2 !px-5 text-sm">Acheter · 77 €</a>
+  </div>
+</header>
+
+<main id="haut">
+  <!-- 1. Ouverture -->
+  <section class="hero">
+    <div class="gutter mx-auto max-w-7xl grid lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-14 items-center pt-28 pb-16 lg:pt-32 lg:pb-24 relative">
+      <div class="min-w-0">
+        <p class="eyebrow text-sand/80 hero-in">Lampe de table · Travertin véritable</p>
+        <h1 class="font-display font-medium text-[clamp(48px,7vw,92px)] leading-[.95] mt-5 mb-6" id="hero-title">
+          <span class="word">La</span> <span class="word">pierre</span> <span class="word">qui</span> <span class="word">garde</span>
+          <span class="word italic text-[#E7B56A]">la</span> <span class="word italic text-[#E7B56A]">lumière.</span>
+        </h1>
+        <p class="text-[17px] leading-relaxed text-[#D6CEC3] max-w-[30em] hero-in">Taillée dans une pierre de travertin véritable, ROKA diffuse une lumière brute
+          et apaisante, dans l'esprit du wabi-sabi. Petite par la taille, grande par la présence.</p>
+        <div class="flex flex-wrap gap-3 mt-8 hero-in">
+          <a href="#acheter" class="btn btn-buy pulse">Acheter · 77 €</a>
+          <a href="#lumiere" class="btn btn-ghost">Choisir sa lumière</a>
+        </div>
+        <dl class="flex flex-wrap gap-x-8 gap-y-3 mt-10 text-sm text-[#BDB3A6] hero-in">
+          <div><dt class="eyebrow text-[10px] text-[#8E847A]">Format</dt><dd class="mt-1 text-[#F5EFE6]">D15 × H16 cm</dd></div>
+          <div><dt class="eyebrow text-[10px] text-[#8E847A]">Ampoule</dt><dd class="mt-1 text-[#F5EFE6]">LED 10 W incluse</dd></div>
+          <div><dt class="eyebrow text-[10px] text-[#8E847A]">Teintes</dt><dd class="mt-1 text-[#F5EFE6]">3000 · 4000 · 6000 K</dd></div>
+        </dl>
+      </div>
+
+      <div class="min-w-0 hero-in">
+        <div id="lamp" aria-label="ROKA en 3D : faites glisser pour la tourner">
+          <div class="absolute left-3 right-3 bottom-3 glass rounded-2xl p-2 flex flex-wrap items-center justify-center gap-2 z-10" role="group" aria-label="Lumière de la lampe">
+            <button class="k-btn" id="power" aria-pressed="true">Allumée</button>
+            <button class="k-btn" data-k="3000" aria-pressed="true"><i class="dot" style="background:#ffb46b"></i>3000 K</button>
+            <button class="k-btn" data-k="4000" aria-pressed="false"><i class="dot" style="background:#ffd9a8"></i>4000 K</button>
+            <button class="k-btn" data-k="6000" aria-pressed="false"><i class="dot" style="background:#eef2ff"></i>6000 K</button>
+          </div>
+          <p class="absolute top-4 right-5 text-xs text-[#BDB3A6] z-10 pointer-events-none">Glissez pour tourner</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Matière -->
+  <section id="matiere" class="py-24 lg:py-32">
+    <div class="gutter mx-auto max-w-6xl grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+      <div class="slab reveal"><img id="slab-img" alt="Gros plan sur la pierre de travertin : couches beiges et petites cavités naturelles" width="800" height="1000"></div>
+      <div class="min-w-0">
+        <p class="eyebrow text-gold reveal">La matière</p>
+        <h2 class="font-display text-[clamp(38px,5vw,60px)] leading-[1.02] mt-4 mb-6 reveal">Du travertin véritable, pas une imitation.</h2>
+        <p class="text-[17px] leading-relaxed text-stone-700 max-w-[34em] reveal">Le travertin se forme couche après couche, au fil des siècles. Ses veines et ses petites
+          cavités sont la signature de la pierre : aucune ROKA n'est tout à fait identique à une autre.</p>
+        <ul class="mt-8 grid gap-4 cascade">
+          <li class="card p-5 flex gap-4"><span class="font-display text-2xl text-gold leading-none">I</span>
+            <div><b class="font-medium">Une pièce unique</b><p class="text-sm text-stone-700 mt-1">Veines, nuances et pores naturels changent d'une lampe à l'autre.</p></div></li>
+          <li class="card p-5 flex gap-4"><span class="font-display text-2xl text-gold leading-none">II</span>
+            <div><b class="font-medium">Pierre et métal</b><p class="text-sm text-stone-700 mt-1">Le poids rassurant de la pierre, la finesse du métal.</p></div></li>
+          <li class="card p-5 flex gap-4"><span class="font-display text-2xl text-gold leading-none">III</span>
+            <div><b class="font-medium">L'esprit wabi-sabi</b><p class="text-sm text-stone-700 mt-1">La beauté de l'imparfait et du naturel, sans artifice.</p></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Lumière -->
+  <section id="lumiere" class="py-24 lg:py-32 bg-white border-y border-stone-300">
+    <div class="gutter mx-auto max-w-6xl">
+      <div class="max-w-2xl reveal">
+        <p class="eyebrow text-gold">La lumière</p>
+        <h2 class="font-display text-[clamp(38px,5vw,60px)] leading-[1.02] mt-4 mb-4">Trois lumières, une pour chaque moment.</h2>
+        <p class="text-[17px] text-stone-700">Choisissez la teinte à la commande. Cliquez sur une carte : la lampe 3D en haut de la page change aussi.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-5 mt-12 cascade">
+        <button class="card text-left p-0 overflow-hidden tone" data-k="3000">
+          <div class="h-40" style="background:radial-gradient(70% 90% at 50% 100%,#FFB46B 0%,#7a4a22 55%,#1C1917 100%)"></div>
+          <div class="p-6"><p class="eyebrow text-gold">3000 K · Blanc chaud</p><h3 class="font-display text-3xl mt-2">Le soir</h3>
+            <p class="text-sm text-stone-700 mt-2">Une lueur dorée et enveloppante, pour la chambre et la lecture au lit.</p></div>
+        </button>
+        <button class="card text-left p-0 overflow-hidden tone" data-k="4000">
+          <div class="h-40" style="background:radial-gradient(70% 90% at 50% 100%,#FFE2BC 0%,#8c7458 55%,#1C1917 100%)"></div>
+          <div class="p-6"><p class="eyebrow text-gold">4000 K · Blanc neutre</p><h3 class="font-display text-3xl mt-2">Le salon</h3>
+            <p class="text-sm text-stone-700 mt-2">Une lumière naturelle et équilibrée, ni trop chaude ni trop froide.</p></div>
+        </button>
+        <button class="card text-left p-0 overflow-hidden tone" data-k="6000">
+          <div class="h-40" style="background:radial-gradient(70% 90% at 50% 100%,#EEF2FF 0%,#7d8396 55%,#1C1917 100%)"></div>
+          <div class="p-6"><p class="eyebrow text-gold">6000 K · Blanc froid</p><h3 class="font-display text-3xl mt-2">Le bureau</h3>
+            <p class="text-sm text-stone-700 mt-2">Une lumière nette et vive, pour travailler et rester concentré.</p></div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Format -->
+  <section id="format" class="py-24 lg:py-32">
+    <div class="gutter mx-auto max-w-6xl grid md:grid-cols-[1fr_1fr] gap-12 lg:gap-20 items-center">
+      <div class="card p-6 sm:p-10 reveal">
+        <!-- silhouette à l'échelle : 15 cm de large, 16 cm de haut (1 cm = 16 px) -->
+        <svg viewBox="0 0 360 330" class="w-full h-auto" role="img" aria-label="Silhouette de ROKA à l'échelle : 15 cm de diamètre, 16 cm de haut">
+          <defs><pattern id="pores" width="22" height="9" patternUnits="userSpaceOnUse">
+            <rect width="22" height="9" fill="#D8C4A3"/><ellipse cx="6" cy="4" rx="3" ry="1" fill="#B9A07A"/><ellipse cx="17" cy="7" rx="2" ry=".8" fill="#C2AA85"/></pattern></defs>
+          <line x1="40" y1="296" x2="320" y2="296" stroke="#D6D3D1" stroke-width="2"/>
+          <path d="M100 168 Q100 50 180 40 Q260 50 260 168 Z" fill="url(#pores)" stroke="#A88E68" stroke-width="1.5"/>
+          <rect x="172" y="168" width="16" height="104" fill="url(#pores)" stroke="#A88E68" stroke-width="1.5"/>
+          <path d="M140 296 L144 274 Q180 266 216 274 L220 296 Z" fill="url(#pores)" stroke="#A88E68" stroke-width="1.5"/>
+          <ellipse cx="180" cy="172" rx="50" ry="5" fill="#FFB46B" opacity=".55"/>
+          <g stroke="#A16207" stroke-width="1.5" fill="#A16207" font-family="Montserrat, sans-serif" font-size="13">
+            <line x1="100" y1="20" x2="260" y2="20"/><line x1="100" y1="14" x2="100" y2="26"/><line x1="260" y1="14" x2="260" y2="26"/>
+            <text x="180" y="12" text-anchor="middle" stroke="none">15 cm</text>
+            <line x1="300" y1="40" x2="300" y2="296"/><line x1="294" y1="40" x2="306" y2="40"/><line x1="294" y1="296" x2="306" y2="296"/>
+            <text x="312" y="172" stroke="none">16 cm</text>
+          </g>
+        </svg>
+      </div>
+      <div class="min-w-0">
+        <p class="eyebrow text-gold reveal">Le format</p>
+        <h2 class="font-display text-[clamp(38px,5vw,60px)] leading-[1.02] mt-4 mb-6 reveal">Compacte, elle trouve sa place partout.</h2>
+        <dl class="cascade">
+          <div class="spec"><dt>Matière</dt><dd>Travertin &amp; métal</dd></div>
+          <div class="spec"><dt>Éclairage</dt><dd>LED 10 W incluse, 3 températures</dd></div>
+          <div class="spec"><dt>Format</dt><dd>D15 × H16 cm</dd></div>
+          <div class="spec"><dt>Interrupteur</dt><dd>Tactile ou à molette</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Ambiances -->
+  <section id="ambiances" class="py-24 lg:py-32 bg-white border-y border-stone-300">
+    <div class="gutter mx-auto max-w-6xl">
+      <div class="max-w-2xl reveal">
+        <p class="eyebrow text-gold">Où la poser</p>
+        <h2 class="font-display text-[clamp(38px,5vw,60px)] leading-[1.02] mt-4">Une lampe, trois pièces.</h2>
+      </div>
+      <div class="grid gap-14 mt-14">
+        <article class="grid md:grid-cols-2 gap-8 lg:gap-14 items-center alt">
+          <div class="room" data-room="chevet"></div>
+          <div class="min-w-0"><h3 class="font-display text-4xl">Sur la table de chevet</h3>
+            <p class="text-stone-700 mt-3 max-w-[30em]">En blanc chaud, ROKA devient une veilleuse douce pour lire et se détendre avant de dormir.</p></div>
+        </article>
+        <article class="grid md:grid-cols-2 gap-8 lg:gap-14 items-center alt">
+          <div class="room md:order-2" data-room="salon"></div>
+          <div class="min-w-0 md:order-1"><h3 class="font-display text-4xl">Dans le salon</h3>
+            <p class="text-stone-700 mt-3 max-w-[30em]">Sur une console ou une étagère, sa pierre accroche le regard même éteinte. Allumée, elle crée un point de lumière chaleureux.</p></div>
+        </article>
+        <article class="grid md:grid-cols-2 gap-8 lg:gap-14 items-center alt">
+          <div class="room" data-room="bureau"></div>
+          <div class="min-w-0"><h3 class="font-display text-4xl">Sur le bureau</h3>
+            <p class="text-stone-700 mt-3 max-w-[30em]">Son petit format laisse de la place pour travailler. En blanc froid, la lumière reste nette toute la journée.</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Achat -->
+  <section id="acheter" class="hero py-24 lg:py-32">
+    <div class="gutter mx-auto max-w-5xl grid md:grid-cols-[1.1fr_1fr] gap-12 items-center relative">
+      <div class="min-w-0 reveal">
+        <p class="eyebrow text-sand/80">ROKA · Lampe de table</p>
+        <h2 class="font-display text-[clamp(42px,6vw,72px)] leading-[1] mt-4 mb-5">Faites entrer la pierre et la lumière chez vous.</h2>
+        <p class="text-[#D6CEC3] max-w-[30em]">Travertin véritable et métal, LED 10 W incluse. Choisissez simplement votre teinte.</p>
+      </div>
+      <div class="glass rounded-3xl p-6 sm:p-8 reveal">
+        <div class="flex items-baseline justify-between"><span class="font-display text-6xl" id="price">77 €</span><span class="text-sm text-[#BDB3A6]">TTC</span></div>
+        <div class="grid gap-3 mt-6" role="group" aria-label="Teinte de la lumière">
+          <button class="variant" data-k="3000" data-v="57844646510917" data-p="77" aria-pressed="true">
+            <span class="flex items-center gap-3"><i class="dot" style="background:#ffb46b"></i>Blanc chaud · 3000 K</span><span>77 €</span></button>
+          <button class="variant" data-k="4000" data-v="57844646543685" data-p="78" aria-pressed="false">
+            <span class="flex items-center gap-3"><i class="dot" style="background:#ffd9a8"></i>Blanc neutre · 4000 K</span><span>78 €</span></button>
+          <button class="variant" data-k="6000" data-v="57844646576453" data-p="77" aria-pressed="false">
+            <span class="flex items-center gap-3"><i class="dot" style="background:#eef2ff"></i>Blanc froid · 6000 K</span><span>77 €</span></button>
+        </div>
+        <a id="buy" class="btn btn-buy pulse w-full mt-6" href="https://lagalerielumineuse.fr/products/roka?variant=57844646510917" target="_blank" rel="noopener">Acheter · 77 €</a>
+        <p class="text-xs text-[#8E847A] mt-4 text-center">Paiement sécurisé sur lagalerielumineuse.fr</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="bg-stone-950 text-[#8E847A] text-sm">
+  <div class="gutter mx-auto max-w-7xl py-10 flex flex-wrap gap-4 justify-between">
+    <span class="font-display text-lg text-[#D6CEC3]">La Galerie Lumineuse</span>
+    <span>lagalerielumineuse.fr</span>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(() => {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ------------------------------------------------ pierre de travertin générée (sans photo)
+  function travertineCanvas(W = 1024, H = 1024, seed = 7) {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    const b = document.createElement("canvas"); b.width = W; b.height = H;
+    const bg = b.getContext("2d");
+    let s = seed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    g.fillStyle = "#d6c19e"; g.fillRect(0, 0, W, H);
+    bg.fillStyle = "#808080"; bg.fillRect(0, 0, W, H);
+    for (let i = 0; i < 140; i++) {
+      const y = rnd() * H, amp = 2 + rnd() * 8, f = 1 + Math.floor(rnd() * 3), ph = rnd() * 6.28, light = rnd() > .5;
+      g.strokeStyle = light ? `rgba(245,232,210,${.15 + rnd() * .3})` : `rgba(150,120,85,${.08 + rnd() * .2})`;
+      g.lineWidth = 1 + rnd() * 7; g.beginPath();
+      for (let x = 0; x <= W; x += 16) { const yy = y + Math.sin(x / W * 6.283 * f + ph) * amp; x ? g.lineTo(x, yy) : g.moveTo(x, yy); }
+      g.stroke();
+    }
+    const img = g.getImageData(0, 0, W, H), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const n = (rnd() - .5) * 14; d[i] += n; d[i + 1] += n; d[i + 2] += n * .8; }
+    g.putImageData(img, 0, 0);
+    for (let i = 0; i < 900; i++) {
+      const x = rnd() * W, y = rnd() * H, w = 2 + rnd() * (rnd() > .9 ? 22 : 9), h = 1 + rnd() * 2.6;
+      g.fillStyle = `rgba(120,92,60,${.35 + rnd() * .4})`; g.beginPath(); g.ellipse(x, y, w, h, (rnd() - .5) * .2, 0, 6.283); g.fill();
+      bg.fillStyle = "#1e1e1e"; bg.beginPath(); bg.ellipse(x, y, w, h, 0, 0, 6.283); bg.fill();
+    }
+    return { color: c, bump: b };
+  }
+  const stoneTex = travertineCanvas();
+  // gros plan de la pierre pour la section « Matière » (éclairage rasant pour faire ressortir les cavités)
+  (() => {
+    const c = document.createElement("canvas"); c.width = 800; c.height = 1000;
+    const g = c.getContext("2d");
+    g.drawImage(stoneTex.color, 0, 0, 640, 800, 0, 0, 800, 1000);
+    const gr = g.createLinearGradient(0, 0, 800, 1000);
+    gr.addColorStop(0, "rgba(255,226,180,.25)"); gr.addColorStop(.6, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(40,28,16,.35)");
+    g.fillStyle = gr; g.fillRect(0, 0, 800, 1000);
+    document.getElementById("slab-img").src = c.toDataURL("image/jpeg", .85);
+  })();
+
+  // ------------------------------------------------ ambiances : une pièce dessinée, éclairée par ROKA
+  const ROOMS = {
+    chevet: { k: 3000, svg: '<rect x="0" y="230" width="400" height="70" fill="#14100d"/><rect x="40" y="170" width="150" height="60" rx="6" fill="#2a211a"/><rect x="210" y="140" width="190" height="90" rx="10" fill="#3a2f27"/><rect x="225" y="120" width="70" height="30" rx="10" fill="#e9dfd2" opacity=".9"/>' },
+    salon: { k: 4000, svg: '<rect x="0" y="240" width="400" height="60" fill="#14100d"/><rect x="60" y="175" width="280" height="10" fill="#2f261f"/><rect x="70" y="185" width="8" height="55" fill="#2f261f"/><rect x="322" y="185" width="8" height="55" fill="#2f261f"/><rect x="250" y="60" width="90" height="70" fill="#3a3029" stroke="#57483c" stroke-width="3"/><rect x="230" y="140" width="40" height="35" rx="4" fill="#5d4a3b"/>' },
+    bureau: { k: 6000, svg: '<rect x="0" y="235" width="400" height="65" fill="#14100d"/><rect x="40" y="180" width="320" height="12" fill="#2f2924"/><rect x="230" y="100" width="110" height="72" rx="6" fill="#26221f" stroke="#3e3833" stroke-width="3"/><rect x="278" y="172" width="14" height="8" fill="#3e3833"/><rect x="200" y="172" width="70" height="8" rx="2" fill="#3a3430"/>' }
+  };
+  const GLOW = { 3000: "255,180,107", 4000: "255,217,168", 6000: "225,232,255" };
+  document.querySelectorAll(".room").forEach(el => {
+    const r = ROOMS[el.dataset.room], col = GLOW[r.k];
+    const lampX = el.dataset.room === "salon" ? 130 : el.dataset.room === "bureau" ? 110 : 115;
+    const lampY = el.dataset.room === "salon" ? 175 : el.dataset.room === "bureau" ? 180 : 170;
+    el.innerHTML = `<div class="light" style="background:radial-gradient(45% 60% at ${lampX / 4}% ${(lampY - 20) / 3}%, rgba(${col},.55), rgba(${col},.08) 55%, transparent 75%)"></div>
+      <svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${r.svg}
+        <g transform="translate(${lampX} ${lampY})"><path d="M-22 -14 Q-22 -46 0 -48 Q22 -46 22 -14 Z" fill="#d8c4a3"/><rect x="-3" y="-14" width="6" height="11" fill="#c9b38f"/>
+        <path d="M-9 0 L-8 -4 Q0 -6 8 -4 L9 0 Z" fill="#c9b38f"/><ellipse cx="0" cy="-13" rx="16" ry="2" fill="rgb(${col})"/></g></svg>`;
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", `ROKA allumée en ${r.k} K dans un décor de ${el.dataset.room === "chevet" ? "chambre" : el.dataset.room}`);
+  });
+
+  // ------------------------------------------------ lampe 3D (aux vraies dimensions : D15 × H16 cm)
+  const lampApi = { setK() {}, setOn() {} };
+  (() => {
+    const box = document.getElementById("lamp");
+    if (!window.THREE || !THREE.OrbitControls) { box.insertAdjacentHTML("afterbegin", '<p class="absolute inset-0 grid place-items-center text-sm text-[#BDB3A6]">La 3D n\'a pas pu se charger.</p>'); return; }
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    box.prepend(renderer.domElement);
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1613); scene.fog = new THREE.Fog(0x1a1613, 60, 150);
+    const camera = new THREE.PerspectiveCamera(30, 1, .1, 400);
+
+    const map = new THREE.CanvasTexture(stoneTex.color); map.encoding = THREE.sRGBEncoding;
+    const bump = new THREE.CanvasTexture(stoneTex.bump);
+    for (const t of [map, bump]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); }
+    const stone = new THREE.MeshStandardMaterial({ map, bumpMap: bump, bumpScale: .18, roughness: .82 });
+    const metal = new THREE.MeshStandardMaterial({ color: 0x8a7a66, roughness: .4, metalness: .8 });
+    const v = (x, y) => new THREE.Vector2(x, y);
+
+    const lamp = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.LatheGeometry([v(0, 0), v(4.6, 0), v(4.8, .3), v(4.8, 1), v(4.5, 1.4), v(2.2, 1.7), v(0, 1.7)], 96), stone);
+    const stem = new THREE.Mesh(new THREE.LatheGeometry([v(0, 1.6), v(1.2, 1.6), v(1.1, 3), v(1, 8.8), v(1.4, 9.4), v(0, 9.4)], 64), metal);
+    const outer = [], inner = [];
+    for (let i = 0; i <= 24; i++) {
+      const a = i / 24 * Math.PI / 2, k = Math.pow(Math.sin(a), .9);
+      outer.push(v(7.5 * Math.cos(a) + .001, 9.2 + 6.8 * k));
+      inner.push(v(6.8 * Math.cos(a) + .001, 9.5 + 6.0 * k));
+    }
+    const shadeMat = stone.clone(); shadeMat.side = THREE.DoubleSide;
+    const shade = new THREE.Mesh(new THREE.LatheGeometry(inner.slice().reverse().concat([v(7.3, 9.0)], outer), 120), shadeMat);
+    for (const m of [base, stem, shade]) { m.castShadow = m.receiveShadow = true; lamp.add(m); }
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0xffb46b, side: THREE.BackSide, transparent: true, opacity: .55 });
+    lamp.add(new THREE.Mesh(new THREE.LatheGeometry(inner.map(p => v(p.x * .985, p.y - .03)), 120), glowMat));
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0xfff1dc });
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.9, 32, 16), bulbMat); bulb.position.y = 10.3; lamp.add(bulb);
+    scene.add(lamp);
+
+    const table = new THREE.Mesh(new THREE.CircleGeometry(160, 96), new THREE.MeshStandardMaterial({ color: 0x2b221b, roughness: .9 }));
+    table.rotation.x = -Math.PI / 2; table.receiveShadow = true; scene.add(table);
+    const poolTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+      const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, "rgba(255,255,255,.9)"); gr.addColorStop(.35, "rgba(255,255,255,.35)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = gr; g.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(c); })();
+    const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, color: 0xffb46b, transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false });
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), poolMat); pool.rotation.x = -Math.PI / 2; pool.position.y = .03; scene.add(pool);
+
+    const hemi = new THREE.HemisphereLight(0x6f5c4a, 0x120d09, .55); scene.add(hemi);
+    const key = new THREE.DirectionalLight(0xffe2c4, .35); key.position.set(-20, 40, 30); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x9fb2d9, .25); rim.position.set(30, 20, -30); scene.add(rim);
+    const down = new THREE.SpotLight(0xffb46b, 3, 70, Math.PI / 2.3, .9, 1.6);
+    down.position.set(0, 10.1, 0); down.target.position.set(0, 0, 0);
+    down.castShadow = true; down.shadow.mapSize.set(1024, 1024); down.shadow.camera.near = .5; down.shadow.bias = -.0006;
+    scene.add(down, down.target);
+    const fill = new THREE.PointLight(0xffb46b, .9, 40, 1.8); fill.position.set(0, 10.6, 0); scene.add(fill);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 7.5, 0); controls.enableDamping = true; controls.dampingFactor = .06; controls.enablePan = false; controls.enableZoom = false;
+    controls.minPolarAngle = .35; controls.maxPolarAngle = Math.PI / 2 - .05;
+    controls.autoRotate = !reduce; controls.autoRotateSpeed = .9;
+    controls.addEventListener("start", () => { controls.autoRotate = false; });
+    const endPos = new THREE.Vector3(30, 17, 36), startPos = new THREE.Vector3(6, 11, 17);
+    camera.position.copy(reduce ? endPos : startPos);
+    let intro = reduce ? 1 : 0;
+
+    const KELVIN = { 3000: 0xffb46b, 4000: 0xffd9a8, 6000: 0xeef2ff };
+    let level = 1, target = 1;
+    lampApi.setK = k => { const c = new THREE.Color(KELVIN[k]); for (const o of [down.color, fill.color, glowMat.color, poolMat.color]) o.copy(c); };
+    lampApi.setOn = on => { target = on ? 1 : 0; };
+
+    const resize = () => { const w = box.clientWidth, h = box.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+      camera.fov = w < 520 ? 38 : 30; camera.updateProjectionMatrix(); };
+    new ResizeObserver(resize).observe(box); resize();
+
+    let visible = true;
+    new IntersectionObserver(([e]) => { visible = e.isIntersecting; }).observe(box);
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(clock.getDelta(), .05);
+      if (!visible) return;
+      if (intro < 1) { intro = Math.min(1, intro + dt / 2.8); camera.position.lerpVectors(startPos, endPos, 1 - Math.pow(1 - intro, 3)); }
+      level += (target - level) * Math.min(1, dt * 6);
+      down.intensity = 3 * level * (1 + Math.sin(clock.elapsedTime * 2.1) * .015); fill.intensity = .9 * level;
+      glowMat.opacity = .08 + .5 * level; poolMat.opacity = .55 * level;
+      bulbMat.color.setRGB(.35 + .65 * level, .32 + .62 * level, .28 + .58 * level);
+      hemi.intensity = .55 + (1 - level) * .25; key.intensity = .35 + (1 - level) * .35;
+      controls.update(); renderer.render(scene, camera);
+    });
+  })();
+
+  // ------------------------------------------------ teinte : un seul état partagé par la 3D, les cartes et l'achat
+  function setK(k) {
+    lampApi.setK(k);
+    document.querySelectorAll("#lamp [data-k]").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === String(k)));
+    document.querySelectorAll(".variant").forEach(b => {
+      const on = b.dataset.k === String(k); b.setAttribute("aria-pressed", on);
+      if (on) {
+        document.getElementById("price").textContent = b.dataset.p + " €";
+        const buy = document.getElementById("buy");
+        buy.textContent = `Acheter · ${b.dataset.p} €`;
+        buy.href = `https://lagalerielumineuse.fr/products/roka?variant=${b.dataset.v}`;
+      }
+    });
+  }
+  document.querySelectorAll("#lamp [data-k], .variant").forEach(b => b.addEventListener("click", () => setK(b.dataset.k)));
+  document.querySelectorAll(".tone").forEach(b => b.addEventListener("click", () => {
+    setK(b.dataset.k); document.getElementById("haut").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+  }));
+  const power = document.getElementById("power");
+  let on = true;
+  power.addEventListener("click", () => { on = !on; lampApi.setOn(on); power.setAttribute("aria-pressed", on); power.textContent = on ? "Allumée" : "Éteinte"; });
+
+  // ------------------------------------------------ barre de navigation : verre dépoli après l'ouverture
+  const nav = document.getElementById("nav");
+  const onScroll = () => nav.classList.toggle("scrolled", scrollY > 40);
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // ------------------------------------------------ animations (GSAP), seulement si le mouvement est autorisé
+  if (reduce || !window.gsap) return;
+  gsap.registerPlugin(ScrollTrigger);
+  const E = "expo.out";
+  gsap.from("#hero-title .word", { yPercent: 110, opacity: 0, rotate: 3, duration: 1.1, ease: E, stagger: .07, delay: .15 });
+  gsap.from(".hero-in", { y: 26, opacity: 0, duration: .9, ease: E, stagger: .12, delay: .45 });
+  // les sections restent visibles au repos : seule la position glisse en place au défilement
+  gsap.utils.toArray(".reveal").forEach(el => gsap.from(el, { y: 50, duration: .9, ease: E,
+    scrollTrigger: { trigger: el, start: "top 90%", once: true } }));
+  gsap.utils.toArray(".cascade").forEach(group => gsap.from(group.children, { y: 40, scale: .97, duration: .8, ease: E, stagger: .1,
+    scrollTrigger: { trigger: group, start: "top 88%", once: true } }));
+  gsap.utils.toArray(".alt").forEach((el, i) => gsap.from(el, { x: i % 2 ? 60 : -60, duration: 1, ease: E,
+    scrollTrigger: { trigger: el, start: "top 88%", once: true } }));
+})();
+</script>
+</body>
+</html>
