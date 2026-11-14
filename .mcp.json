@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "magicui": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@magicuidesign/mcp@latest"]
+    },
+    "21st": {
+      "type": "http",
+      "url": "https://21st.dev/api/mcp",
+      "headers": { "x-api-key": "${API_KEY_21ST:-}" }
+    },
+    "stitch": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@_davideast/stitch-mcp", "proxy"],
+      "env": { "STITCH_API_KEY": "${STITCH_API_KEY:-}" }
+    },
+    "nano-banana": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "nano-banana-mcp"],
+      "env": { "GEMINI_API_KEY": "${GEMINI_API_KEY:-}" }
+    }
+  }
+}
