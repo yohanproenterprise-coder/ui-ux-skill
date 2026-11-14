@@ -52,7 +52,7 @@ header .btn { min-height: 40px; padding: 8px 18px; font-size: 14.5px; }
 
 /* comparateur avant / après : on fait glisser la poignée (souris, doigt) ou les flèches du clavier */
 .compare { max-width: 900px; margin: 34px auto 0; }
-.ba { position: relative; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); aspect-ratio: 960 / 648; max-width: 100%;
+.ba { position: relative; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); aspect-ratio: var(--ar, 960 / 648); max-width: 100%;
   background: #ddd; user-select: none; -webkit-user-select: none; touch-action: pan-y; cursor: ew-resize; }
 .ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; -webkit-user-drag: none; }
 .ba .after { clip-path: inset(0 0 0 var(--x)); }
@@ -69,13 +69,37 @@ section { padding-block: 64px; }
 .title { text-align: center; max-width: 620px; margin: 0 auto 32px; }
 .title h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin-bottom: 10px; }
 .title p { color: var(--muted); margin: 0; font-size: 17px; }
-.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
-.card img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: var(--soft); }
-.card div { padding: 18px 20px 20px; }
-.card h3 { font-size: 18.5px; margin-bottom: 6px; }
-.card p { color: var(--muted); margin: 0; font-size: 15px; }
-@media (max-width: 820px) { .cards { grid-template-columns: 1fr; } }
+
+/* outils : onglets + démonstration de chaque outil */
+.tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0 auto 26px; }
+.tab { font: 600 15px var(--sans); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  padding: 10px 18px; min-height: 44px; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+.tab:hover { box-shadow: var(--shadow); }
+.tab[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tab:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.panel { display: grid; grid-template-columns: 1.45fr 1fr; gap: 36px; align-items: center; background: var(--card);
+  border: 1px solid var(--line); border-radius: 24px; padding: 22px; box-shadow: var(--shadow); }
+.panel[hidden] { display: none; }
+.panel .ba { box-shadow: none; border-radius: 16px; }
+.panel h3 { font-size: 26px; margin-bottom: 8px; }
+.panel .lead { color: var(--muted); margin: 0 0 16px; font-size: 16.5px; }
+.steps { list-style: none; counter-reset: s; padding: 0; margin: 0; display: grid; gap: 10px; }
+.steps li { counter-increment: s; display: flex; gap: 12px; align-items: baseline; font-size: 15.5px; }
+.steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--soft); color: var(--accent);
+  font-weight: 700; font-size: 13.5px; display: grid; place-items: center; transform: translateY(-1px); }
+.panel .small { font-size: 13.5px; color: var(--muted); margin-top: 14px; }
+.gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.gallery figure { margin: 0; position: relative; border-radius: 14px; overflow: hidden; }
+.gallery img { width: 100%; height: auto; display: block; aspect-ratio: 1; object-fit: cover; }
+.gallery figcaption { position: absolute; left: 10px; bottom: 10px; padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  color: #fff; background: rgba(30, 22, 56, .55); backdrop-filter: blur(6px); }
+.shot { width: 100%; height: auto; display: block; border-radius: 14px; border: 1px solid var(--line); }
+@media (max-width: 820px) { .panel { grid-template-columns: 1fr; gap: 20px; padding: 14px; } .panel .txt { padding: 0 6px 8px; } }
+.why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.why div { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+.why b { display: block; font-size: 17px; margin-bottom: 4px; }
+.why span { color: var(--muted); font-size: 15px; }
+@media (max-width: 820px) { .why { grid-template-columns: 1fr; } }
 
 .price { max-width: 460px; margin: 0 auto; background: var(--card); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow);
   padding: 32px; text-align: center; }
@@ -109,8 +133,8 @@ footer a { color: var(--muted); }
 <main id="haut">
   <div class="glow"></div>
   <div class="wrap hero">
-    <h1>Vos photos produit, <em>nettes</em> en un clic.</h1>
-    <p>Photo Studio IA nettoie, rend nettes et met en scène vos photos pour votre boutique en ligne. Tout se passe sur votre PC,
+    <h1>Vos photos produit, <em>parfaites</em> en un clic.</h1>
+    <p>Amélioration, netteté, gomme magique, détourage et mise en scène : tout pour des photos de boutique impeccables. Tout se passe sur votre PC,
       et vous payez une seule fois.</p>
     <div class="ctas">
       <a class="btn buy" data-buy href="#prix">Acheter · 29 €</a>
@@ -126,22 +150,111 @@ footer a { color: var(--muted); }
         <div class="line"></div>
         <div class="knob" tabindex="0" role="slider" aria-label="Comparer avant et après" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⟷</div>
       </div>
-      <div class="hint">Faites glisser pour comparer · photo de 480 px améliorée en 1 seconde</div>
+      <div class="hint">Faites glisser pour comparer · petite photo de 480 px, sombre et compressée, améliorée par l'application</div>
     </div>
   </div>
 
-  <section>
+  <section id="outils">
     <div class="wrap">
-      <div class="title"><h2>Tout ce qu'il faut, rien de compliqué.</h2>
-        <p>Pensé pour les vendeurs qui photographient eux-mêmes leurs produits.</p></div>
-      <div class="cards">
-        <article class="card"><img src="{{cafe-apres}}" alt="Photo de tasse améliorée" width="960" height="640">
-          <div><h3>Amélioration en un clic</h3><p>Flou, bruit et compression nettoyés. Les petites photos sont agrandies ×2.</p></div></article>
-        <article class="card"><img src="{{scene-moto}}" alt="Produit détouré sur fond beige avec son ombre" width="754" height="753">
-          <div><h3>Mise en scène</h3><p>Détourage automatique, fond de studio ou décor créé par l'IA, ombre au sol.</p></div></article>
-        <article class="card"><img src="{{app}}" alt="La fenêtre de Photo Studio IA" width="1280" height="764">
-          <div><h3>Dossiers entiers</h3><p>Des centaines de photos améliorées en arrière-plan. Les originaux restent intacts.</p></div></article>
+      <div class="title"><h2>Six outils, <em>un seul logiciel.</em></h2>
+        <p>Choisissez un outil pour voir un exemple réel, produit par l'application.</p></div>
+      <div class="tabs" role="tablist" aria-label="Outils">
+        <button class="tab" role="tab" aria-selected="true" aria-controls="p-net" id="t-net">✨ Amélioration</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-zoom" id="t-zoom">🔍 Netteté</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-gomme" id="t-gomme">🪄 Gomme magique</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-detour" id="t-detour">✂️ Détourage</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-scene" id="t-scene">🖼️ Mise en scène</button>
+        <button class="tab" role="tab" aria-selected="false" aria-controls="p-dossier" id="t-dossier">📂 Dossiers entiers</button>
       </div>
+
+      <div class="panel" role="tabpanel" id="p-net" aria-labelledby="t-net">
+        <div class="ba" style="--x:50%;--ar:800 / 534">
+          <img src="{{cafe-avant}}" alt="Photo de tasse terne et compressée" width="800" height="534">
+          <img class="after" src="{{cafe-apres}}" alt="La même photo, lumineuse et nette" width="800" height="534">
+          <span class="tag l">Avant</span><span class="tag r">Après</span>
+          <div class="line"></div>
+          <div class="knob" tabindex="0" role="slider" aria-label="Comparer avant et après" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⟷</div>
+        </div>
+        <div class="txt"><h3>Amélioration en un clic</h3>
+          <p class="lead">Rien à régler : l'IA nettoie et corrige la photo toute seule.</p>
+          <ol class="steps"><li>Compression et bruit nettoyés</li><li>Netteté restaurée, petites photos agrandies ×2</li>
+            <li>Lumière et couleurs équilibrées, matières fidèles</li></ol></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-zoom" aria-labelledby="t-zoom" hidden>
+        <div class="ba" style="--x:50%;--ar:900 / 600">
+          <img src="{{zoom-avant}}" alt="Détail flou d'une petite photo" width="900" height="600">
+          <img class="after" src="{{zoom-apres}}" alt="Le même détail, net après l'IA" width="900" height="600">
+          <span class="tag l">Avant</span><span class="tag r">Après</span>
+          <div class="line"></div>
+          <div class="knob" tabindex="0" role="slider" aria-label="Comparer avant et après" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⟷</div>
+        </div>
+        <div class="txt"><h3>Netteté renforcée</h3>
+          <p class="lead">Un gros plan sur la photo du haut de la page. C'est là que la différence se voit vraiment.</p>
+          <ol class="steps"><li>Contours, textes et reflets redessinés nettement</li><li>Plus aucun bloc de compression</li>
+            <li>Option « Qualité maximale » pour les photos importantes</li></ol></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-gomme" aria-labelledby="t-gomme" hidden>
+        <div class="ba" style="--x:50%;--ar:1200 / 800">
+          <img src="{{gomme-masque}}" alt="Photo de tasse avec la cuillère surlignée au pinceau" width="1200" height="800">
+          <img class="after" src="{{gomme-apres}}" alt="La même photo sans la cuillère" width="1200" height="800">
+          <span class="tag l">Pinceau</span><span class="tag r">Résultat</span>
+          <div class="line"></div>
+          <div class="knob" tabindex="0" role="slider" aria-label="Comparer pinceau et résultat" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⟷</div>
+        </div>
+        <div class="txt"><h3>Gomme magique</h3>
+          <p class="lead">Un objet, une étiquette, une poussière ou un reflet gênant ? Passez le pinceau, l'IA reconstruit le fond.</p>
+          <ol class="steps"><li>Peignez sur ce qu'il faut retirer</li><li>L'IA recrée le décor derrière, avec le même grain</li>
+            <li>Annulez ou recommencez autant que vous voulez</li></ol></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-detour" aria-labelledby="t-detour" hidden>
+        <div class="ba" style="--x:50%;--ar:1482 / 1000">
+          <img src="{{detour-avant}}" alt="Moto photographiée dans un garage encombré" width="1482" height="1000">
+          <img class="after" src="{{detour-apres}}" alt="La moto détourée sur fond transparent" width="1482" height="1000">
+          <span class="tag l">Avant</span><span class="tag r">Après</span>
+          <div class="line"></div>
+          <div class="knob" tabindex="0" role="slider" aria-label="Comparer avant et après" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⟷</div>
+        </div>
+        <div class="txt"><h3>Détourage automatique</h3>
+          <p class="lead">Le produit principal est détecté et découpé au pixel près, même les fines tiges et les rayons.</p>
+          <ol class="steps"><li>Un clic, aucun tracé à faire</li><li>Fond transparent (PNG) ou blanc pur pour les places de marché</li>
+            <li>Le produit n'est jamais redessiné : ce sont vos pixels</li></ol></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-scene" aria-labelledby="t-scene" hidden>
+        <div class="gallery">
+          <figure><img src="{{scene-beige}}" alt="Moto sur fond de studio beige avec son ombre" width="900" height="900"><figcaption>Studio beige</figcaption></figure>
+          <figure><img src="{{scene-nuit}}" alt="Moto sur fond sombre avec halo de lumière" width="900" height="900"><figcaption>Nuit</figcaption></figure>
+          <figure><img src="{{scene-bleu}}" alt="Moto sur fond bleu clair" width="900" height="900"><figcaption>Bleu ciel</figcaption></figure>
+          <figure><img src="{{scene-tasse}}" alt="Tasse détourée sur fond pêche" width="900" height="900"><figcaption>Pêche</figcaption></figure>
+        </div>
+        <div class="txt"><h3>Mise en scène</h3>
+          <p class="lead">Le même produit sur le fond de votre choix, avec l'ombre au sol et les bonnes proportions.</p>
+          <ol class="steps"><li>Fonds de studio, couleurs unies ou votre propre photo de décor</li>
+            <li>Décor créé par l'IA à partir d'une simple phrase (« salon scandinave lumineux »)</li>
+            <li>Luminaires : posé, suspendu ou mural, avec halo de lumière</li></ol>
+          <p class="small">Ces quatre images viennent des deux photos d'origine montrées plus haut.</p></div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-dossier" aria-labelledby="t-dossier" hidden>
+        <img class="shot" src="{{app}}" alt="La fenêtre de Photo Studio IA" width="1280" height="764">
+        <div class="txt"><h3>Dossiers entiers</h3>
+          <p class="lead">Tout votre catalogue amélioré pendant que vous faites autre chose.</p>
+          <ol class="steps"><li>Choisissez un dossier : sous-dossiers, HEIC et AVIF compris</li>
+            <li>Suivi en direct : photo en cours, temps restant</li>
+            <li>Reprise automatique après une coupure ou une mise en veille</li>
+            <li>Les originaux restent intacts, les résultats vont dans « Améliorées »</li></ol></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="wrap why">
+      <div><b>🔒 Vos photos restent chez vous</b><span>Tout tourne sur votre PC, sans envoi sur internet.</span></div>
+      <div><b>⚡ Rapide</b><span>Environ une seconde par photo, plus vite encore avec une carte graphique.</span></div>
+      <div><b>💶 Payé une fois</b><span>Pas d'abonnement ni de crédits. Usage commercial autorisé.</span></div>
     </div>
   </section>
 
@@ -196,6 +309,15 @@ const BUY_URL = "";
 const TRIAL_URL = "";
 for (const [sel, url] of [["[data-buy]", BUY_URL], ["[data-trial]", TRIAL_URL]])
   if (url) document.querySelectorAll(sel).forEach(a => { a.href = url; a.target = "_blank"; a.rel = "noopener"; });
+
+// onglets des outils (souris, toucher, flèches du clavier)
+const tabs = [...document.querySelectorAll(".tab")];
+const pick = t => { tabs.forEach(b => { const on = b === t; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1;
+  document.getElementById(b.getAttribute("aria-controls")).hidden = !on; }); };
+tabs.forEach((t, i) => { t.addEventListener("click", () => pick(t));
+  t.addEventListener("keydown", e => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (d) { const n = tabs[(i + d + tabs.length) % tabs.length]; pick(n); n.focus(); e.preventDefault(); } }); });
+pick(tabs[0]);
 
 // comparateur avant / après : suit la souris ou le doigt pendant le glissement, et les flèches du clavier
 document.querySelectorAll(".ba").forEach(box => {
