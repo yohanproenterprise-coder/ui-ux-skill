@@ -1,14 +1,26 @@
-# Scène 3D cinématique pour Shopify
+# Scène 3D cinématique — boutique multi-produits
 
-Tout est généré par code (Three.js, aucun modèle externe) : luminaire AURA procédural, matières dessinées sur canvas, lumière, poussière, caméra pilotée par le défilement, configurateur de matière/couleur.
+Moteur Three.js sans modèle externe : 5 familles de luminaires générées par code, adaptées à chaque fiche produit.
 
-## Installer dans un thème Shopify (Online Store 2.0)
-1. Copiez `assets/cinematic-3d.css` et `assets/cinematic-3d.js` dans le dossier `assets/` du thème.
-2. Copiez `sections/cinematic-3d.liquid` dans `sections/`.
-3. Éditeur de thème → Ajouter une section → « Scène 3D cinématique ». Les chapitres, couleurs, longueur du défilement et le produit (bouton panier) se règlent dans l'éditeur.
+| Famille (`data-model`) | Produits concernés | Réglages |
+|---|---|---|
+| `table` | Lampes de table, de chevet | matière du socle (travertin, marbre, noyer, céramique), couleur d'abat-jour |
+| `pendant` | Suspensions | forme `ball` ou `dome`, couleur |
+| `wall` | Appliques | forme `globe` ou `bar` (barre en bois), couleur |
+| `chandelier` | Lustres | nombre de têtes (3–14), couleur |
+| `flush` | Plafonniers | nombre de têtes (3–12) |
 
-## Aperçu local
-Ouvrez `../index.html` (page autonome utilisant les mêmes fichiers).
+## Installation (thème Online Store 2.0)
+1. `assets/cinematic-3d.css` et `assets/cinematic-3d.js` → dossier `assets/` du thème.
+2. `sections/cinematic-3d.liquid` → dossier `sections/`.
+3. Éditeur de thème → modèle **Produit** → Ajouter une section « Scène 3D cinématique ».
 
-## Remplacer par votre vrai produit
-Le luminaire est dans la section « le luminaire » de `cinematic-3d.js` (LatheGeometry aux vraies dimensions). Pour un modèle réel : exportez un `.glb` depuis Blender (< 5 Mo, Draco) et chargez-le avec GLTFLoader à la place du groupe `lamp`.
+## Fonctionnement par produit
+- **Modèle automatique** d'après le type de produit (`Suspension`, `Lampe de table`, `Applique murale`, `Plafonnier`, `Lustre`). On peut le forcer par produit avec les métachamps `custom.model_3d` et `custom.shape_3d`.
+- **Options Shopify** : les valeurs de couleur (Noir, Blanc, Or, Cuivre, Bleu, Orange…) deviennent des pastilles qui changent la couleur du modèle 3D **et** la variante / le prix du bouton « Ajouter au panier ». Un nombre de « têtes » dans le nom d'une option change le nombre de têtes du lustre.
+- Chaque chapitre a ses cases « Afficher les options » et « Afficher le bouton panier ».
+
+## Limites connues
+- Les formes sont des **archétypes** (une suspension boule, une applique, etc.), pas la copie exacte de chaque produit. Pour un rendu fidèle d'un produit phare, exportez un `.glb` depuis Blender et chargez-le avec GLTFLoader.
+- L'applique murale est la famille la moins aboutie.
+- Testé uniquement dans un aperçu hors Shopify (pas dans un thème réel).

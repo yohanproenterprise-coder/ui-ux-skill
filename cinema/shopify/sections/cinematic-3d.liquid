@@ -1,6 +1,21 @@
 {{ 'cinematic-3d.css' | asset_url | stylesheet_tag }}
 
-<section class="c3d" data-accent="{{ section.settings.accent }}" aria-label="{{ section.settings.aria }}"
+{%- assign p = section.settings.product | default: product -%}
+{%- assign type = p.type | downcase -%}
+{%- assign model = p.metafields.custom.model_3d.value | default: section.settings.model -%}
+{%- if model == 'auto' or model == blank -%}
+  {%- if type contains 'table' or type contains 'chevet' or type contains 'bureau' -%}{%- assign model = 'table' -%}
+  {%- elsif type contains 'applique' -%}{%- assign model = 'wall' -%}
+  {%- elsif type contains 'plafonnier' -%}{%- assign model = 'flush' -%}
+  {%- elsif type contains 'lustre' -%}{%- assign model = 'chandelier' -%}
+  {%- else -%}{%- assign model = 'pendant' -%}{%- endif -%}
+{%- endif -%}
+{%- assign shape = p.metafields.custom.shape_3d.value | default: section.settings.shape -%}
+{%- assign tags_l = p.tags | join: ',' | downcase -%}
+{%- if shape == blank and model == 'wall' -%}{%- if tags_l contains 'bois' or p.title contains 'NEBA' -%}{%- assign shape = 'bar' -%}{%- else -%}{%- assign shape = 'globe' -%}{%- endif -%}{%- endif -%}
+{%- if shape == blank and model == 'pendant' and tags_l contains 'boule' -%}{%- assign shape = 'ball' -%}{%- endif -%}
+
+<section class="c3d" data-model="{{ model }}" data-shape="{{ shape }}" data-heads="{{ section.settings.heads }}" data-finish="{{ section.settings.finish }}" data-accent="{{ section.settings.accent }}" aria-label="{{ section.settings.aria }}"
   style="--c3d-accent:{{ section.settings.accent }};--c3d-bg:{{ section.settings.bg }};height:{{ section.settings.scroll_length }}vh">
   <div class="c3d__stage">
     <canvas class="c3d__canvas" role="img" aria-label="{{ section.settings.aria }}"></canvas>
@@ -25,13 +40,21 @@
               <button class="c3d__btn c3d__swatch" data-shade="#4f6b57" style="background:#4f6b57" aria-label="Sauge" aria-pressed="false"></button>
             </div>
           {%- endif -%}
-          {%- if block.settings.product != blank -%}
-            {%- assign p = block.settings.product -%}
+          {%- if block.settings.show_options and p != blank -%}
+            {%- for option in p.options_with_values -%}
+              <div class="c3d__config" role="group" aria-label="{{ option.name | escape }}">
+                {%- for value in option.values -%}
+                  <button class="c3d__btn{% if option.name contains 'ouleur' or option.name contains 'olor' or option.name contains 'inition' %} c3d__swatch{% endif %}" data-option-index="{{ forloop.parentloop.index0 }}" data-option-value="{{ value | escape }}" aria-pressed="{% if option.selected_value == value %}true{% else %}false{% endif %}" aria-label="{{ value | escape }}">{% unless option.name contains 'ouleur' or option.name contains 'olor' or option.name contains 'inition' %}{{ value }}{% endunless %}</button>
+                {%- endfor -%}
+              </div>
+            {%- endfor -%}
+          {%- endif -%}
+          {%- if block.settings.show_cart and p != blank -%}
             <div class="c3d__config">
               {%- form 'product', p -%}
                 <input type="hidden" name="id" value="{{ p.selected_or_first_available_variant.id }}">
                 <button class="c3d__btn c3d__btn--cta" type="submit" {% unless p.available %}disabled{% endunless %}>
-                  {% if p.available %}{{ 'products.product.add_to_cart' | t }} · {{ p.price | money }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}
+                  {% if p.available %}{{ 'products.product.add_to_cart' | t }} · <span data-c3d-price>{{ p.selected_or_first_available_variant.price | money }}</span>{% else %}{{ 'products.product.sold_out' | t }}{% endif %}
                 </button>
               {%- endform -%}
             </div>
@@ -44,6 +67,7 @@
   </div>
 </section>
 
+{%- if p != blank -%}<script type="application/json" data-c3d-variants>[{% for v in p.variants %}{"id":{{ v.id }},"options":{{ v.options | json }},"price_formatted":{{ v.price | money | json }}}{% unless forloop.last %},{% endunless %}{% endfor %}]</script>{%- endif -%}
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" defer></script>
 <script src="{{ 'cinematic-3d.js' | asset_url }}" defer></script>
 
@@ -55,6 +79,12 @@
     { "type": "text", "id": "aria", "label": "Description accessible", "default": "Présentation cinématique du produit en 3D" },
     { "type": "text", "id": "fallback", "label": "Texte si la 3D ne charge pas", "default": "Luminaire AURA en travertin et laiton." },
     { "type": "text", "id": "hint", "label": "Indication de défilement", "default": "Défiler" },
+    { "type": "product", "id": "product", "label": "Produit (vide = produit de la page)" },
+    { "type": "select", "id": "model", "label": "Modèle 3D", "default": "auto", "options": [
+      { "value": "auto", "label": "Automatique (selon le type de produit)" }, { "value": "table", "label": "Lampe de table" }, { "value": "pendant", "label": "Suspension" }, { "value": "wall", "label": "Applique" }, { "value": "chandelier", "label": "Lustre à têtes" }, { "value": "flush", "label": "Plafonnier" } ] },
+    { "type": "select", "id": "shape", "label": "Forme (suspension / applique)", "default": "", "options": [ { "value": "", "label": "Automatique" }, { "value": "ball", "label": "Boule" }, { "value": "dome", "label": "Dôme" }, { "value": "globe", "label": "Globe mural" }, { "value": "bar", "label": "Barre murale" } ] },
+    { "type": "select", "id": "finish", "label": "Matière du socle (lampe de table)", "default": "travertin", "options": [ { "value": "travertin", "label": "Travertin" }, { "value": "marbre", "label": "Marbre noir" }, { "value": "noyer", "label": "Noyer" }, { "value": "ceramique", "label": "Céramique" } ] },
+    { "type": "range", "id": "heads", "label": "Nombre de têtes (lustre / plafonnier)", "min": 3, "max": 14, "step": 1, "default": 6 },
     { "type": "color", "id": "accent", "label": "Couleur d'accent / lumière", "default": "#ffb46b" },
     { "type": "color", "id": "bg", "label": "Fond", "default": "#07060a" },
     { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de hauteur d'écran)", "min": 300, "max": 900, "step": 20, "default": 520 }
@@ -69,7 +99,8 @@
         { "type": "textarea", "id": "text", "label": "Texte" },
         { "type": "checkbox", "id": "right", "label": "Aligner à droite", "default": false },
         { "type": "checkbox", "id": "show_config", "label": "Afficher le configurateur (matière / couleur)", "default": false },
-        { "type": "product", "id": "product", "label": "Produit (bouton Ajouter au panier)" }
+        { "type": "checkbox", "id": "show_options", "label": "Afficher les options du produit (couleur, taille…)", "default": false },
+        { "type": "checkbox", "id": "show_cart", "label": "Afficher le bouton Ajouter au panier", "default": false }
       ]
     }
   ],
