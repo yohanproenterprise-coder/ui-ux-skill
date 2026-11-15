@@ -24,3 +24,8 @@ Moteur Three.js sans modèle externe : 5 familles de luminaires générées par 
 - Les formes sont des **archétypes** (une suspension boule, une applique, etc.), pas la copie exacte de chaque produit. Pour un rendu fidèle d'un produit phare, exportez un `.glb` depuis Blender et chargez-le avec GLTFLoader.
 - L'applique murale est la famille la moins aboutie.
 - Testé uniquement dans un aperçu hors Shopify (pas dans un thème réel).
+
+## Le film (hero vidéo)
+- `cinema/media/film-hero.mp4` : film de 14 s (1280×720, 1,3 Mo, sans son, boucle propre via fondu au noir) — lustre, suspension, lampe de table (vue éclatée), plafonnier, enchaînés en fondu. Rendu image par image avec le même moteur (`cinema/film.html`).
+- `sections/hero-film.liquid` : section « Hero film cinématique ». Téléversez le MP4 dans Shopify (Contenu → Fichiers) puis choisissez-le dans le réglage « Film ».
+- Pour un film plus long, en 1080p ou 4K : modifier les plans (`SHOTS`) et la taille de la fenêtre dans le script de rendu, et relancer.

@@ -1,0 +1,39 @@
+{{ 'cinematic-3d.css' | asset_url | stylesheet_tag }}
+<section class="hf" style="--hf-accent:{{ section.settings.accent }}">
+  {%- if section.settings.video != blank -%}
+    {{ section.settings.video | video_tag: image_size: '1920x', autoplay: true, loop: true, muted: true, controls: false, playsinline: true, class: 'hf__video', preload: 'metadata' }}
+  {%- elsif section.settings.poster != blank -%}
+    {{ section.settings.poster | image_url: width: 1920 | image_tag: class: 'hf__video', loading: 'eager' }}
+  {%- endif -%}
+  <div class="hf__shade"></div>
+  <div class="hf__copy">
+    <p class="hf__kicker">{{ section.settings.kicker }}</p>
+    <h1 class="hf__title">{{ section.settings.title }}</h1>
+    {%- if section.settings.button_label != blank -%}<a class="hf__cta" href="{{ section.settings.button_link }}">{{ section.settings.button_label }}</a>{%- endif -%}
+  </div>
+</section>
+<style>
+.hf{position:relative;height:min(92vh,860px);min-height:480px;overflow:hidden;background:#07060a;color:#f4efe8}
+.hf__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hf__shade{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.7)),radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,.5))}
+.hf__copy{position:absolute;left:clamp(16px,6vw,96px);bottom:clamp(40px,10vh,110px);max-width:min(640px,90vw)}
+.hf__kicker{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:var(--hf-accent);margin:0 0 14px}
+.hf__title{font-size:clamp(36px,6.4vw,88px);line-height:.98;font-weight:300;letter-spacing:-.02em;margin:0 0 24px}
+.hf__cta{display:inline-flex;align-items:center;min-height:48px;padding:0 26px;border-radius:999px;background:var(--hf-accent);color:#150d05;font-weight:600;text-decoration:none}
+@media (prefers-reduced-motion:reduce){.hf__video{animation:none}}
+</style>
+{% schema %}
+{
+  "name": "Hero film cinématique",
+  "settings": [
+    { "type": "video", "id": "video", "label": "Film (MP4 téléversé dans Shopify)" },
+    { "type": "image_picker", "id": "poster", "label": "Image de repli" },
+    { "type": "text", "id": "kicker", "label": "Surtitre", "default": "La Galerie Lumineuse" },
+    { "type": "text", "id": "title", "label": "Titre", "default": "La lumière devient matière" },
+    { "type": "text", "id": "button_label", "label": "Bouton", "default": "Découvrir la collection" },
+    { "type": "url", "id": "button_link", "label": "Lien du bouton" },
+    { "type": "color", "id": "accent", "label": "Couleur d'accent", "default": "#ffb46b" }
+  ],
+  "presets": [{ "name": "Hero film cinématique" }]
+}
+{% endschema %}

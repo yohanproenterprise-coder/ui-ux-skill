@@ -209,10 +209,16 @@
     var visible = true, t0 = performance.now(), last = t0, activeIdx = -1, tmp = new THREE.Vector3();
     if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { visible = e[0].isIntersecting; }).observe(root);
 
+    var film = root.dataset.film === '1';
     function frame(now) {
-      requestAnimationFrame(frame); if (!visible) return;
+      requestAnimationFrame(frame); if (!visible || film) return;
       var dt = Math.min(.05, (now - last) / 1000); last = now; var t = (now - t0) / 1000;
       prog += (target - prog) * (reduced ? 1 : 1 - Math.pow(.0009, dt)); rotY += (rotTarget - rotY) * (1 - Math.pow(.001, dt));
+      draw(t, dt);
+    }
+    /* mode « film » : rendu image par image, déterministe (pour produire une vidéo) */
+    root.__c3d.film = function (t, p, d) { if (d) { for (var k in d) state[k] = d[k]; build(); } prog = target = p; draw(t, 1 / 24); };
+    function draw(t, dt) {
       var glow = smooth(.07, .26, prog) * (.94 + Math.sin(t * 7.3) * .02 + Math.sin(t * 2.1) * .02);
       var ex = smooth(.46, .6, prog) * (1 - smooth(.7, .82, prog));
       var c = model.bounds.c, R = model.bounds.r;
