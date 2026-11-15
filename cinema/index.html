@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURA — Aperçu cinématique 3D</title>
+<link rel="stylesheet" href="shopify/assets/cinematic-3d.css">
+<style>body{margin:0;background:#07060a}</style>
+</head>
+<body>
+<section class="c3d" data-accent="#ffb46b" aria-label="Présentation cinématique du luminaire AURA">
+  <div class="c3d__stage">
+    <canvas class="c3d__canvas" role="img" aria-label="Luminaire AURA en 3D, rotation au glisser"></canvas>
+    <div class="c3d__vignette"></div>
+    <div class="c3d__fallback"><p>AURA — luminaire en travertin et laiton.</p></div>
+    <div class="c3d__chapters">
+      <article class="c3d__chapter"><p class="c3d__kicker">Collection 2026</p><h2 class="c3d__title">La lumière devient matière</h2><p class="c3d__text">Faites défiler pour allumer AURA.</p></article>
+      <article class="c3d__chapter c3d__chapter--right"><p class="c3d__kicker">01 — Éveil</p><h2 class="c3d__title">Une chaleur de 2700 K</h2><p class="c3d__text">Un abat-jour en lin diffuse la lumière comme un coucher de soleil.</p></article>
+      <article class="c3d__chapter"><p class="c3d__kicker">02 — Anatomie</p><h2 class="c3d__title">Chaque pièce, pensée seule</h2><p class="c3d__text">Socle taillé, tige en laiton massif, douille et abat-jour : tout se démonte.</p></article>
+      <article class="c3d__chapter c3d__chapter--right"><p class="c3d__kicker">03 — Votre version</p><h2 class="c3d__title">Choisissez la matière</h2>
+        <div class="c3d__config" role="group" aria-label="Matière du socle">
+          <button class="c3d__btn" data-finish="travertin" aria-pressed="true">Travertin</button><button class="c3d__btn" data-finish="marbre" aria-pressed="false">Marbre noir</button><button class="c3d__btn" data-finish="noyer" aria-pressed="false">Noyer</button><button class="c3d__btn" data-finish="ceramique" aria-pressed="false">Céramique</button></div>
+        <div class="c3d__config" role="group" aria-label="Couleur de l'abat-jour">
+          <button class="c3d__btn c3d__swatch" data-shade="#f0e4d0" style="background:#f0e4d0" aria-label="Lin" aria-pressed="true"></button><button class="c3d__btn c3d__swatch" data-shade="#c96a3c" style="background:#c96a3c" aria-label="Terracotta" aria-pressed="false"></button><button class="c3d__btn c3d__swatch" data-shade="#4f6b57" style="background:#4f6b57" aria-label="Sauge" aria-pressed="false"></button></div>
+        <div class="c3d__config"><a class="c3d__btn c3d__btn--cta" href="#">Ajouter au panier</a></div></article>
+    </div>
+    <div class="c3d__progress" aria-hidden="true"><i class="c3d__dot"></i><i class="c3d__dot"></i><i class="c3d__dot"></i><i class="c3d__dot"></i></div>
+    <div class="c3d__hint">Défiler</div>
+  </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="shopify/assets/cinematic-3d.js"></script>
+</body>
+</html>

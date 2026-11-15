@@ -1,0 +1,87 @@
+{{ 'cinematic-3d.css' | asset_url | stylesheet_tag }}
+
+<section class="c3d" data-accent="{{ section.settings.accent }}" aria-label="{{ section.settings.aria }}"
+  style="--c3d-accent:{{ section.settings.accent }};--c3d-bg:{{ section.settings.bg }};height:{{ section.settings.scroll_length }}vh">
+  <div class="c3d__stage">
+    <canvas class="c3d__canvas" role="img" aria-label="{{ section.settings.aria }}"></canvas>
+    <div class="c3d__vignette"></div>
+    <div class="c3d__fallback"><p>{{ section.settings.fallback }}</p></div>
+    <div class="c3d__chapters">
+      {%- for block in section.blocks -%}
+        <article class="c3d__chapter{% if block.settings.right %} c3d__chapter--right{% endif %}" {{ block.shopify_attributes }}>
+          <p class="c3d__kicker">{{ block.settings.kicker }}</p>
+          <h2 class="c3d__title">{{ block.settings.title }}</h2>
+          <p class="c3d__text">{{ block.settings.text }}</p>
+          {%- if block.settings.show_config -%}
+            <div class="c3d__config" role="group" aria-label="Matière du socle">
+              <button class="c3d__btn" data-finish="travertin" aria-pressed="true">Travertin</button>
+              <button class="c3d__btn" data-finish="marbre" aria-pressed="false">Marbre noir</button>
+              <button class="c3d__btn" data-finish="noyer" aria-pressed="false">Noyer</button>
+              <button class="c3d__btn" data-finish="ceramique" aria-pressed="false">Céramique</button>
+            </div>
+            <div class="c3d__config" role="group" aria-label="Couleur de l'abat-jour">
+              <button class="c3d__btn c3d__swatch" data-shade="#f0e4d0" style="background:#f0e4d0" aria-label="Lin" aria-pressed="true"></button>
+              <button class="c3d__btn c3d__swatch" data-shade="#c96a3c" style="background:#c96a3c" aria-label="Terracotta" aria-pressed="false"></button>
+              <button class="c3d__btn c3d__swatch" data-shade="#4f6b57" style="background:#4f6b57" aria-label="Sauge" aria-pressed="false"></button>
+            </div>
+          {%- endif -%}
+          {%- if block.settings.product != blank -%}
+            {%- assign p = block.settings.product -%}
+            <div class="c3d__config">
+              {%- form 'product', p -%}
+                <input type="hidden" name="id" value="{{ p.selected_or_first_available_variant.id }}">
+                <button class="c3d__btn c3d__btn--cta" type="submit" {% unless p.available %}disabled{% endunless %}>
+                  {% if p.available %}{{ 'products.product.add_to_cart' | t }} · {{ p.price | money }}{% else %}{{ 'products.product.sold_out' | t }}{% endif %}
+                </button>
+              {%- endform -%}
+            </div>
+          {%- endif -%}
+        </article>
+      {%- endfor -%}
+    </div>
+    <div class="c3d__progress" aria-hidden="true">{% for block in section.blocks %}<i class="c3d__dot"></i>{% endfor %}</div>
+    <div class="c3d__hint">{{ section.settings.hint }}</div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js" defer></script>
+<script src="{{ 'cinematic-3d.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Scène 3D cinématique",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "aria", "label": "Description accessible", "default": "Présentation cinématique du produit en 3D" },
+    { "type": "text", "id": "fallback", "label": "Texte si la 3D ne charge pas", "default": "Luminaire AURA en travertin et laiton." },
+    { "type": "text", "id": "hint", "label": "Indication de défilement", "default": "Défiler" },
+    { "type": "color", "id": "accent", "label": "Couleur d'accent / lumière", "default": "#ffb46b" },
+    { "type": "color", "id": "bg", "label": "Fond", "default": "#07060a" },
+    { "type": "range", "id": "scroll_length", "label": "Longueur du défilement (% de hauteur d'écran)", "min": 300, "max": 900, "step": 20, "default": 520 }
+  ],
+  "blocks": [
+    {
+      "type": "chapter",
+      "name": "Chapitre",
+      "settings": [
+        { "type": "text", "id": "kicker", "label": "Surtitre" },
+        { "type": "text", "id": "title", "label": "Titre", "default": "La lumière devient matière" },
+        { "type": "textarea", "id": "text", "label": "Texte" },
+        { "type": "checkbox", "id": "right", "label": "Aligner à droite", "default": false },
+        { "type": "checkbox", "id": "show_config", "label": "Afficher le configurateur (matière / couleur)", "default": false },
+        { "type": "product", "id": "product", "label": "Produit (bouton Ajouter au panier)" }
+      ]
+    }
+  ],
+  "max_blocks": 4,
+  "presets": [{
+    "name": "Scène 3D cinématique",
+    "blocks": [
+      { "type": "chapter", "settings": { "kicker": "Collection 2026", "title": "La lumière devient matière", "text": "Faites défiler pour allumer AURA." } },
+      { "type": "chapter", "settings": { "kicker": "01 — Éveil", "title": "Une chaleur de 2700 K", "text": "Un abat-jour en lin diffuse la lumière comme un coucher de soleil.", "right": true } },
+      { "type": "chapter", "settings": { "kicker": "02 — Anatomie", "title": "Chaque pièce, pensée seule", "text": "Socle taillé, tige en laiton massif, douille et abat-jour : tout se démonte." } },
+      { "type": "chapter", "settings": { "kicker": "03 — Votre version", "title": "Choisissez la matière", "right": true, "show_config": true } }
+    ]
+  }]
+}
+{% endschema %}
