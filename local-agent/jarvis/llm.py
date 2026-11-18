@@ -27,12 +27,18 @@ class Stop(Exception):
 
 
 def _open(url, payload, headers=None, timeout=900):
+    # un nom de logiciel explicite : certains services (Groq, derrière Cloudflare) refusent le nom par défaut
+    # « Python-urllib » avec l'erreur 1010
     req = urllib.request.Request(url, data=json.dumps(payload).encode(),
-                                 headers={"Content-Type": "application/json", **(headers or {})})
+                                 headers={"Content-Type": "application/json", "Accept": "application/json",
+                                          "User-Agent": "Jarvis/1.0 (assistant local)", **(headers or {})})
     try:
         return urllib.request.urlopen(req, timeout=timeout)
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", "replace")[:800]
+        if e.code == 403 and "1010" in body:
+            raise LLMError("Accès bloqué par le pare-feu du service (Cloudflare, erreur 1010) : ce n'est pas ta clé. "
+                           "Mets Jarvis à jour.", retryable=True)
         if e.code in (401, 403):
             raise LLMError(f"Clé API refusée ({e.code}). Vérifie ta clé. {body}")
         raise LLMError(f"HTTP {e.code} : {body}", retryable=e.code in (408, 429) or e.code >= 500)
