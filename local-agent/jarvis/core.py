@@ -42,18 +42,64 @@ class Brain:
     def label(self):
         return f"{self.name} · {self.llm.model}"
 
+    def _alternates(self):
+        """Cerveaux de secours, dans l'ordre : celui choisi en secours, puis les autres cerveaux en ligne qui ont
+        une clé, puis le cerveau local."""
+        order = [self.cfg.get("fallback")] + [n for n in self.cfg["providers"] if n != "local"] + ["local"]
+        out = []
+        for n in order:
+            if n and n != self.name and n not in out and config.available(self.cfg, n):
+                out.append(n)
+        return out
+
+    def _ready(self, client):
+        """Le cerveau local n'est utilisable que si Ollama répond (Jarvis le démarre s'il est installé)."""
+        if isinstance(client, llm.OllamaLLM):
+            return llm.ensure_ollama(client, lambda m: self.ui.info(m, "warn"))
+        return True
+
     def chat(self, messages, tools=None, on_token=None, model=None):
         if self.backup and time.time() < self.backup_until:
-            return self.backup.chat(messages, tools, on_token)
-        try:
-            return self.llm.chat(messages, tools, on_token, model)
-        except llm.LLMError as e:
-            fb = self.cfg.get("fallback")
-            if not e.retryable or not fb or fb == self.name or not config.available(self.cfg, fb):
-                raise
-            self.ui.info(f"{self.name} indisponible ({str(e)[:120]}) → j'utilise {fb} pendant 10 min", "warn")
-            self.backup, self.backup_until = llm.make(self.cfg, fb), time.time() + 600
-            return self.backup.chat(messages, tools, on_token)
+            try:
+                return self.backup.chat(messages, tools, on_token)
+            except llm.LLMError:
+                self.backup, self.backup_until = None, 0   # le secours a lâché : on retente le principal
+        # 1. le cerveau principal, avec deux nouveaux essais espacés s'il est surchargé (pics de demande passagers)
+        last = None
+        for attempt, wait in enumerate((4, 10, None)):
+            try:
+                return self.llm.chat(messages, tools, on_token, model)
+            except llm.LLMError as e:
+                if not e.retryable:
+                    raise
+                last = e
+                busy = any(c in str(e) for c in ("HTTP 429", "HTTP 500", "HTTP 502", "HTTP 503", "HTTP 504"))
+                if not busy or wait is None or isinstance(self.llm, llm.OllamaLLM):
+                    break
+                self.ui.info(f"{self.name} est surchargé, nouvel essai dans {wait} s…", "warn")
+                time.sleep(wait)
+        # 2. les cerveaux de secours
+        tried = []
+        for fb in self._alternates():
+            other = llm.make(self.cfg, fb)
+            if not self._ready(other):
+                tried.append(f"{fb} : Ollama n'est pas lancé ou pas installé")
+                continue
+            try:
+                res = other.chat(messages, tools, on_token)
+            except llm.LLMError as e:
+                tried.append(f"{fb} : {str(e)[:80]}")
+                continue
+            self.ui.info(f"{self.name} indisponible → j'utilise {fb} pendant 10 min", "warn")
+            self.backup, self.backup_until = other, time.time() + 600
+            return res
+        why = "surchargé" if last and any(c in str(last) for c in ("HTTP 429", "HTTP 503")) else "indisponible"
+        detail = (" Secours essayés : " + " ; ".join(tried) + ".") if tried else ""
+        tip = "" if config.available(self.cfg, "groq") else (
+            " Pour un secours fiable et gratuit, ajoute une clé Groq : /cle groq TA_CLE "
+            f"(clé gratuite sur {self.cfg['providers'].get('groq', {}).get('key_url', 'https://console.groq.com/keys')}).")
+        raise llm.LLMError(f"{self.name} est {why} pour le moment et aucun cerveau de secours n'a répondu.{detail} "
+                           f"Réessaie dans une minute.{tip}")
 
     def vision(self, question, image):
         msg = [{"role": "user", "content": question, "images": [image]}]

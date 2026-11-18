@@ -7,6 +7,11 @@ et sont convertis pour chaque fournisseur.
 """
 
 import json
+import os
+import shutil
+import subprocess
+import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -179,6 +184,47 @@ def _parse_args(text):
         return value if isinstance(value, dict) else {"_raw": text}
     except json.JSONDecodeError:
         return {"_raw": text}
+
+
+def ollama_running(base):
+    try:
+        with urllib.request.urlopen(base.rstrip("/") + "/api/tags", timeout=2):
+            return True
+    except Exception:
+        return False
+
+
+def _ollama_exe():
+    exe = shutil.which("ollama")
+    if exe:
+        return exe
+    if sys.platform == "win32":   # emplacement par défaut de l'installateur Windows
+        p = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Ollama", "ollama.exe")
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def ensure_ollama(client, info=None):
+    """Vérifie qu'Ollama répond ; sinon le démarre en arrière-plan s'il est installé. Renvoie True s'il répond."""
+    if ollama_running(client.base):
+        return True
+    exe = _ollama_exe()
+    if not exe:
+        return False
+    if info:
+        info("Démarrage d'Ollama (cerveau local)…")
+    flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+    try:
+        subprocess.Popen([exe, "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         stdin=subprocess.DEVNULL, creationflags=flags)
+    except OSError:
+        return False
+    for _ in range(30):
+        time.sleep(.5)
+        if ollama_running(client.base):
+            return True
+    return False
 
 
 def make(cfg, name):
