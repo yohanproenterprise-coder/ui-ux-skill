@@ -489,7 +489,7 @@ def serve(cfg, workdir, port=7860, open_browser=True, open_path=None):
                     self._json(res)
                 elif self.path == "/scene_cutout":
                     from . import scene
-                    self._json(scene.cutout_data_url(data.get("image", "")))
+                    self._json(scene.cutout_data_url(data.get("image", ""), data.get("box")))
                 elif self.path == "/scene_background":
                     from . import scene
                     self._json(scene.background(data.get("prompt", ""), data.get("width", 1024),

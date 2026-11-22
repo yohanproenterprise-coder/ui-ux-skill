@@ -131,6 +131,7 @@
             redessiné : forme, proportions et détails restent exactement ceux de ta photo.</p>
           <div class="st-label">1. Produit</div>
           <button class="st-btn primary wide" id="sc-cut">✂ Détourer le produit</button>
+          <button class="st-btn wide" id="sc-pick">🎯 Montrer le produit sur la photo</button>
           <div class="st-msg" id="sc-cut-msg"></div>
           <button class="st-btn wide" id="sc-png" hidden>⬇ Enregistrer le produit détouré (PNG transparent)</button>
           <div id="sc-step2" hidden>
@@ -287,6 +288,7 @@
     S.full.width = img.naturalWidth; S.full.height = img.naturalHeight;
     S.full.getContext("2d").drawImage(img, 0, 0);
     makePrev(); S.baseHist = []; q("#st-heal-undo").disabled = true;
+    try { SC.pick = null; SC.picking = false; } catch (e) {}
     S.name = (name || "photo").replace(/\.[^.]+$/, "");
     S.p = clone(DEFAULTS); S.hist = []; S.fut = [];
     q("#st-name").textContent = `${name || "photo"} · ${img.naturalWidth}×${img.naturalHeight}`;
@@ -544,8 +546,9 @@
   function schedule() { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; render(); }); } }
   function render() {
     if (!S.prev) return;
-    canvas.style.cursor = S.tab === "scene" && SC.bg && SC.cut ? "move" : "";
-    if (S.tab === "scene" && SC.bg && SC.cut && !S.compare) {
+    const picking = S.tab === "scene" && SC.picking;
+    canvas.style.cursor = picking ? "crosshair" : S.tab === "scene" && SC.bg && SC.cut ? "move" : "";
+    if (S.tab === "scene" && SC.bg && SC.cut && !S.compare && !picking) {
       cropEl.style.display = "none"; q("#st-badge").style.display = "none";
       const k = Math.min(1, 1400 / Math.max(SC.bg.width, SC.bg.height));
       const out = compose(Math.round(SC.bg.width * k), Math.round(SC.bg.height * k));
@@ -559,6 +562,13 @@
     else if (S.tab === "heal") { out = geometry(S.prev, { ...S.p, rot: 0, flipH: false, flipV: false }, false); pixels(out, { ...S.p, text: null }, false); }
     else out = process(S.prev, S.p, false);
     canvas.width = out.width; canvas.height = out.height; ctx.drawImage(out, 0, 0);
+    if (picking && SC.pick) {   // cadre autour du produit : le reste de la photo est assombri
+      const W = canvas.width, H = canvas.height, b = SC.pick;
+      const x = Math.min(b.x0, b.x1) * W, y = Math.min(b.y0, b.y1) * H, w = Math.abs(b.x1 - b.x0) * W, h = Math.abs(b.y1 - b.y0) * H;
+      ctx.save(); ctx.fillStyle = "rgba(0,0,0,.45)";
+      ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.rect(x, y, w, h); ctx.fill("evenodd");
+      ctx.lineWidth = Math.max(2, W / 400); ctx.setLineDash([10, 6]); ctx.strokeStyle = "#fff"; ctx.strokeRect(x, y, w, h); ctx.restore();
+    }
     q("#st-badge").style.display = S.compare ? "block" : "none";
     if (cropping) placeCrop();
     placeMask();
@@ -1104,7 +1114,8 @@
 
   // ---------------------------------------------------------- mise en scène --
   const SC = { cut: null, bg: null, x: .5, y: .88, size: .6, shadow: 60, light: 35, flip: false, seed: 1, glow: 0, mount: "pose",
-               tinted: null, tintKey: "", lightDx: 0, bgMean: [128, 128, 128], drag: null, solid: null };
+               tinted: null, tintKey: "", lightDx: 0, bgMean: [128, 128, 128], drag: null, solid: null,
+               picking: false, pick: null, pickDrag: null };
   const SCENES = [
     ["Marbre blanc", "white marble countertop in a bright minimalist kitchen, soft daylight from a window, softly blurred background"],
     ["Bois clair", "light oak wooden table in a scandinavian living room, soft morning light, softly blurred background"],
@@ -1158,13 +1169,24 @@
     box.textContent = "";
     try {
       const src = process(S.full, S.p, true), big = src.width * src.height > 4e6;
-      const r = await busyRun("Détourage du produit…", () => post("/scene_cutout", { image: src.toDataURL(big ? "image/jpeg" : "image/png", .97) }));
-      SC.cut = await loadImg(r.image); SC.tintKey = "";
-      box.textContent = `Produit détouré ✓ (${r.width}×${r.height}). Choisis maintenant un décor.`;
+      const b = SC.pick, pickBox = b ? [Math.min(b.x0, b.x1), Math.min(b.y0, b.y1), Math.max(b.x0, b.x1), Math.max(b.y0, b.y1)] : null;
+      const r = await busyRun("Détourage du produit…", () => post("/scene_cutout", { image: src.toDataURL(big ? "image/jpeg" : "image/png", .97), box: pickBox }));
+      SC.cut = await loadImg(r.image); SC.tintKey = ""; SC.picking = false;
+      box.textContent = `Produit détouré ✓ (${r.width}×${r.height}). Choisis maintenant un décor.` +
+        (pickBox ? "" : " D'autres objets sont restés ? Clique sur « Montrer le produit sur la photo ».");
       if (!SC.bg) setSolid("#ffffff");   // aperçu immédiat sur fond blanc
       else { autoPlace(); render(); }
       sceneSteps();
     } catch (e) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(e.message)}</span>`; }
+  };
+  q("#sc-pick").onclick = () => {
+    if (!S.full) return;
+    SC.picking = !SC.picking; SC.pick = null;
+    q("#sc-pick").classList.toggle("primary", SC.picking);
+    q("#sc-cut-msg").textContent = SC.picking
+      ? "Trace un cadre autour du produit sur la photo (clique et glisse). Le détourage se lance dès que tu relâches."
+      : "";
+    render();
   };
   q("#sc-png").onclick = () => {
     if (!SC.cut) return;
@@ -1334,8 +1356,29 @@
     }
     return out;
   }
+  const frac = e => { const r = canvas.getBoundingClientRect();
+    return [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; };
   canvas.addEventListener("pointerdown", e => {
-    if (S.tab !== "scene" || !SC.bg || !SC.cut) return;
+    if (S.tab !== "scene" || !SC.picking) return;
+    const [x, y] = frac(e); SC.pick = { x0: x, y0: y, x1: x, y1: y }; SC.pickDrag = true;
+    canvas.setPointerCapture(e.pointerId); e.preventDefault(); e.stopImmediatePropagation(); schedule();
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!SC.pickDrag) return;
+    [SC.pick.x1, SC.pick.y1] = frac(e); e.stopImmediatePropagation(); schedule();
+  });
+  ["pointerup", "pointercancel"].forEach(ev => canvas.addEventListener(ev, e => {
+    if (!SC.pickDrag) return;
+    SC.pickDrag = false; e.stopImmediatePropagation();
+    const b = SC.pick;
+    if (Math.abs(b.x1 - b.x0) < .03 || Math.abs(b.y1 - b.y0) < .03) {
+      SC.pick = null; q("#sc-cut-msg").textContent = "Cadre trop petit : glisse pour entourer tout le produit."; return schedule();
+    }
+    q("#sc-pick").classList.remove("primary");
+    q("#sc-cut").click();
+  }));
+  canvas.addEventListener("pointerdown", e => {
+    if (S.tab !== "scene" || !SC.bg || !SC.cut || SC.picking) return;
     const r = canvas.getBoundingClientRect();
     SC.drag = { fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height, x: SC.x, y: SC.y };
     canvas.setPointerCapture(e.pointerId); e.preventDefault();

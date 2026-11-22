@@ -45,8 +45,8 @@ def _mask(img):
     return np.asarray(m, np.float32) / 255
 
 
-def _keep_main(m):
-    """Retire les petits morceaux isolés (reflets, bouts de décor) : ne garde que les parties importantes."""
+def _labels(m):
+    """Découpe le masque en morceaux séparés (sur une version réduite à 256 px) : (étiquettes, tailles, sw, sh)."""
     from PIL import Image
     h, w = m.shape
     k = 256 / max(h, w)
@@ -68,17 +68,57 @@ def _keep_main(m):
                             labels[yy, xx] = n
                             stack.append((yy, xx))
                 sizes.append(count)
-    if len(sizes) <= 2:
-        return m
-    biggest = max(sizes)
-    drop = np.isin(labels, [i for i, s in enumerate(sizes) if i and s < biggest * .12])
+    return labels, sizes
+
+
+def _drop(m, labels, drop_ids):
+    """Efface du masque (taille réelle) les morceaux indiqués."""
+    from PIL import Image, ImageFilter
+    h, w = m.shape
+    drop = np.isin(labels, list(drop_ids))
     if not drop.any():
         return m
     # zone à effacer, agrandie à la taille réelle et un peu élargie pour emporter les bords
     big = Image.fromarray((drop * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR)
-    from PIL import ImageFilter
     big = np.asarray(big.filter(ImageFilter.MaxFilter(5)), np.float32) / 255
     return m * (1 - big)
+
+
+def _keep_main(m):
+    """Retire les petits morceaux isolés (reflets, bouts de décor) : ne garde que les parties importantes."""
+    labels, sizes = _labels(m)
+    if len(sizes) <= 2:
+        return m
+    biggest = max(sizes)
+    return _drop(m, labels, [i for i, s in enumerate(sizes) if i and s < biggest * .12])
+
+
+def _pick(m, box):
+    """Ne garde que l'objet désigné par le cadre (coordonnées en pixels du masque) : les morceaux situés surtout
+    dans le cadre. Les meubles, plantes ou décors qui ne font que l'effleurer sont retirés."""
+    labels, sizes = _labels(m)
+    if len(sizes) <= 1:
+        return m
+    h, w = m.shape
+    sh, sw = labels.shape
+    x0, y0, x1, y1 = box
+    inside = np.zeros(labels.shape, bool)
+    inside[max(0, int(y0 * sh / h)):max(1, int(np.ceil(y1 * sh / h))), max(0, int(x0 * sw / w)):max(1, int(np.ceil(x1 * sw / w)))] = True
+    keep, best, best_in = set(), None, 0
+    for i in range(1, len(sizes)):
+        part = labels == i
+        n_in = int((part & inside).sum())
+        if n_in > best_in:
+            best, best_in = i, n_in
+        if n_in >= .5 * sizes[i]:
+            keep.add(i)
+    if not keep and best:
+        keep.add(best)
+    if not keep:
+        return m
+    biggest = max(sizes[i] for i in keep)
+    keep = {i for i in keep if sizes[i] >= biggest * .15}   # feuilles, reflets, bouts de décor : retirés
+    return _drop(m, labels, [i for i in range(1, len(sizes)) if i not in keep])
 
 
 def _box_blur(a, r):
@@ -94,11 +134,25 @@ def _box_blur(a, r):
     return a
 
 
-def cutout(img):
-    """Image PIL → produit détouré (RGBA, recadré au plus près). Les bords sont nettoyés de la couleur du fond."""
+def cutout(img, box=None):
+    """Image PIL → produit détouré (RGBA, recadré au plus près). Les bords sont nettoyés de la couleur du fond.
+    box = (x0, y0, x1, y1) en fractions de l'image : le cadre tracé autour du produit. L'IA travaille alors sur
+    cette zone (plus de détails) et ne garde que l'objet désigné, pas le décor autour."""
     from PIL import Image
     img = img.convert("RGB")
-    m = _keep_main(_mask(img))
+    if box:
+        W, H = img.size
+        x0, x1 = sorted(min(1., max(0., float(v))) for v in (box[0], box[2]))
+        y0, y1 = sorted(min(1., max(0., float(v))) for v in (box[1], box[3]))
+        mx, my = (x1 - x0) * .08, (y1 - y0) * .08            # petite marge : le produit peut dépasser du cadre
+        X0, Y0 = max(0, int((x0 - mx) * W)), max(0, int((y0 - my) * H))
+        X1, Y1 = min(W, int(np.ceil((x1 + mx) * W))), min(H, int(np.ceil((y1 + my) * H)))
+        if X1 - X0 < 24 or Y1 - Y0 < 24:
+            raise RuntimeError("Le cadre est trop petit : trace-le autour du produit entier.")
+        img = img.crop((X0, Y0, X1, Y1))
+        m = _pick(_mask(img), (x0 * W - X0, y0 * H - Y0, x1 * W - X0, y1 * H - Y0))
+    else:
+        m = _keep_main(_mask(img))
     a = np.clip((m - .06) / .88, 0, 1)
     rgb = np.asarray(img, np.float32)
     # couleur des bords : on reprend celle de l'intérieur du produit (sinon un liseré du fond reste visible)
@@ -117,13 +171,13 @@ def cutout(img):
     return Image.fromarray(out, "RGBA")
 
 
-def cutout_data_url(data_url):
+def cutout_data_url(data_url, box=None):
     if not ai_inpaint.pack_ready("cutout"):
         raise RuntimeError("L'IA de détourage n'est pas installée.")
     with ai_inpaint.user_priority():
         ai_inpaint.ustate().update(busy=True, progress=30, step="Détourage du produit…")
         try:
-            res = cutout(ai_inpaint._decode(data_url, "RGB"))
+            res = cutout(ai_inpaint._decode(data_url, "RGB"), box)
         finally:
             ai_inpaint.ustate().update(busy=False, progress=100, step="")
     buf = io.BytesIO()

@@ -244,7 +244,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": True})
             elif p == "/scene_cutout":
                 from jarvis import scene
-                self._json(scene.cutout_data_url(d.get("image", "")))
+                self._json(scene.cutout_data_url(d.get("image", ""), d.get("box")))
             elif p == "/scene_background":
                 from jarvis import scene
                 self._json(scene.background(d.get("prompt", ""), d.get("width", 1024), d.get("height", 1024),
