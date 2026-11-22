@@ -29,6 +29,9 @@ Décors créés par l'IA — modèle Flux via le service Pollinations (https://p
   Service en ligne gratuit et open source. Seule la description du décor est envoyée, jamais vos photos.
   Vérifiez les conditions d'utilisation de Pollinations pour un usage commercial des décors générés.
 
+Détection des textes ajoutés — PaddleOCR PP-OCRv3 (text-det.onnx) — © PaddlePaddle Authors — licence Apache 2.0
+  https://github.com/PaddlePaddle/PaddleOCR
+
 LOGICIELS
 ---------
 Python — Python Software Foundation License — https://www.python.org

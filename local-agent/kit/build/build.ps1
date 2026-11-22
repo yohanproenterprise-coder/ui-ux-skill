@@ -24,11 +24,11 @@ if ($LASTEXITCODE) { throw "dépendances" }
 
 # 2. Application : le Studio de Jarvis + le kit (seulement les modules utiles)
 New-Item -ItemType Directory -Force "$stage\app\jarvis\models", "$stage\app\kit" | Out-Null
-foreach ($m in "__init__", "config", "ai_inpaint", "ai_face", "enhance_ai", "batch", "scene", "photo_export", "gpu", "system", "photo") {
+foreach ($m in "__init__", "config", "ai_inpaint", "ai_face", "enhance_ai", "batch", "scene", "overlays", "photo_export", "gpu", "system", "photo") {
   Copy-Item "$root\jarvis\$m.py" "$stage\app\jarvis\"
 }
 Copy-Item "$root\jarvis\index.html", "$root\jarvis\studio.js", "$root\jarvis\studio.css", "$root\jarvis\inpaint.js" "$stage\app\jarvis\"
-Copy-Item "$root\jarvis\models\upscale-x4.onnx", "$root\jarvis\models\sharp-x4.onnx" "$stage\app\jarvis\models\"
+Copy-Item "$root\jarvis\models\upscale-x4.onnx", "$root\jarvis\models\sharp-x4.onnx", "$root\jarvis\models\text-det.onnx" "$stage\app\jarvis\models\"
 Copy-Item "$root\kit\kit.py", "$root\kit\kit.js", "$root\kit\LICENCES.txt", "$root\kit\licence.py", "$root\kit\licence-config.json" "$stage\app\kit\"
 
 # 3. Vérification : l'application démarre et améliore une vraie image

@@ -113,6 +113,7 @@
             <button class="st-btn" id="st-eng-ai" title="Intelligence artificielle LaMa : reconstruit les formes (bords d'objets, visages de fond…)">✦ IA</button>
           </div>
           <div id="st-ai-box" class="st-note" hidden></div>
+          <button class="st-btn wide" id="st-overlays" style="margin-top:12px">🧹 Repérer textes, logos et formes ajoutés</button>
           <div class="st-row" style="margin-top:12px"><label>Taille du pinceau <span id="v-brush">30</span></label>
             <input type="range" min="4" max="150" value="30" id="st-brush"></div>
           <div class="st-grid two">
@@ -842,8 +843,10 @@
       const sc = soft.getContext("2d"); sc.filter = `blur(${Math.max(1, 1.5 / k)}px)`; sc.drawImage(hc, 0, 0, rw, rh);
       fc.globalCompositeOperation = "destination-in"; fc.drawImage(soft, 0, 0);
       // sauvegarde pour annuler, puis application
-      const snap = document.createElement("canvas"); snap.width = S.full.width; snap.height = S.full.height; snap.getContext("2d").drawImage(S.full, 0, 0);
-      S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
+      if (!S.noHist) {
+        const snap = document.createElement("canvas"); snap.width = S.full.width; snap.height = S.full.height; snap.getContext("2d").drawImage(S.full, 0, 0);
+        S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
+      }
       S.full.getContext("2d").drawImage(fill, rx, ry);
       makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = false;
       S.lastHeal = { mask: maskCopy, variant }; q("#st-heal-again").disabled = false;
@@ -851,7 +854,70 @@
     } catch (err) { healMsg("Échec : " + err.message, true); }
     finally { q("#st-busy").style.display = "none"; q("#st-heal").disabled = S.engine === "ai" && !(aiState && aiState.state === "ready"); }
   }
-  q("#st-heal").onclick = () => heal(0);
+  // zones séparées du tracé (une par texte, logo ou pastille) : chacune est effacée à part, en pleine qualité
+  function maskZones() {
+    const k = Math.min(1, 220 / Math.max(mask.width, mask.height)), W = Math.max(1, Math.round(mask.width * k)), H = Math.max(1, Math.round(mask.height * k));
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d", { willReadFrequently: true }); g.drawImage(mask, 0, 0, W, H);
+    const d = g.getImageData(0, 0, W, H).data, on = new Uint8Array(W * H);
+    for (let i = 0; i < W * H; i++) on[i] = d[i * 4 + 3] > 10 ? 1 : 0;
+    const grown = dilateMask(on, W, H, 3), seen = new Uint8Array(W * H), zones = [];   // les lettres d'un même mot restent ensemble
+    for (let i = 0; i < W * H; i++) {
+      if (!grown[i] || seen[i]) continue;
+      let x0 = W, y0 = H, x1 = -1, y1 = -1, any = false; const st = [i]; seen[i] = 1;
+      while (st.length) {
+        const j = st.pop(), x = j % W, y = (j / W) | 0;
+        if (on[j]) any = true;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        for (const n of [j - 1, j + 1, j - W, j + W])
+          if (n >= 0 && n < W * H && !seen[n] && grown[n] && Math.abs((n % W) - x) <= 1) { seen[n] = 1; st.push(n); }
+      }
+      if (any) zones.push([x0 / k, y0 / k, (x1 + 1) / k, (y1 + 1) / k]);
+    }
+    return zones;
+  }
+  async function healZones() {
+    const zones = maskZones();
+    if (zones.length <= 1) return heal(0);
+    const all = document.createElement("canvas"); all.width = mask.width; all.height = mask.height; all.getContext("2d").drawImage(mask, 0, 0);
+    const t0 = performance.now(); let done = 0;
+    // une seule étape d'annulation pour l'ensemble des zones
+    const snap = document.createElement("canvas"); snap.width = S.full.width; snap.height = S.full.height; snap.getContext("2d").drawImage(S.full, 0, 0);
+    S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
+    S.noHist = true;
+    try { for (const [x0, y0, x1, y1] of zones) {
+      const pad = 6, bx = Math.max(0, Math.floor(x0 - pad)), by = Math.max(0, Math.floor(y0 - pad));
+      const bw = Math.min(mask.width, Math.ceil(x1 + pad)) - bx, bh = Math.min(mask.height, Math.ceil(y1 + pad)) - by;
+      mctx.clearRect(0, 0, mask.width, mask.height); mctx.globalCompositeOperation = "source-over";
+      mctx.drawImage(all, bx, by, bw, bh, bx, by, bw, bh);
+      healMsg(`Effacement de la zone ${++done} sur ${zones.length}…`);
+      await heal(0);
+    } } finally { S.noHist = false; }
+    q("#st-heal-undo").disabled = false;
+    mctx.clearRect(0, 0, mask.width, mask.height); S.lastHeal = null; q("#st-heal-again").disabled = true;
+    healMsg(`${zones.length} zones effacées en ${((performance.now() - t0) / 1000).toFixed(1)} s. Une trace reste ? Repeins-la et clique sur « Effacer ».`);
+  }
+  q("#st-heal").onclick = () => healZones();
+  q("#st-overlays").onclick = async () => {
+    if (!S.full) return;
+    const k = Math.min(1, 2000 / Math.max(S.full.width, S.full.height));
+    const src = document.createElement("canvas"); src.width = Math.round(S.full.width * k); src.height = Math.round(S.full.height * k);
+    const sg = src.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(S.full, 0, 0, src.width, src.height);
+    q("#st-busy span").textContent = "Recherche des textes et logos ajoutés…"; q("#st-busy").style.display = "flex";
+    try {
+      const r = await (await fetch("/detect_overlays", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: src.toDataURL("image/jpeg", .95) }) })).json();
+      if (r.error) throw new Error(r.error === "introuvable" ? "Jarvis doit être redémarré pour utiliser la mise à jour." : r.error);
+      if (!r.found) return healMsg("Aucun texte ni logo ajouté trouvé sur cette photo.");
+      const im = new Image(); im.src = r.mask; await im.decode();
+      mctx.globalCompositeOperation = "source-over"; mctx.drawImage(im, 0, 0, mask.width, mask.height);
+      const parts = [r.texts ? `${r.texts} texte${r.texts > 1 ? "s" : ""}` : "", r.shapes ? `${r.shapes} logo${r.shapes > 1 ? "s" : ""} ou forme${r.shapes > 1 ? "s" : ""}` : ""].filter(Boolean).join(" et ");
+      healMsg(`${parts || "Éléments"} repéré${(r.texts + r.shapes) > 1 ? "s" : ""} (en rose). Vérifie : ajoute au pinceau ce qui manque, retire à la gomme ` +
+        `ce qui doit rester, puis clique sur « Effacer la zone peinte ».` +
+        (r.protected ? "" : " Astuce : installe l'IA de détourage (onglet Mise en scène) pour que le produit soit toujours protégé."));
+    } catch (e) { healMsg("Échec : " + e.message, true); }
+    finally { q("#st-busy").style.display = "none"; }
+  };
   q("#st-heal-again").onclick = async () => {
     // annule la dernière gomme et recalcule la même zone avec un autre réglage
     const last = S.lastHeal, snap = S.baseHist.pop(); if (!last || !snap) return;

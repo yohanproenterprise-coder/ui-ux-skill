@@ -242,6 +242,9 @@ class Handler(BaseHTTPRequestHandler):
                 target = d.get("path") or str(SAVE_DIR)
                 system.open_item(str(target))
                 self._json({"ok": True})
+            elif p == "/detect_overlays":
+                from jarvis import overlays
+                self._json(overlays.detect_data_url(d.get("image", "")))
             elif p == "/scene_cutout":
                 from jarvis import scene
                 self._json(scene.cutout_data_url(d.get("image", ""), d.get("box")))

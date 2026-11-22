@@ -29,3 +29,7 @@ onnxruntime-directml (Microsoft, licence MIT), installé à la demande depuis le
   « swin tiny » convertie en ONNX par le projet rembg (https://github.com/danielgatis/rembg). Téléchargé à la demande.
 - Décors créés par l'IA : modèle Flux (Black Forest Labs) via le service gratuit Pollinations (projet open source,
   https://github.com/pollinations/pollinations). Seule la description du décor est envoyée, jamais la photo du produit.
+
+## Effacement des textes et logos ajoutés
+- text-det.onnx — détection de texte PaddleOCR PP-OCRv3 (« ch_PP-OCRv3_det_infer »), © PaddlePaddle Authors, licence
+  Apache 2.0 (usage commercial autorisé), https://github.com/PaddlePaddle/PaddleOCR. Livré avec Jarvis (2,4 Mo).
