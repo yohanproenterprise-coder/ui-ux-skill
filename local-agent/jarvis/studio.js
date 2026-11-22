@@ -134,6 +134,15 @@
           <button class="st-btn wide" id="sc-pick">🎯 Montrer le produit sur la photo</button>
           <div class="st-msg" id="sc-cut-msg"></div>
           <button class="st-btn wide" id="sc-png" hidden>⬇ Enregistrer le produit détouré (PNG transparent)</button>
+          <button class="st-btn wide" id="sc-touch" hidden>🖌 Retoucher le détourage</button>
+          <div id="sc-touch-box" hidden>
+            <div style="display:flex;gap:8px"><button class="st-btn primary" id="sc-add" style="flex:1">＋ Ajouter</button>
+              <button class="st-btn" id="sc-del" style="flex:1">− Retirer</button></div>
+            <div class="st-row"><label>Taille du pinceau <span id="v-sc-brush">20</span></label><input type="range" min="3" max="120" value="20" id="sc-brush"></div>
+            <p class="st-note">Ajouter : repeins les parties oubliées (pieds, tiges, câbles) : les vrais pixels de ta photo reviennent.
+              Retirer : efface ce qui est en trop. La photo d'origine apparaît en transparence pour te guider.</p>
+            <button class="st-btn primary wide" id="sc-touch-done">✓ Terminer la retouche</button>
+          </div>
           <div id="sc-step2" hidden>
             <div class="st-label">2. Décor</div>
             <div class="st-row"><label>Le produit est…</label>
@@ -288,7 +297,7 @@
     S.full.width = img.naturalWidth; S.full.height = img.naturalHeight;
     S.full.getContext("2d").drawImage(img, 0, 0);
     makePrev(); S.baseHist = []; q("#st-heal-undo").disabled = true;
-    try { SC.pick = null; SC.picking = false; } catch (e) {}
+    try { SC.pick = null; SC.picking = false; SC.touching = false; SC.alpha = null; q("#sc-touch").hidden = true; q("#sc-touch-box").hidden = true; } catch (e) {}
     S.name = (name || "photo").replace(/\.[^.]+$/, "");
     S.p = clone(DEFAULTS); S.hist = []; S.fut = [];
     q("#st-name").textContent = `${name || "photo"} · ${img.naturalWidth}×${img.naturalHeight}`;
@@ -546,6 +555,7 @@
   function schedule() { if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; render(); }); } }
   function render() {
     if (!S.prev) return;
+    if (S.tab === "scene" && SC.touching && SC.alpha) { drawTouch(); return; }
     const picking = S.tab === "scene" && SC.picking;
     canvas.style.cursor = picking ? "crosshair" : S.tab === "scene" && SC.bg && SC.cut ? "move" : "";
     if (S.tab === "scene" && SC.bg && SC.cut && !S.compare && !picking) {
@@ -571,6 +581,21 @@
     }
     q("#st-badge").style.display = S.compare ? "block" : "none";
     if (cropping) placeCrop();
+    placeMask();
+  }
+  function drawTouch() {
+    // damier (transparence) + photo d'origine en filigrane + produit détouré tel qu'il est maintenant
+    const sp = SC.srcPrev, W = sp.width, H = sp.height, t = Math.max(8, Math.round(W / 70));
+    canvas.width = W; canvas.height = H;
+    cropEl.style.display = "none"; q("#st-badge").style.display = "none";
+    ctx.fillStyle = "#cfd0d6"; ctx.fillRect(0, 0, W, H); ctx.fillStyle = "#f2f2f5";
+    for (let y = 0; y < H; y += t) for (let x = (y / t) % 2 ? t : 0; x < W; x += 2 * t) ctx.fillRect(x, y, t, t);
+    ctx.globalAlpha = .3; ctx.drawImage(sp, 0, 0); ctx.globalAlpha = 1;
+    const tmp = SC.tmp || (SC.tmp = document.createElement("canvas")); tmp.width = W; tmp.height = H;
+    const g = tmp.getContext("2d"); g.drawImage(sp, 0, 0);
+    g.globalCompositeOperation = "destination-in"; g.drawImage(SC.alpha, 0, 0, W, H); g.globalCompositeOperation = "source-over";
+    ctx.drawImage(tmp, 0, 0);
+    canvas.style.cursor = "crosshair";
     placeMask();
   }
   function buildFilterThumbs() {
@@ -1115,7 +1140,8 @@
   // ---------------------------------------------------------- mise en scène --
   const SC = { cut: null, bg: null, x: .5, y: .88, size: .6, shadow: 60, light: 35, flip: false, seed: 1, glow: 0, mount: "pose",
                tinted: null, tintKey: "", lightDx: 0, bgMean: [128, 128, 128], drag: null, solid: null,
-               picking: false, pick: null, pickDrag: null };
+               picking: false, pick: null, pickDrag: null,
+               touching: false, touchMode: "add", painting: null, src: null, cutFull: null, alpha: null, srcPrev: null };
   const SCENES = [
     ["Marbre blanc", "white marble countertop in a bright minimalist kitchen, soft daylight from a window, softly blurred background"],
     ["Bois clair", "light oak wooden table in a scandinavian living room, soft morning light, softly blurred background"],
@@ -1171,7 +1197,15 @@
       const src = process(S.full, S.p, true), big = src.width * src.height > 4e6;
       const b = SC.pick, pickBox = b ? [Math.min(b.x0, b.x1), Math.min(b.y0, b.y1), Math.max(b.x0, b.x1), Math.max(b.y0, b.y1)] : null;
       const r = await busyRun("Détourage du produit…", () => post("/scene_cutout", { image: src.toDataURL(big ? "image/jpeg" : "image/png", .97), box: pickBox }));
-      SC.cut = await loadImg(r.image); SC.tintKey = ""; SC.picking = false;
+      SC.cut = await loadImg(r.image); SC.tintKey = ""; SC.picking = false; SC.touching = false;
+      SC.src = src;
+      SC.cutFull = document.createElement("canvas"); SC.cutFull.width = src.width; SC.cutFull.height = src.height;
+      SC.cutFull.getContext("2d").drawImage(SC.cut, r.x || 0, r.y || 0);
+      SC.alpha = document.createElement("canvas"); SC.alpha.width = src.width; SC.alpha.height = src.height;
+      SC.alpha.getContext("2d").drawImage(SC.cutFull, 0, 0);
+      const kp = Math.min(1, 1400 / Math.max(src.width, src.height));
+      SC.srcPrev = toCanvas(src, Math.round(src.width * kp), Math.round(src.height * kp));
+      q("#sc-touch").hidden = false; q("#sc-touch-box").hidden = true;
       box.textContent = `Produit détouré ✓ (${r.width}×${r.height}). Choisis maintenant un décor.` +
         (pickBox ? "" : " D'autres objets sont restés ? Clique sur « Montrer le produit sur la photo ».");
       if (!SC.bg) setSolid("#ffffff");   // aperçu immédiat sur fond blanc
@@ -1181,11 +1215,40 @@
   };
   q("#sc-pick").onclick = () => {
     if (!S.full) return;
-    SC.picking = !SC.picking; SC.pick = null;
+    SC.picking = !SC.picking; SC.pick = null; SC.touching = false; q("#sc-touch-box").hidden = true;
     q("#sc-pick").classList.toggle("primary", SC.picking);
     q("#sc-cut-msg").textContent = SC.picking
       ? "Trace un cadre autour du produit sur la photo (clique et glisse). Le détourage se lance dès que tu relâches."
       : "";
+    render();
+  };
+  // retouche du détourage au pinceau
+  function touchMode(m) {
+    SC.touchMode = m; q("#sc-add").classList.toggle("primary", m === "add"); q("#sc-del").classList.toggle("primary", m === "del");
+  }
+  q("#sc-touch").onclick = () => {
+    if (!SC.alpha) return;
+    SC.touching = !SC.touching; SC.picking = false;
+    q("#sc-touch-box").hidden = !SC.touching; touchMode(SC.touchMode); render();
+  };
+  q("#sc-add").onclick = () => touchMode("add");
+  q("#sc-del").onclick = () => touchMode("del");
+  q("#sc-brush").oninput = e => { q("#v-sc-brush").textContent = e.target.value; };
+  q("#sc-touch-done").onclick = () => {
+    const src = SC.src, W = src.width, H = src.height, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = "destination-in"; g.drawImage(SC.alpha, 0, 0);
+    g.globalCompositeOperation = "source-atop"; g.drawImage(SC.cutFull, 0, 0);   // bords nettoyés par l'IA, là où elle avait détouré
+    const d = g.getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0, i = y * W * 4 + 3; x < W; x++, i += 4)
+      if (d[i] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) { q("#sc-cut-msg").textContent = "Il ne reste plus rien du produit : utilise « Ajouter » pour le repeindre."; return; }
+    const out = document.createElement("canvas"); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+    out.getContext("2d").drawImage(c, -x0, -y0);
+    SC.cut = out; SC.tintKey = ""; SC.touching = false; q("#sc-touch-box").hidden = true;
+    q("#sc-cut-msg").textContent = `Retouche appliquée ✓ (${out.width}×${out.height}).`;
     render();
   };
   q("#sc-png").onclick = () => {
@@ -1358,6 +1421,27 @@
   }
   const frac = e => { const r = canvas.getBoundingClientRect();
     return [Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), Math.max(0, Math.min(1, (e.clientY - r.top) / r.height))]; };
+  const touchAt = e => { const [x, y] = frac(e); return [x * SC.alpha.width, y * SC.alpha.height]; };
+  function touchStroke(a, b) {
+    const g = SC.alpha.getContext("2d"), r = canvas.getBoundingClientRect();
+    g.save(); g.globalCompositeOperation = SC.touchMode === "add" ? "source-over" : "destination-out";
+    g.strokeStyle = g.fillStyle = "#fff"; g.lineCap = "round"; g.lineJoin = "round";
+    g.lineWidth = +q("#sc-brush").value * SC.alpha.width / r.width;
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0] + .01, b[1]); g.stroke(); g.restore();
+    schedule();
+  }
+  canvas.addEventListener("pointerdown", e => {
+    if (S.tab !== "scene" || !SC.touching || !SC.alpha) return;
+    SC.painting = touchAt(e); touchStroke(SC.painting, SC.painting);
+    canvas.setPointerCapture(e.pointerId); e.preventDefault(); e.stopImmediatePropagation();
+  });
+  canvas.addEventListener("pointermove", e => {
+    if (!SC.painting) return;
+    const p = touchAt(e); touchStroke(SC.painting, p); SC.painting = p; e.stopImmediatePropagation();
+  });
+  ["pointerup", "pointercancel"].forEach(ev => canvas.addEventListener(ev, e => {
+    if (SC.painting) { SC.painting = null; e.stopImmediatePropagation(); }
+  }));
   canvas.addEventListener("pointerdown", e => {
     if (S.tab !== "scene" || !SC.picking) return;
     const [x, y] = frac(e); SC.pick = { x0: x, y0: y, x1: x, y1: y }; SC.pickDrag = true;
@@ -1378,7 +1462,7 @@
     q("#sc-cut").click();
   }));
   canvas.addEventListener("pointerdown", e => {
-    if (S.tab !== "scene" || !SC.bg || !SC.cut || SC.picking) return;
+    if (S.tab !== "scene" || !SC.bg || !SC.cut || SC.picking || SC.touching) return;
     const r = canvas.getBoundingClientRect();
     SC.drag = { fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height, x: SC.x, y: SC.y };
     canvas.setPointerCapture(e.pointerId); e.preventDefault();
@@ -1392,7 +1476,7 @@
   });
   ["pointerup", "pointercancel"].forEach(ev => canvas.addEventListener(ev, () => { SC.drag = null; }));
   canvas.addEventListener("wheel", e => {
-    if (S.tab !== "scene" || !SC.bg || !SC.cut) return;
+    if (S.tab !== "scene" || !SC.bg || !SC.cut || SC.touching || SC.picking) return;
     e.preventDefault(); SC.size = Math.max(.05, Math.min(1, SC.size * (e.deltaY < 0 ? 1.05 : .95)));
     q("#sc-size").value = Math.round(SC.size * 100); q("#v-sc-size").textContent = Math.round(SC.size * 100); schedule();
   }, { passive: false });

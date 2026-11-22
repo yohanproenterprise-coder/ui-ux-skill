@@ -84,13 +84,25 @@ def _drop(m, labels, drop_ids):
     return m * (1 - big)
 
 
+def _near(labels, keep, frac=.035):
+    """Morceaux situés tout près des morceaux gardés (pieds fins, tiges, câbles coupés en pointillés par l'IA)."""
+    from PIL import Image, ImageFilter
+    zone = Image.fromarray((np.isin(labels, list(keep)) * 255).astype(np.uint8))
+    for _ in range(max(1, round(max(labels.shape) * frac))):
+        zone = zone.filter(ImageFilter.MaxFilter(3))
+    return {int(i) for i in np.unique(labels[np.asarray(zone) > 0]) if i}
+
+
 def _keep_main(m):
-    """Retire les petits morceaux isolés (reflets, bouts de décor) : ne garde que les parties importantes."""
+    """Retire les petits morceaux isolés (reflets, bouts de décor) : garde les parties importantes et tout ce
+    qui les touche presque (les fines parties du produit)."""
     labels, sizes = _labels(m)
     if len(sizes) <= 2:
         return m
     biggest = max(sizes)
-    return _drop(m, labels, [i for i, s in enumerate(sizes) if i and s < biggest * .12])
+    keep = {i for i, s in enumerate(sizes) if i and s >= biggest * .12}
+    keep |= _near(labels, keep)
+    return _drop(m, labels, [i for i in range(1, len(sizes)) if i not in keep])
 
 
 def _pick(m, box):
@@ -118,6 +130,7 @@ def _pick(m, box):
         return m
     biggest = max(sizes[i] for i in keep)
     keep = {i for i in keep if sizes[i] >= biggest * .15}   # feuilles, reflets, bouts de décor : retirés
+    keep |= {i for i in _near(labels, keep, .02) if (labels == i)[inside].any()}   # fines parties du produit
     return _drop(m, labels, [i for i in range(1, len(sizes)) if i not in keep])
 
 
@@ -134,12 +147,33 @@ def _box_blur(a, r):
     return a
 
 
+def _mask_hd(img):
+    """Masque en deux passes quand le produit est petit dans la photo : l'IA le repère, puis analyse une zone
+    carrée autour de lui (sans déformer l'image), avec bien plus de pixels pour les tiges, pieds et câbles."""
+    m = _mask(img)
+    W, H = img.size
+    ys, xs = np.nonzero(m > .25)
+    if not len(xs):
+        return m
+    x0, x1, y0, y1 = xs.min(), xs.max(), ys.min(), ys.max()
+    side = int(max(x1 - x0, y1 - y0) * 1.15) + 16
+    if side * side > .45 * W * H or side >= min(W, H):
+        return m                                    # le produit occupe déjà la photo : rien à gagner
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    X0 = min(max(0, cx - side // 2), W - side)
+    Y0 = min(max(0, cy - side // 2), H - side)
+    out = np.zeros_like(m)
+    out[Y0:Y0 + side, X0:X0 + side] = _mask(img.crop((X0, Y0, X0 + side, Y0 + side)))
+    return out
+
+
 def cutout(img, box=None):
     """Image PIL → produit détouré (RGBA, recadré au plus près). Les bords sont nettoyés de la couleur du fond.
     box = (x0, y0, x1, y1) en fractions de l'image : le cadre tracé autour du produit. L'IA travaille alors sur
     cette zone (plus de détails) et ne garde que l'objet désigné, pas le décor autour."""
     from PIL import Image
     img = img.convert("RGB")
+    ox = oy = 0
     if box:
         W, H = img.size
         x0, x1 = sorted(min(1., max(0., float(v))) for v in (box[0], box[2]))
@@ -150,9 +184,10 @@ def cutout(img, box=None):
         if X1 - X0 < 24 or Y1 - Y0 < 24:
             raise RuntimeError("Le cadre est trop petit : trace-le autour du produit entier.")
         img = img.crop((X0, Y0, X1, Y1))
-        m = _pick(_mask(img), (x0 * W - X0, y0 * H - Y0, x1 * W - X0, y1 * H - Y0))
+        ox, oy = X0, Y0
+        m = _pick(_mask_hd(img), (x0 * W - X0, y0 * H - Y0, x1 * W - X0, y1 * H - Y0))
     else:
-        m = _keep_main(_mask(img))
+        m = _keep_main(_mask_hd(img))
     a = np.clip((m - .06) / .88, 0, 1)
     rgb = np.asarray(img, np.float32)
     # couleur des bords : on reprend celle de l'intérieur du produit (sinon un liseré du fond reste visible)
@@ -168,7 +203,9 @@ def cutout(img, box=None):
     x0, x1 = max(0, xs.min() - 2), min(img.width, xs.max() + 3)
     y0, y1 = max(0, ys.min() - 2), min(img.height, ys.max() + 3)
     out = np.dstack([np.clip(rgb, 0, 255), a * 255]).astype(np.uint8)[y0:y1, x0:x1]
-    return Image.fromarray(out, "RGBA")
+    res = Image.fromarray(out, "RGBA")
+    res.info["offset"] = (int(ox + x0), int(oy + y0))   # position dans la photo envoyée (pour la retouche)
+    return res
 
 
 def cutout_data_url(data_url, box=None):
@@ -183,7 +220,8 @@ def cutout_data_url(data_url, box=None):
     buf = io.BytesIO()
     res.save(buf, "PNG", compress_level=1)
     return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode(),
-            "width": res.width, "height": res.height}
+            "width": res.width, "height": res.height,
+            "x": res.info.get("offset", (0, 0))[0], "y": res.info.get("offset", (0, 0))[1]}
 
 
 # --------------------------------------------------------------------- décor --
