@@ -33,3 +33,7 @@ onnxruntime-directml (Microsoft, licence MIT), installé à la demande depuis le
 ## Effacement des textes et logos ajoutés
 - text-det.onnx — détection de texte PaddleOCR PP-OCRv3 (« ch_PP-OCRv3_det_infer »), © PaddlePaddle Authors, licence
   Apache 2.0 (usage commercial autorisé), https://github.com/PaddlePaddle/PaddleOCR. Livré avec Jarvis (2,4 Mo).
+
+## Amélioration « naturelle » (moteur par défaut des photos produit)
+- natural-x2.onnx — 2xNomosUni_compact_multijpg de Philip Hofmann (Phhofm), licence CC BY 4.0 (usage commercial
+  autorisé en citant l'auteur), https://github.com/Phhofm/models. Converti en ONNX pour Jarvis. Livré (2,4 Mo).

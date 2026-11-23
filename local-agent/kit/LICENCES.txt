@@ -32,6 +32,9 @@ Décors créés par l'IA — modèle Flux via le service Pollinations (https://p
 Détection des textes ajoutés — PaddleOCR PP-OCRv3 (text-det.onnx) — © PaddlePaddle Authors — licence Apache 2.0
   https://github.com/PaddlePaddle/PaddleOCR
 
+Amélioration naturelle — 2xNomosUni_compact_multijpg (natural-x2.onnx) — Philip Hofmann (Phhofm) — licence CC BY 4.0
+  https://github.com/Phhofm/models
+
 LOGICIELS
 ---------
 Python — Python Software Foundation License — https://www.python.org

@@ -93,6 +93,57 @@ def light_and_color(img, product=False):
     return Image.fromarray((np.clip(a, 0, 1) * 255 + .5).astype(np.uint8))
 
 
+def pro_tone(img, crisp=.2):
+    """Lumière et couleurs « photo de studio », pour les photos produit :
+    blancs vraiment blancs (balance des blancs prudente prise sur les zones neutres claires), exposition qui fait
+    respirer la photo sans brûler les hautes lumières, tons moyens posés, contraste doux, « clarté » qui fait
+    ressortir les matières, et piqué de sortie fin. Les teintes des matières sont conservées (toutes les
+    corrections passent par la luminosité, sauf la balance des blancs)."""
+    from PIL import Image, ImageFilter
+    W = np.array([.299, .587, .114], np.float32)
+    a = np.asarray(img.convert("RGB"), np.float32) / 255.0
+    sm = np.asarray(img.convert("RGB").resize((max(8, img.width // 4), max(8, img.height // 4))), np.float32) / 255.0
+    lum_s = sm @ W
+    # 1. balance des blancs : zones claires et peu colorées (fond, murs, blancs) ramenées vers le neutre, sans excès
+    sat_s = sm.max(2) - sm.min(2)
+    neutral = (sat_s < .14) & (lum_s > .45) & (lum_s < .98)
+    if neutral.mean() > .04:
+        m = sm[neutral].mean(0)
+        # prudente : une dérive de couleur est corrigée, mais l'ambiance chaude d'une lampe allumée est gardée
+        gains = np.clip(1 + (m.mean() / m - 1) * .45, .975, 1.025)
+        a = a * gains
+        sm = sm * gains
+        lum_s = sm @ W
+    # 2. exposition et niveaux (sur la luminosité) : point blanc vers 0,97, noirs jamais bouchés
+    lo, hi, mid = np.percentile(lum_s, [0.3, 99.6, 50])
+    lo = min(lo, .12) * .5
+    hi = max(hi, .55)
+    l0 = a @ W
+    l1 = np.clip((l0 - lo) / max(1e-3, hi - lo) * .97, 0, 1)
+    # 3. tons moyens : médiane amenée doucement vers 0,48
+    mid_n = np.clip((mid - lo) / max(1e-3, hi - lo) * .97, .05, .95)
+    gamma = 1 + (np.clip(np.log(.48) / np.log(mid_n), .8, 1.2) - 1) * .45
+    l1 = l1 ** gamma
+    # 4. contraste doux (courbe en S légère)
+    l1 = l1 + (l1 * l1 * (3 - 2 * l1) - l1) * .08
+    # 5. clarté : contraste local à grand rayon, matières et volumes qui ressortent (sans halo : effet plafonné)
+    r = max(4, max(img.size) / 90)
+    L = Image.fromarray((np.clip(l1, 0, 1) * 255).astype(np.uint8))
+    base = np.asarray(L.filter(ImageFilter.GaussianBlur(r)), np.float32) / 255
+    l1 = l1 + np.clip(l1 - base, -.06, .06) * .22
+    # 6. piqué de sortie fin (petit rayon, seuil : le bruit et le grain du fond ne sont pas accentués)
+    L = Image.fromarray((np.clip(l1, 0, 1) * 255).astype(np.uint8))
+    fine = l1 - np.asarray(L.filter(ImageFilter.GaussianBlur(max(.7, max(img.size) / 2200))), np.float32) / 255
+    l1 = l1 + np.where(np.abs(fine) > 4 / 255, fine, 0) * crisp
+    l1 = np.clip(l1, 0, 1)
+    a = a * (l1 / np.maximum(l0, 1e-3)).clip(.4, 2.5)[..., None]
+    # 7. vibrance très légère sur les couleurs ternes uniquement (les couleurs déjà vives ne bougent pas)
+    lum = a @ W
+    sat = a.max(2) - a.min(2)
+    a = lum[..., None] + (a - lum[..., None]) * (1 + .08 * np.clip(1 - sat * 3, 0, 1))[..., None]
+    return Image.fromarray((np.clip(a, 0, 1) * 255 + .5).astype(np.uint8))
+
+
 def enhance(img, best=False, mode=None, sharp=False):
     """Renvoie (image améliorée, liste des étapes réalisées). best=True : qualité maximale (plus lent).
     mode : « produit » (défaut, voir default_mode) ou « portrait »."""
@@ -107,6 +158,32 @@ def enhance(img, best=False, mode=None, sharp=False):
     quality = "max" if best and ai_inpaint.pack_ready("upmax") else "fast"
     if sharp:   # netteté renforcée : moins de photo d'origine remélangée ; modèle le plus fin en qualité maximale
         quality, keep = ("sharpmax" if best and ai_inpaint.pack_ready("sharp") else "sharp"), keep * .5
+    if product and not best:
+        # moteur « naturel » (2xNomosUni) + lumière et couleurs de studio : rendu photo, matières fidèles
+        try:
+            if max(w, h) < SMALL:
+                _progress(2, "Nettoyage et agrandissement ×2…")
+                out = ai_inpaint.natural_x2(img, (2, 85))
+                done.append(f"agrandie ×2 ({out.width}×{out.height})")
+            elif w * h <= 5_000_000:
+                # nettoyage à pleine définition : l'IA travaille en ×2 puis l'image revient à sa taille (aucun détail perdu)
+                _progress(2, "Nettoyage de la photo par l'IA…")
+                out = ai_inpaint.natural_x2(img, (2, 85)).resize((w, h), Image.LANCZOS)
+            elif max(w, h) <= LARGE:
+                _progress(2, "Nettoyage de la photo par l'IA…")
+                half = img.resize((w // 2, h // 2), Image.LANCZOS)
+                out = Image.blend(ai_inpaint.natural_x2(half, (2, 85)).resize((w, h), Image.LANCZOS), img, .35)
+            else:
+                out = img
+                done.append("photo déjà en haute résolution : nettoyage IA non nécessaire")
+            if out is not img:
+                done.append("compression et bruit nettoyés, matières et détails conservés")
+            _progress(90, "Lumière et couleurs…")
+            out = pro_tone(out, crisp=.35 if sharp else .2)
+            done.append("lumière et couleurs de studio (blancs nets, matières mises en valeur)")
+            return out, done
+        finally:
+            ai_inpaint.ustate().update(busy=False, progress=100, step="")
     try:
         # 1. nettoyage et netteté par IA
         if max(w, h) < SMALL:
@@ -143,8 +220,8 @@ def enhance(img, best=False, mode=None, sharp=False):
                 done.append(f"{n} visage{'s' if n > 1 else ''} restauré{'s' if n > 1 else ''}")
         # 3. lumière et couleurs
         _progress(90, "Lumière et couleurs…")
-        out = light_and_color(out, product)
-        done.append("lumière et couleurs équilibrées" + (" (mode produit : matières fidèles)" if product else ""))
+        out = pro_tone(out, crisp=.3) if product else light_and_color(out, product)
+        done.append("lumière et couleurs de studio" if product else "lumière et couleurs équilibrées")
     finally:
         ai_inpaint.ustate().update(busy=False, progress=100, step="")
     return out, done

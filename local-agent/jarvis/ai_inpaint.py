@@ -488,6 +488,27 @@ def _sharp_x4(img, factor=2, heavy=False):
     return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), 0.12 if heavy else 0.22)
 
 
+NATURAL_MODEL = __import__("pathlib").Path(__file__).resolve().parent / "models" / "natural-x2.onnx"  # inclus
+_natural_session = None
+
+
+def natural_x2(img, progress=(0, 100)):
+    """Agrandissement ×2 « naturel » : 2xNomosUni compact multijpg (Phhofm, CC BY 4.0), entraîné sur de vraies
+    photos compressées. Retire la compression et le bruit en gardant les vraies matières (pores, fibres, grain),
+    sans effet lissé ni détails inventés. Léger (2,4 Mo) et rapide, même sans carte graphique."""
+    global _natural_session
+    import numpy as np
+    from PIL import Image
+    if _natural_session is None:
+        _natural_session = new_session(NATURAL_MODEL)
+    src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
+    run = lambda part: _natural_session.run(None, {"input": part.transpose(2, 0, 1)[None]})[0][0].transpose(1, 2, 0)
+    out = _tiled(src, run, 2, 384, 16, progress)
+    res = Image.fromarray((out.clip(0, 1) * 255).round().astype(np.uint8))
+    # 20 % d'agrandissement classique : adoucit les micro-contrastes trop marqués, rendu plus photographique
+    return Image.blend(res, img.convert("RGB").resize(res.size, Image.LANCZOS), .2)
+
+
 def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
     """Agrandit une image PIL ×2 ou ×4 avec Real-ESRGAN (rendu naturel), par tuiles pour limiter la mémoire."""
     global _up_session
@@ -513,6 +534,15 @@ def upscale_image(img, factor=2, tile=640, pad=16, quality="fast"):
         return _sharp_x4(img, factor, heavy=True)
     if quality in ("sharp", "sharpmax"):
         return _sharp_x4(img, factor)
+    if quality == "natural":
+        ustate().update(busy=True, progress=0)
+        try:
+            res = natural_x2(img, (0, 100 if factor == 2 else 50))
+            if factor == 4:
+                res = natural_x2(res, (50, 100))
+        finally:
+            ustate()["busy"] = False
+        return res
     if _up_session is None:
         _up_session = new_session(UPSCALE_MODEL)
     src = np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0
