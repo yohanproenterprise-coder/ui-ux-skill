@@ -487,6 +487,9 @@ def serve(cfg, workdir, port=7860, open_browser=True, open_path=None):
                     with ai_inpaint.user_priority():
                         res = {"image": ai_inpaint.inpaint(data.get("image", ""), data.get("mask", ""))}
                     self._json(res)
+                elif self.path == "/clean_overlays":
+                    from . import overlays
+                    self._json(overlays.clean_data_url(data.get("image", "")))
                 elif self.path == "/detect_overlays":
                     from . import overlays
                     self._json(overlays.detect_data_url(data.get("image", "")))

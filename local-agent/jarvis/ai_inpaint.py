@@ -372,6 +372,7 @@ def inpaint(image_data_url, mask_data_url):
     m = np.pad(np.asarray(mask), ((0, side - h), (0, side - w)))
     x = np.asarray(Image.fromarray(a).resize((SIZE, SIZE), Image.BICUBIC), dtype=np.float32).transpose(2, 0, 1)[None] / 255.0
     mk = (np.asarray(Image.fromarray(m).resize((SIZE, SIZE), Image.BILINEAR)) > 20).astype(np.float32)[None, None]
+    x = x * (1 - mk)   # la zone à effacer est vidée : l'IA ne doit pas « voir » (ni recopier) ce qu'il y avait dessous
     out = _get_session().run(None, {"image": x, "mask": mk})[0][0].transpose(1, 2, 0)
     if out.max() <= 2:
         out = out * 255

@@ -902,10 +902,30 @@
   q("#st-overlays-auto").onclick = async () => {
     if (!S.full) return;
     mctx.clearRect(0, 0, mask.width, mask.height);
-    if (!await detectOverlays()) return;
-    // moteur IA si disponible (bords et formes reconstruits), sinon moteur classique
-    if (aiState && aiState.state === "ready") S.engine = "ai";
-    await healZones();
+    try { aiState = await (await fetch("/ai_status")).json(); } catch (e) {}
+    if (!(aiState && aiState.state === "ready")) {
+      // sans l'IA de retouche : repérage, puis effacement avec le moteur classique
+      if (!await detectOverlays()) return;
+      return healZones();
+    }
+    // avec l'IA : tout se fait sur le PC, en pleine définition. Quand un texte touche le produit, sa silhouette est
+    // retrouvée sous le texte et produit et fond sont reconstruits séparément (bord net, matière continue).
+    const t0 = performance.now();
+    q("#st-busy span").textContent = "Effacement des textes et logos (le produit est protégé)…"; q("#st-busy").style.display = "flex";
+    try {
+      const r = await (await fetch("/clean_overlays", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: S.full.toDataURL("image/png") }) })).json();
+      if (r.error) throw new Error(r.error === "introuvable" ? "Jarvis doit être redémarré pour utiliser la mise à jour." : r.error);
+      if (!r.found) return healMsg("Aucun texte ni logo ajouté trouvé sur cette photo.");
+      const im = new Image(); im.src = r.image; await im.decode();
+      const snap = document.createElement("canvas"); snap.width = S.full.width; snap.height = S.full.height; snap.getContext("2d").drawImage(S.full, 0, 0);
+      S.baseHist.push(snap); if (S.baseHist.length > 6) S.baseHist.shift();
+      S.full.getContext("2d").drawImage(im, 0, 0, S.full.width, S.full.height);
+      makePrev(); buildFilterThumbs(); render(); q("#st-heal-undo").disabled = false; S.lastHeal = null; q("#st-heal-again").disabled = true;
+      const parts = [r.texts ? `${r.texts} texte${r.texts > 1 ? "s" : ""}` : "", r.shapes ? `${r.shapes} logo${r.shapes > 1 ? "s" : ""} ou forme${r.shapes > 1 ? "s" : ""}` : ""].filter(Boolean).join(" et ");
+      healMsg(`${parts} effacé${(r.texts + r.shapes) > 1 ? "s" : ""} en ${((performance.now() - t0) / 1000).toFixed(0)} s. Une trace reste ? Peins-la et clique sur « Effacer la zone peinte ».`);
+    } catch (e) { healMsg("Échec : " + e.message, true); }
+    finally { q("#st-busy").style.display = "none"; }
   };
   q("#st-overlays").onclick = () => detectOverlays();
   async function detectOverlays() {
