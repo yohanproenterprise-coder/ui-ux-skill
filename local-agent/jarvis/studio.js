@@ -113,7 +113,8 @@
             <button class="st-btn" id="st-eng-ai" title="Intelligence artificielle LaMa : reconstruit les formes (bords d'objets, visages de fond…)">✦ IA</button>
           </div>
           <div id="st-ai-box" class="st-note" hidden></div>
-          <button class="st-btn wide" id="st-overlays" style="margin-top:12px">🧹 Repérer textes, logos et formes ajoutés</button>
+          <button class="st-btn primary wide" id="st-overlays-auto" style="margin-top:12px">⚡ Effacer tout seul les textes, logos et lignes</button>
+          <button class="st-btn wide" id="st-overlays">🧹 Repérer seulement (je vérifie avant d'effacer)</button>
           <div class="st-row" style="margin-top:12px"><label>Taille du pinceau <span id="v-brush">30</span></label>
             <input type="range" min="4" max="150" value="30" id="st-brush"></div>
           <div class="st-grid two">
@@ -898,8 +899,17 @@
     healMsg(`${zones.length} zones effacées en ${((performance.now() - t0) / 1000).toFixed(1)} s. Une trace reste ? Repeins-la et clique sur « Effacer ».`);
   }
   q("#st-heal").onclick = () => healZones();
-  q("#st-overlays").onclick = async () => {
+  q("#st-overlays-auto").onclick = async () => {
     if (!S.full) return;
+    mctx.clearRect(0, 0, mask.width, mask.height);
+    if (!await detectOverlays()) return;
+    // moteur IA si disponible (bords et formes reconstruits), sinon moteur classique
+    if (aiState && aiState.state === "ready") S.engine = "ai";
+    await healZones();
+  };
+  q("#st-overlays").onclick = () => detectOverlays();
+  async function detectOverlays() {
+    if (!S.full) return false;
     const k = Math.min(1, 2000 / Math.max(S.full.width, S.full.height));
     const src = document.createElement("canvas"); src.width = Math.round(S.full.width * k); src.height = Math.round(S.full.height * k);
     const sg = src.getContext("2d"); sg.imageSmoothingQuality = "high"; sg.drawImage(S.full, 0, 0, src.width, src.height);
@@ -908,16 +918,17 @@
       const r = await (await fetch("/detect_overlays", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: src.toDataURL("image/jpeg", .95) }) })).json();
       if (r.error) throw new Error(r.error === "introuvable" ? "Jarvis doit être redémarré pour utiliser la mise à jour." : r.error);
-      if (!r.found) return healMsg("Aucun texte ni logo ajouté trouvé sur cette photo.");
+      if (!r.found) { healMsg("Aucun texte ni logo ajouté trouvé sur cette photo."); return false; }
       const im = new Image(); im.src = r.mask; await im.decode();
       mctx.globalCompositeOperation = "source-over"; mctx.drawImage(im, 0, 0, mask.width, mask.height);
       const parts = [r.texts ? `${r.texts} texte${r.texts > 1 ? "s" : ""}` : "", r.shapes ? `${r.shapes} logo${r.shapes > 1 ? "s" : ""} ou forme${r.shapes > 1 ? "s" : ""}` : ""].filter(Boolean).join(" et ");
       healMsg(`${parts || "Éléments"} repéré${(r.texts + r.shapes) > 1 ? "s" : ""} (en rose). Vérifie : ajoute au pinceau ce qui manque, retire à la gomme ` +
         `ce qui doit rester, puis clique sur « Effacer la zone peinte ».` +
         (r.protected ? "" : " Astuce : installe l'IA de détourage (onglet Mise en scène) pour que le produit soit toujours protégé."));
-    } catch (e) { healMsg("Échec : " + e.message, true); }
+      return true;
+    } catch (e) { healMsg("Échec : " + e.message, true); return false; }
     finally { q("#st-busy").style.display = "none"; }
-  };
+  }
   q("#st-heal-again").onclick = async () => {
     // annule la dernière gomme et recalcule la même zone avec un autre réglage
     const last = S.lastHeal, snap = S.baseHist.pop(); if (!last || !snap) return;
