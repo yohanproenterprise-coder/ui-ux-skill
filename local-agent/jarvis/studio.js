@@ -131,6 +131,14 @@
         <div class="st-pane" data-pane="scene">
           <p class="st-note" style="margin-top:0">Détoure ton produit et pose-le dans le décor de ton choix. Le produit n'est jamais
             redessiné : forme, proportions et détails restent exactement ceux de ta photo.</p>
+          <div class="st-label">Fond studio en un clic</div>
+          <p class="st-note" style="margin-top:0">Produit détouré, centré avec des marges régulières, sur un fond uni avec une ombre
+            douce. Les suspensions restent accrochées en haut. Sur une photo d'ambiance, montre d'abord le produit (🎯 plus bas).</p>
+          <div style="display:flex;gap:8px">
+            <select id="sc-studio-color" style="flex:1"><option value="blanc">Blanc pur (places de marché)</option>
+              <option value="gris">Gris clair</option><option value="beige">Beige chaud</option><option value="noir">Noir</option></select>
+            <button class="st-btn primary" id="sc-studio">⚪ Appliquer</button></div>
+          <div class="st-msg" id="sc-studio-msg"></div>
           <div class="st-label">1. Produit</div>
           <button class="st-btn primary wide" id="sc-cut">✂ Détourer le produit</button>
           <button class="st-btn wide" id="sc-pick">🎯 Montrer le produit sur la photo</button>
@@ -235,17 +243,23 @@
       <div class="row" style="justify-content:space-between;margin:0"><strong class="title">Améliorer tout un dossier</strong>
         <button class="pill" id="st-batch-close">Fermer</button></div>
       <div id="st-batch-choose">
-        <p class="hint">Toutes les photos du dossier sont améliorées automatiquement, en arrière-plan. Les originaux ne sont
-          jamais modifiés : les copies vont dans un sous-dossier « Améliorées ».</p>
+        <p class="hint">Toutes les photos du dossier sont traitées automatiquement, en arrière-plan. Les originaux ne sont
+          jamais modifiés : les copies vont dans un sous-dossier (« Améliorées », « Sans texte », « Fond studio »…).</p>
         <div class="st-label">Dossiers avec des photos</div>
         <div class="st-folders" id="st-folders"><span class="st-note">Recherche…</span></div>
         <div class="st-label">Ou colle le chemin d'un dossier</div>
         <input type="text" id="st-folder" placeholder="C:\\Users\\toi\\Pictures\\Vacances">
+        <div class="st-label">Traitements</div>
+        <label class="check"><input type="checkbox" id="st-batch-clean"> 🧹 Effacer tout seul textes, prix, logos et lignes de cote (produit protégé)</label>
+        <label class="check"><input type="checkbox" id="st-batch-enh" checked> ✨ Améliorer (netteté, compression, lumière de studio)</label>
+        <div class="st-row" style="margin:6px 0"><label>⚪ Fond studio</label>
+          <select id="st-batch-studio"><option value="">Non</option><option value="blanc">Blanc pur</option><option value="gris">Gris clair</option>
+            <option value="beige">Beige chaud</option><option value="noir">Noir</option></select></div>
         <label class="check" style="margin-top:8px"><input type="checkbox" id="st-batch-sharp"> Netteté renforcée, façon Upscayl (plus net, rapide)</label>
         <label class="check"><input type="checkbox" id="st-batch-best"> Qualité maximale (bien plus lent ; avec la netteté : modèle le plus fin)</label>
         <label class="check"><input type="checkbox" id="st-batch-watch" checked> Automatique : améliorer aussi toute nouvelle photo ajoutée à ce dossier</label>
         <div id="st-batch-msg" class="st-note"></div>
-        <button class="st-btn primary wide" id="st-batch-start">Lancer l'amélioration</button>
+        <button class="st-btn primary wide" id="st-batch-start">Lancer le traitement du dossier</button>
         <div id="st-watch-box" hidden><div class="st-label">Dossiers en automatique</div><div class="st-folders" id="st-watch"></div>
           <p class="st-note">Jarvis vérifie ces dossiers toutes les 30 secondes tant qu'il est allumé : dépose tes photos dedans, les versions améliorées apparaissent toutes seules dans « Améliorées ».</p></div>
       </div>
@@ -1083,18 +1097,22 @@
   q("#st-batch-start").onclick = async function startBatch() {
     const box = q("#st-batch-msg"), folder = q("#st-folder").value.trim();
     if (!folder) return box.textContent = "Choisis un dossier dans la liste ou colle son chemin.";
-    if (!await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo)", startBatch)) return;
+    const ops = { enhance: q("#st-batch-enh").checked, clean: q("#st-batch-clean").checked, studio: q("#st-batch-studio").value };
+    if (!ops.enhance && !ops.clean && !ops.studio) return box.textContent = "Choisis au moins un traitement.";
+    if (ops.enhance && !await ensurePack("enhance", box, "L'IA d'amélioration (≈ 530 Mo)", startBatch)) return;
+    if (ops.clean && !await ensurePack("lama", box, "L'IA de retouche (≈ 92 Mo)", startBatch)) return;
+    if ((ops.clean || ops.studio) && !await ensurePack("cutout", box, "L'IA de détourage (≈ 225 Mo)", startBatch)) return;
     const sharp = q("#st-batch-sharp").checked;
     if (sharp && q("#st-batch-best").checked && !await ensurePack("sharp", box, "Le modèle de netteté le plus fin (≈ 67 Mo)", startBatch)) return;
     box.textContent = "Lancement…";
     const r = await (await fetch("/batch_start", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ folder, best: q("#st-batch-best").checked, sharp }) })).json();
+      body: JSON.stringify({ folder, best: q("#st-batch-best").checked, sharp, ops }) })).json();
     if (r.error === "introuvable") r.error = "Jarvis doit être redémarré pour utiliser la mise à jour : ferme-le complètement puis relance-le.";
     if (r.error) return box.innerHTML = `<span style="color:var(--err)">${esc2(r.error)}</span>`;
     box.textContent = "";
     if (q("#st-batch-watch").checked)
       await fetch("/photo_watch", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder, on: true, best: q("#st-batch-best").checked, sharp }) });
+        body: JSON.stringify({ folder, on: true, best: q("#st-batch-best").checked, sharp, ops }) });
     showBatch();
   };
 
@@ -1577,6 +1595,25 @@
     e.preventDefault(); SC.size = Math.max(.05, Math.min(1, SC.size * (e.deltaY < 0 ? 1.05 : .95)));
     q("#sc-size").value = Math.round(SC.size * 100); q("#v-sc-size").textContent = Math.round(SC.size * 100); schedule();
   }, { passive: false });
+  q("#sc-studio").onclick = async function studioBg() {
+    const box = q("#sc-studio-msg"); if (!S.full) return;
+    if (!await ensurePack("cutout", box, "L'IA de détourage (≈ 225 Mo)", studioBg)) return;
+    box.textContent = "";
+    try {
+      const src = process(S.full, S.p, true), big = src.width * src.height > 4e6, b = SC.pick;
+      const pickBox = b ? [Math.min(b.x0, b.x1), Math.min(b.y0, b.y1), Math.max(b.x0, b.x1), Math.max(b.y0, b.y1)] : null;
+      const r = await busyRun("Fond studio…", () => post("/scene_studio", { image: src.toDataURL(big ? "image/jpeg" : "image/png", .97),
+        color: q("#sc-studio-color").value, box: pickBox }));
+      const out = await loadImg(r.image);
+      S.baseHist.push(S.full); if (S.baseHist.length > 6) S.baseHist.shift();
+      S.full = out; makePrev();
+      S.p = clone(DEFAULTS); lastCommitted = JSON.stringify(S.p); S.hist = []; S.fut = []; sync();
+      buildFilterThumbs(); q("#st-name").textContent = `${S.name} · ${out.width}×${out.height}`;
+      q("#st-heal-undo").disabled = false; q("#st-up-undo").hidden = false;
+      SC.picking = false; SC.pick = null; render();
+      box.textContent = "Fond studio appliqué ✓ « Annuler » pour revenir. Tu peux ensuite améliorer (✨) et exporter.";
+    } catch (e) { box.innerHTML = `<span style="color:var(--err)">Échec : ${esc2(e.message)}</span>`; }
+  };
   q("#sc-apply").onclick = () => {
     if (!SC.bg || !SC.cut) return;
     const out = compose(SC.bg.width, SC.bg.height);

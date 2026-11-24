@@ -228,6 +228,10 @@ class _Session:
         import onnxruntime as ort
         o = ort.SessionOptions()
         o.log_severity_level = 3
+        # mémoire : sans réserve permanente (arena) ni plan mémoire figé, la mémoire de travail est rendue après
+        # chaque passage. Les gros modèles (détourage) restent ainsi utilisables sur un PC de 8 Go.
+        o.enable_cpu_mem_arena = False
+        o.enable_mem_pattern = False
         if prov[0] != "CPUExecutionProvider":   # exigé par DirectML
             o.enable_mem_pattern = False
             o.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL

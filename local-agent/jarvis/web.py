@@ -465,11 +465,11 @@ def serve(cfg, workdir, port=7860, open_browser=True, open_path=None):
                     self._json({"ok": True})
                 elif self.path == "/batch_start":
                     from . import batch
-                    self._json(batch.start(data.get("folder", ""), bool(data.get("best")), sharp=bool(data.get("sharp"))))
+                    self._json(batch.start(data.get("folder", ""), bool(data.get("best")), sharp=bool(data.get("sharp")), ops=data.get("ops")))
                 elif self.path == "/photo_watch":
                     from . import batch
                     self._json(batch.set_watch(app.cfg, data.get("folder", ""), bool(data.get("on", True)), bool(data.get("best")),
-                                               bool(data.get("sharp"))))
+                                               bool(data.get("sharp")), data.get("ops")))
                 elif self.path == "/batch_cancel":
                     from . import batch
                     self._json(batch.cancel())
@@ -493,6 +493,9 @@ def serve(cfg, workdir, port=7860, open_browser=True, open_path=None):
                 elif self.path == "/detect_overlays":
                     from . import overlays
                     self._json(overlays.detect_data_url(data.get("image", "")))
+                elif self.path == "/scene_studio":
+                    from . import scene
+                    self._json(scene.studio_data_url(data.get("image", ""), data.get("color", "blanc"), data.get("box")))
                 elif self.path == "/scene_cutout":
                     from . import scene
                     self._json(scene.cutout_data_url(data.get("image", ""), data.get("box")))

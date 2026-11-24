@@ -188,6 +188,8 @@ def cutout(img, box=None):
         m = _pick(_mask_hd(img), (x0 * W - X0, y0 * H - Y0, x1 * W - X0, y1 * H - Y0))
     else:
         m = _keep_main(_mask_hd(img))
+    _lb, _sz = _labels(m)
+    parts = sum(1 for v in _sz[1:] if v >= .25 * max(_sz[1:] or [1]))   # objets séparés importants
     a = np.clip((m - .06) / .88, 0, 1)
     rgb = np.asarray(img, np.float32)
     # couleur des bords : on reprend celle de l'intérieur du produit (sinon un liseré du fond reste visible)
@@ -205,6 +207,8 @@ def cutout(img, box=None):
     out = np.dstack([np.clip(rgb, 0, 255), a * 255]).astype(np.uint8)[y0:y1, x0:x1]
     res = Image.fromarray(out, "RGBA")
     res.info["offset"] = (int(ox + x0), int(oy + y0))   # position dans la photo envoyée (pour la retouche)
+    res.info["top_touch"] = y0 <= 2                       # le produit touche le haut de la zone analysée
+    res.info["parts"] = parts
     return res
 
 
@@ -279,3 +283,87 @@ def ideas(brain, data_url):
     if not out:
         raise RuntimeError("l'IA n'a pas pu proposer d'idées (" + (answer or "pas de réponse")[:150] + ")")
     return {"ideas": out}
+
+
+# ------------------------------------------------------------------------------------------- fond studio --
+STUDIO_COLORS = {"blanc": "#ffffff", "gris": "#eeeeec", "beige": "#f1ebe2", "noir": "#161616"}
+
+
+class StudioAmbiguous(RuntimeError):
+    """Plusieurs objets séparés sur la photo : impossible de savoir lequel est le produit sans le montrer."""
+
+
+def studio(img, color="#ffffff", margin=.08, shadow=.6, box=None, strict=False):
+    """Photo « packshot » : le produit est détouré et posé sur un fond studio uni, centré avec des marges
+    régulières (les mêmes sur toutes les photos d'une collection), avec une ombre douce au sol.
+    Le produit n'est jamais redessiné. Un luminaire suspendu (câble qui part du haut de la photo) reste accroché
+    en haut, sans ombre au sol. La photo garde sa taille et son format."""
+    from PIL import Image, ImageDraw, ImageFilter
+    img = img.convert("RGB")
+    W, H = img.size
+    color = STUDIO_COLORS.get(color, color)
+    rgb = tuple(int(color.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4))
+    cut = cutout(img, box)
+    if strict and not box and cut.info.get("parts", 1) > 1:
+        raise StudioAmbiguous("plusieurs objets sur la photo : fond studio à faire dans le Studio en montrant le produit (🎯)")
+    ox, oy = cut.info.get("offset", (0, 0))
+    # suspension : le produit part du haut (câble, tige) avec une partie fine en haut et large en dessous
+    al = np.asarray(cut.split()[3]) > 80
+    widths = al.sum(axis=1)
+    top = widths[:max(2, len(widths) // 8)]
+    hanging = bool(cut.info.get("top_touch")) and widths.max() > 0 and top.mean() < widths.max() * .3
+    # taille : le produit remplit la zone utile, sans être agrandi plus de 1,6× (resterait flou)
+    room_w, room_h = W * (1 - 2 * margin), H * (1 - 2 * margin) * (1 if hanging else .94)
+    k = min(room_w / cut.width, room_h / cut.height, 1.6)
+    cw, ch = max(1, round(cut.width * k)), max(1, round(cut.height * k))
+    prod = cut.resize((cw, ch), Image.LANCZOS)
+    x = (W - cw) // 2
+    if hanging:
+        y = max(0, int(H * (1 - margin * 1.6)) - ch)       # le luminaire dans le haut-milieu, câble jusqu'au plafond
+        if y > 0:   # on prolonge le câble jusqu'en haut de la photo
+            strip = prod.crop((0, 0, cw, max(1, ch // 60))).resize((cw, y), Image.NEAREST)
+            prod_full = Image.new("RGBA", (cw, ch + y), (0, 0, 0, 0))
+            prod_full.paste(strip, (0, 0)); prod_full.paste(prod, (0, y))
+            prod, ch, y = prod_full, ch + y, 0
+    else:
+        y = int(H * margin + (room_h - ch) / 2 + (H * (1 - 2 * margin) - room_h) * .2)
+    # fond : uni ; pour les teintes autres que le blanc pur, une très légère lumière au centre (rendu « studio »)
+    bg = Image.new("RGB", (W, H), rgb)
+    if rgb != (255, 255, 255):
+        yy, xx = np.mgrid[0:H, 0:W]
+        r = np.sqrt(((xx - W / 2) / (W * .7)) ** 2 + ((yy - H * .45) / (H * .8)) ** 2)
+        light = (np.clip(1 - r, 0, 1) ** 1.5 * (14 if sum(rgb) > 200 else 22))[..., None]
+        bg = Image.fromarray(np.clip(np.asarray(bg, np.float32) + light, 0, 255).astype(np.uint8))
+    canvas = bg.convert("RGBA")
+    if shadow > 0 and not hanging:
+        a = prod.split()[3]
+        # ombre de contact (sous la base) + ombre portée douce
+        ys, xs = np.nonzero(np.asarray(a)[-max(3, ch // 12):] > 60)
+        sh = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sh)
+        if len(xs):
+            bx0, bx1 = x + xs.min(), x + xs.max()
+            d.ellipse((bx0 - cw * .04, y + ch - ch * .025, bx1 + cw * .04, y + ch + ch * .035), fill=int(150 * shadow))
+        sh = sh.filter(ImageFilter.GaussianBlur(max(3, ch * .02)))
+        drop = Image.new("L", (W, H), 0)
+        drop.paste(a.point(lambda v: v * .35 * shadow), (x, y + int(ch * .015)))
+        drop = drop.filter(ImageFilter.GaussianBlur(max(4, ch * .035)))
+        both = Image.fromarray(np.maximum(np.asarray(sh), np.asarray(drop)))
+        tone = tuple(int(c * .55) for c in rgb)
+        canvas = Image.composite(Image.new("RGBA", (W, H), tone + (255,)), canvas, both)
+    canvas.alpha_composite(prod, (x, y))
+    return canvas.convert("RGB")
+
+
+def studio_data_url(data_url, color="#ffffff", box=None):
+    if not ai_inpaint.pack_ready("cutout"):
+        raise RuntimeError("L'IA de détourage n'est pas installée (onglet Mise en scène).")
+    with ai_inpaint.user_priority():
+        ai_inpaint.ustate().update(busy=True, progress=40, step="Fond studio…")
+        try:
+            res = studio(ai_inpaint._decode(data_url, "RGB"), color, box=box)
+        finally:
+            ai_inpaint.ustate().update(busy=False, progress=100, step="")
+    buf = io.BytesIO()
+    res.save(buf, "PNG", compress_level=1)
+    return {"image": "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()}

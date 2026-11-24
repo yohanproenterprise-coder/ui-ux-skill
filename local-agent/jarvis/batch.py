@@ -8,6 +8,28 @@ from . import enhance_ai, photo_export, system
 
 IMG_EXT = {".jpg", ".jpeg", ".jfif", ".png", ".webp", ".bmp", ".tif", ".tiff", ".avif", ".heic", ".heif"}
 OUT_NAME = "Améliorées"
+OUT_PREFIXES = (OUT_NAME, "Sans texte", "Fond studio")   # dossiers de résultats : jamais retraités
+
+
+def norm_ops(ops=None):
+    """Traitements d'un dossier : amélioration (par défaut), effacement des textes/logos, fond studio (couleur)."""
+    ops = dict(ops or {})
+    return {"enhance": bool(ops.get("enhance", True)), "clean": bool(ops.get("clean", False)),
+            "studio": str(ops.get("studio") or "")}
+
+
+def out_name(ops=None):
+    """Nom du sous-dossier de résultats selon les traitements choisis (un dossier par combinaison)."""
+    o = norm_ops(ops)
+    if o["enhance"] and not o["clean"] and not o["studio"]:
+        return OUT_NAME
+    parts = (["Sans texte"] if o["clean"] else []) + ([f"Fond studio {o['studio']}"] if o["studio"] else [])
+    name = " + ".join(parts) or "Améliorées"
+    return name + (" + améliorées" if o["enhance"] and parts else "")
+
+
+def _is_out(part):
+    return part.startswith(OUT_PREFIXES)
 APP_NAME = "Jarvis"   # nom affiché dans les notifications (changé par Photo Studio IA)
 job = {"running": False, "folder": "", "out": "", "total": 0, "done": 0, "current": "", "errors": [],
        "started": 0.0, "finished": 0.0, "cancel": False}
@@ -105,7 +127,7 @@ def photos_in(folder):
     """Photos du dossier et de ses sous-dossiers (sauf « Améliorées »)."""
     folder = Path(folder)
     return sorted(p for p in folder.rglob("*") if p.is_file() and p.suffix.lower() in IMG_EXT
-                  and OUT_NAME not in p.relative_to(folder).parts)
+                  and not any(_is_out(x) for x in p.relative_to(folder).parts[:-1]))
 
 
 def status():
@@ -142,19 +164,21 @@ queue = []        # dossiers demandés pendant qu'un autre tournait : lancés l'
 _failed = set()   # photos en échec (chemin, date) : la surveillance ne les réessaie pas en boucle
 
 
-def _save_resume(folder, best, sharp):
+def _save_resume(folder, best, sharp, ops=None):
     try:
         import json
         _resume_file().write_text(json.dumps({"folder": str(folder), "best": bool(best), "sharp": bool(sharp),
-                                              "queue": queue}), encoding="utf-8")
+                                              "ops": norm_ops(ops), "queue": queue}), encoding="utf-8")
     except OSError:
         pass
 
 
-def start(folder, best=False, only_new=False, sharp=False):
-    """Lance l'amélioration du dossier. only_new : seulement les photos pas encore améliorées (surveillance).
+def start(folder, best=False, only_new=False, sharp=False, ops=None):
+    """Lance le traitement du dossier (amélioration, et/ou effacement des textes, et/ou fond studio).
+    only_new : seulement les photos pas encore traitées (surveillance).
     Si un autre dossier est en cours, celui-ci est mis dans la file et démarrera juste après."""
     folder = clean_path(folder)
+    ops = norm_ops(ops)
     if not folder.is_dir():
         raise ValueError(f"Dossier introuvable : {folder}. Astuce : dans l'explorateur, clic droit sur le dossier → "
                          "« Copier en tant que chemin d'accès », puis colle-le ici.")
@@ -164,13 +188,13 @@ def start(folder, best=False, only_new=False, sharp=False):
                 return None
             if Path(job["folder"]) == folder:
                 return status()   # déjà en cours pour ce dossier : on affiche simplement l'avancement
-            item = {"folder": str(folder), "best": bool(best), "sharp": bool(sharp)}
+            item = {"folder": str(folder), "best": bool(best), "sharp": bool(sharp), "ops": ops}
             if all(Path(q["folder"]) != folder for q in queue):
                 queue.append(item)
-                _save_resume(job["folder"], job.get("best"), job.get("sharp"))
+                _save_resume(job["folder"], job.get("best"), job.get("sharp"), job.get("ops"))
             return {**status(), "queued": True, "position": 1 + [Path(q["folder"]) for q in queue].index(folder)}
         files = photos_in(folder)
-        out = folder / OUT_NAME
+        out = folder / out_name(ops)
         if only_new:
             now = time.time()
             files = [f for f in files if not _target(folder, out, f).exists() and (str(f), f.stat().st_mtime) not in _failed
@@ -189,8 +213,8 @@ def start(folder, best=False, only_new=False, sharp=False):
                              + ". Formats acceptés : JPG, PNG, WEBP, AVIF, HEIC, TIFF, BMP.")
         job.update(running=True, folder=str(folder), out=str(out), total=len(files), done=0, current="",
                    errors=[], started=time.time(), finished=0.0, cancel=False, durations=[], skipped=skipped, best=bool(best),
-                   sharp=bool(sharp))
-        _save_resume(folder, best, sharp)
+                   sharp=bool(sharp), ops=ops)
+        _save_resume(folder, best, sharp, ops)
 
     def work():
         from PIL import Image, ImageOps
@@ -208,7 +232,19 @@ def start(folder, best=False, only_new=False, sharp=False):
                 t0 = job["photo_started"] = time.time()
                 try:
                     img = ImageOps.exif_transpose(Image.open(f)).convert("RGB")
-                    better, _ = enhance_ai.enhance(img, best, sharp=sharp)
+                    better = img
+                    if ops["clean"]:      # textes, prix, logos, lignes ajoutés : effacés (produit protégé)
+                        from . import overlays
+                        if enhance_ai.ai_inpaint.pack_ready("lama"):
+                            better, _, _ = overlays.clean(better)
+                    if ops["enhance"]:
+                        better, _ = enhance_ai.enhance(better, best, sharp=sharp)
+                    if ops["studio"]:     # en dernier : le détourage profite de la photo nettoyée et améliorée
+                        from . import scene
+                        try:
+                            better = scene.studio(better, ops["studio"], strict=True)
+                        except scene.StudioAmbiguous as e:   # photo d'ambiance : gardée sans fond studio, signalée
+                            job["errors"].append(f"{f.name} : {e}")
                     fmt = "png" if f.suffix.lower() == ".png" else "jpeg"
                     raw, ext = photo_export.encode_image(better, fmt, 92, source_path=str(f), keep_meta=True, keep_gps=True)
                     target = _target(folder, out, f)
@@ -226,7 +262,7 @@ def start(folder, best=False, only_new=False, sharp=False):
             _stay_awake(False)
             job.update(running=False, current="", finished=time.time())
             n = job["done"] - len(job["errors"])
-            msg = (f"Arrêté : {n} photo(s) améliorée(s)" if job["cancel"] else f"{n} photo(s) améliorée(s)") + f" dans {out}"
+            msg = (f"Arrêté : {n} photo(s) traitée(s)" if job["cancel"] else f"{n} photo(s) traitée(s)") + f" dans {out}"
             if job["cancel"]:
                 queue.clear()   # « Arrêter » arrête aussi la file d'attente
             try:
@@ -240,7 +276,7 @@ def start(folder, best=False, only_new=False, sharp=False):
             while queue:   # dossier suivant de la file (les redémarrages en attente patientent encore)
                 nxt = queue.pop(0)
                 try:
-                    if start(nxt["folder"], nxt.get("best", False), sharp=nxt.get("sharp", False)):
+                    if start(nxt["folder"], nxt.get("best", False), sharp=nxt.get("sharp", False), ops=nxt.get("ops")):
                         break
                 except Exception:
                     continue
@@ -259,7 +295,7 @@ def watch_list(cfg):
     return list(cfg.get("photo_watch") or [])
 
 
-def set_watch(cfg, folder, on=True, best=False, sharp=False):
+def set_watch(cfg, folder, on=True, best=False, sharp=False, ops=None):
     """Ajoute ou retire un dossier surveillé (les nouvelles photos y sont améliorées automatiquement)."""
     from . import config
     folder = clean_path(folder)
@@ -267,7 +303,7 @@ def set_watch(cfg, folder, on=True, best=False, sharp=False):
     if on:
         if not folder.is_dir():
             raise ValueError(f"Dossier introuvable : {folder}")
-        lst.append({"folder": str(folder), "best": bool(best), "sharp": bool(sharp)})
+        lst.append({"folder": str(folder), "best": bool(best), "sharp": bool(sharp), "ops": norm_ops(ops)})
     cfg["photo_watch"] = lst
     config.save(cfg)
     return lst
@@ -284,12 +320,12 @@ def start_watcher(cfg, every=30):
             if f.exists() and not job["running"] and enhance_ai.ai_inpaint._deps_ok():
                 r = json.loads(f.read_text(encoding="utf-8"))
                 queue[:] = [q for q in r.get("queue", []) if isinstance(q, dict) and q.get("folder")]
-                if start(r["folder"], r.get("best", False), only_new=True, sharp=r.get("sharp", False)) is None:
+                if start(r["folder"], r.get("best", False), only_new=True, sharp=r.get("sharp", False), ops=r.get("ops")) is None:
                     f.unlink(missing_ok=True)
                     while queue and not job["running"]:
                         nxt = queue.pop(0)
                         try:
-                            start(nxt["folder"], nxt.get("best", False), sharp=nxt.get("sharp", False))
+                            start(nxt["folder"], nxt.get("best", False), sharp=nxt.get("sharp", False), ops=nxt.get("ops"))
                         except Exception:
                             pass
         except Exception:
@@ -300,7 +336,7 @@ def start_watcher(cfg, every=30):
                     break
                 try:
                     if Path(w["folder"]).is_dir() and enhance_ai.ai_inpaint._deps_ok():
-                        start(w["folder"], w.get("best", False), only_new=True, sharp=w.get("sharp", False))
+                        start(w["folder"], w.get("best", False), only_new=True, sharp=w.get("sharp", False), ops=w.get("ops"))
                 except Exception:
                     pass
             time.sleep(every)
@@ -317,7 +353,7 @@ def folders(roots, limit=40):
             continue
         for dirpath, dirnames, filenames in os.walk(root):
             depth = len(Path(dirpath).relative_to(root).parts)
-            dirnames[:] = [] if depth >= 4 else [d for d in dirnames if not d.startswith((".", "$")) and d not in (OUT_NAME, "node_modules")]
+            dirnames[:] = [] if depth >= 4 else [d for d in dirnames if not d.startswith((".", "$")) and not _is_out(d) and d != "node_modules"]
             n = sum(1 for x in filenames if Path(x).suffix.lower() in IMG_EXT)
             if not n:
                 continue

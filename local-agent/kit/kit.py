@@ -230,10 +230,10 @@ class Handler(BaseHTTPRequestHandler):
                 ai_inpaint.warmup()
                 self._json({"ok": True})
             elif p == "/batch_start":
-                self._json(batch.start(d.get("folder", ""), bool(d.get("best")), sharp=bool(d.get("sharp"))))
+                self._json(batch.start(d.get("folder", ""), bool(d.get("best")), sharp=bool(d.get("sharp")), ops=d.get("ops")))
             elif p == "/photo_watch":
                 self._json(batch.set_watch(config.load(), d.get("folder", ""), bool(d.get("on", True)),
-                                           bool(d.get("best")), bool(d.get("sharp"))))
+                                           bool(d.get("best")), bool(d.get("sharp")), d.get("ops")))
             elif p == "/batch_cancel":
                 self._json(batch.cancel())
             elif p == "/convert_image":
@@ -248,6 +248,9 @@ class Handler(BaseHTTPRequestHandler):
             elif p == "/detect_overlays":
                 from jarvis import overlays
                 self._json(overlays.detect_data_url(d.get("image", "")))
+            elif p == "/scene_studio":
+                from jarvis import scene
+                self._json(scene.studio_data_url(d.get("image", ""), d.get("color", "blanc"), d.get("box")))
             elif p == "/scene_cutout":
                 from jarvis import scene
                 self._json(scene.cutout_data_url(d.get("image", ""), d.get("box")))

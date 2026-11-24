@@ -317,12 +317,18 @@ class Tools:
             msg += " Dossiers en automatique (nouvelles photos traitées toutes seules) : " + ", ".join(auto) + "."
         return msg
 
-    def enhance_folder(self, path, best=False, sharp=False):
+    def enhance_folder(self, path, best=False, sharp=False, clean=False, studio="", enhance=True):
         from . import ai_inpaint, batch
         if sharp and best and not ai_inpaint.pack_ready("sharp"):
             ai_inpaint._download_pack("sharp")
-        st = batch.start(str(self._path(path)), bool(best), sharp=bool(sharp))
-        return (f"Amélioration lancée en arrière-plan : {st['total']} photo(s). Résultats dans « {st['out']} » "
+        for need, pack in ((clean, "lama"), (clean or studio, "cutout")):
+            if need and not ai_inpaint.pack_ready(pack):
+                ai_inpaint._download_pack(pack)
+        st = batch.start(str(self._path(path)), bool(best), sharp=bool(sharp),
+                         ops={"enhance": enhance, "clean": clean, "studio": studio or ""})
+        if st.get("queued"):
+            return f"Un autre dossier est en cours : celui-ci est dans la file (position {st.get('position')})."
+        return (f"Traitement lancé en arrière-plan : {st['total']} photo(s). Résultats dans « {st['out']} » "
                 "(originaux intacts). Une notification s'affichera à la fin ; suivi dans le Studio.")
 
     def edit_photo(self, path, **settings):
@@ -526,10 +532,15 @@ TOOL_SPECS = [
            "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, rapide)"}}, ["path"]),
     _tool("photo_folder_status", "Indique où en est l'amélioration automatique d'un dossier de photos "
           "(en cours, terminée, photos restantes, dossiers en automatique).", {}, []),
-    _tool("enhance_folder", "Améliore automatiquement TOUTES les photos d'un dossier (comme « Améliorer la photo » "
-          "du Studio), en arrière-plan. Les copies vont dans un sous-dossier « Améliorées ».",
+    _tool("enhance_folder", "Traite automatiquement TOUTES les photos d'un dossier, en arrière-plan : amélioration "
+          "(par défaut), et/ou effacement des textes, prix, logos et lignes ajoutés (clean), et/ou fond studio uni "
+          "(studio). Les copies vont dans un sous-dossier (« Améliorées », « Sans texte… », « Fond studio… »).",
           {"path": S, "best": {"type": "boolean", "description": "qualité maximale (beaucoup plus lent)"},
-           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, rapide)"}}, ["path"]),
+           "sharp": {"type": "boolean", "description": "netteté renforcée façon Upscayl (rendu plus net, rapide)"},
+           "clean": {"type": "boolean", "description": "effacer tout seul textes, prix, logos et lignes de cote (produit protégé)"},
+           "studio": {"type": "string", "enum": ["", "blanc", "gris", "beige", "noir"],
+                      "description": "fond studio uni (produit détouré, centré, ombre douce) ; vide = non"},
+           "enhance": {"type": "boolean", "description": "améliorer (vrai par défaut)"}}, ["path"]),
     _tool("edit_photo", "Retouche une photo, un dossier entier ou un motif (*.jpg). Réglages de -100 à +100. "
           "Crée une copie (suffixe -retouche), l'original reste intact. Pour EFFACER un objet ou une personne "
           "(le fond se reconstruit), dis à l'utilisateur d'utiliser la Gomme magique du Studio (bouton Studio).",
