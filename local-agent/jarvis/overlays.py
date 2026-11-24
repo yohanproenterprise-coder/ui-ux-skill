@@ -25,12 +25,13 @@ def _text_map(img):
     if _text is None:
         _text = ai_inpaint.new_session(TEXT_MODEL)
     w, h = img.size
-    k = min(1., 1280 / max(w, h))
+    # petites photos (fournisseurs) agrandies pour que les petits textes soient vus ; les autres jusqu'à 1280 px
+    k = 1280 / max(w, h) if max(w, h) < 700 else min(1., 1280 / max(w, h))
     tw, th = max(32, round(w * k / 32) * 32), max(32, round(h * k / 32) * 32)
-    x = np.asarray(img.convert("RGB").resize((tw, th), Image.BILINEAR), np.float32) / 255
+    x = np.asarray(img.convert("RGB").resize((tw, th), Image.BICUBIC), np.float32) / 255
     x = ((x - (.485, .456, .406)) / (.229, .224, .225)).transpose(2, 0, 1)[None].astype(np.float32)
-    p = _text.run(None, {_text.get_inputs()[0].name: x})[0][0, 0]
-    m = Image.fromarray((np.clip(p, 0, 1) * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR)
+    prob = _text.run(None, {_text.get_inputs()[0].name: x})[0][0, 0]
+    m = Image.fromarray((np.clip(prob, 0, 1) * 255).astype(np.uint8)).resize((w, h), Image.BILINEAR)
     return np.asarray(m, np.float32) / 255
 
 
@@ -121,10 +122,79 @@ def _unclip(text):
         if not blob.any():
             continue
         thick = blob.sum() / max(1, max(blob.shape))        # épaisseur moyenne du cœur
-        r = int(thick * .8 + 3 + max(w, h) * .002)
+        r = int(thick * .85 + 4 + max(w, h) * .003)
         x0, y0, x1, y1 = max(0, X0 - r), max(0, Y0 - r), min(w, X1 + r), min(h, Y1 + r)
         out[y0:y1, x0:x1] |= _dilate(text[y0:y1, x0:x1], r)
     return out
+
+
+def _badges(img, words, product):
+    """Un texte posé sur une étiquette ou une pastille de couleur unie (prix, « promo »…) : l'étiquette entière est
+    ajoutée à la zone à effacer. On part de la couleur juste autour du mot et on suit la zone de cette couleur ; si
+    elle reste fermée (elle ne s'étend pas à tout le fond), c'est une étiquette."""
+    from PIL import Image
+    from . import scene
+    out = np.zeros_like(words)
+    if not words.any():
+        return out
+    h, w = words.shape
+    arr = np.asarray(img.convert("RGB"), np.float32)
+    labels, sizes = scene._labels(words.astype(np.float32))
+    sh, sw = labels.shape
+    for i in range(1, len(sizes)):
+        ys, xs = np.nonzero(labels == i)
+        x0, y0 = int(xs.min() * w / sw), int(ys.min() * h / sh)
+        x1, y1 = min(w, int(np.ceil((xs.max() + 1) * w / sw))), min(h, int(np.ceil((ys.max() + 1) * h / sh)))
+        bw, bh = x1 - x0, y1 - y0
+        X0, Y0, X1, Y1 = max(0, x0 - bw), max(0, y0 - bh * 2), min(w, x1 + bw), min(h, y1 + bh * 2)
+        win, wd = arr[Y0:Y1, X0:X1], words[Y0:Y1, X0:X1]
+        ring = _dilate(wd, max(3, bh // 6)) & ~wd
+        if ring.sum() < 20 or product[Y0:Y1, X0:X1][ring].mean() > .3:
+            continue
+        ref = np.median(win[ring], axis=0)
+        same = (np.abs(win - ref).max(axis=2) < 30) & ~product[Y0:Y1, X0:X1]
+        # zone de cette couleur reliée au pourtour du mot (croissance limitée à la fenêtre)
+        reg = ring & same
+        for _ in range(max(win.shape)):
+            nxt = _dilate(reg, 1) & (same | wd)
+            if nxt.sum() == reg.sum():
+                break
+            reg = nxt
+        border = np.concatenate([reg[0], reg[-1], reg[:, 0], reg[:, -1]])
+        if border.mean() > .04 or reg.sum() < ring.sum():   # s'étend jusqu'au bord de la fenêtre : c'est le fond
+            continue
+        ry, rx = np.nonzero(reg | wd)
+        box = np.zeros_like(wd)
+        box[ry.min():ry.max() + 1, rx.min():rx.max() + 1] = True
+        # l'étiquette : sa zone colorée, les lettres et ce qu'elles enferment (rectangle englobant si forme pleine)
+        fill = reg | wd | (box & _dilate(reg, 2))
+        # marge généreuse : le bord d'une étiquette est adouci (anticrénelage, compression), il laisserait un contour
+        out[Y0:Y1, X0:X1] |= _dilate(fill, max(4, int(.1 * min(np.ptp(ry) + 1, np.ptp(rx) + 1))))
+    return out
+
+
+def _confident(prob):
+    """Zones de texte (seuil 0,3 comme PaddleOCR), mais on ne garde que celles où le détecteur est vraiment sûr
+    de lui quelque part (vrai mot : cœur très net). Feuilles, cordons, motifs : écartés."""
+    from . import scene
+    text = prob > .3
+    if not text.any():
+        return text
+    labels, sizes = scene._labels(text.astype(np.float32))
+    sh, sw = labels.shape
+    h, w = text.shape
+    keep = np.zeros((sh, sw), bool)
+    from PIL import Image
+    small_p = np.asarray(Image.fromarray((prob * 255).astype(np.uint8)).resize((sw, sh), Image.BILINEAR), np.float32) / 255
+    for i in range(1, len(sizes)):
+        part = labels == i
+        vals = np.sort(small_p[part])[::-1]
+        q = vals[:max(1, len(vals) // 4)].mean()           # le quart le plus net de la zone
+        # vrai mot : cœur très net, ou zone assez grande et nette ; minuscules taches incertaines écartées
+        if (q >= .95 and sizes[i] >= 4) or (q > .8 and sizes[i] >= 25):
+            keep |= part
+    big = np.asarray(Image.fromarray(keep.astype(np.uint8) * 255).resize((w, h), Image.NEAREST)) > 0
+    return text & big
 
 
 def detect(img):
@@ -133,7 +203,7 @@ def detect(img):
     from . import scene
     img = img.convert("RGB")
     w, h = img.size
-    text = _text_map(img) > .3
+    text = _confident(_text_map(img))
     product = np.zeros((h, w), bool)
     shapes = np.zeros((h, w), bool)
     n_shapes = 0
@@ -149,7 +219,13 @@ def detect(img):
                 part = labels == i
                 px = small_rgb[part]
                 # pastille, logo, icône : une couleur domine nettement (même avec des lettres dessus)
-                flat[i] = (np.abs(px - np.median(px, axis=0)).max(axis=1) < 22).mean() > .6
+                uni = (np.abs(px - np.median(px, axis=0)).max(axis=1) < 22).mean()
+                ys_, xs_ = np.nonzero(part)
+                solid = sizes[i] / max(1, (np.ptp(ys_) + 1) * (np.ptp(xs_) + 1))
+                touches_text = (_dilate(part, 2) & small_text).any()
+                # forme ajoutée : aplat qui porte un texte (pastille, étiquette), ou aplat franc, net et compact
+                # (une feuille, un bout de tissu ou de bois n'en est pas : couleur moins uniforme, forme découpée)
+                flat[i] = (uni > .6 and touches_text) or (uni > .85 and solid > .6 and sizes[i] > 30)
                 texty[i] = (part & small_text).sum() > .3 * sizes[i]         # lettre ou bloc de texte
             # protégés : tous les objets à vraie texture (le produit, les meubles…). Une pastille unie ou un texte
             # ajouté n'en fait pas partie.
@@ -171,7 +247,8 @@ def detect(img):
     if text.any():
         lines = _lines(img) & _grow(text, .06) & ~product
     words = _unclip(text)
-    erase = words | _grow(shapes, .005) | _grow(lines, .004)   # marge : contours adoucis, ombres, halos
+    words |= _badges(img, words, product)       # étiquette prix, pastille : le fond coloré du texte part avec lui
+    erase = words | _grow(shapes, .005) | _grow(lines, .009)   # marge : contours adoucis, pointes de flèche, ombres
     erase &= ~(product & ~words)                               # jamais sur le produit (sauf texte qui le chevauche)
     if lines.any():
         n_shapes += len(scene._labels(lines.astype(np.float32))[1]) - 1
